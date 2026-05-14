@@ -2,9 +2,9 @@
 
 > Protocolo de comunicação acústica subaquática baseado em séries harmônicas racionais
 
+[![CI](https://github.com/Hubstry-DeepTech/hubstry-marine-acoustic-layer/actions/workflows/ci.yml/badge.svg)](https://github.com/Hubstry-DeepTech/hubstry-marine-acoustic-layer/actions)
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-2_passed-green)](tests/)
 
 ## Visão
 
