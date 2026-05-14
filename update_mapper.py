@@ -1,4 +1,6 @@
-def classify_vocalization(frequency_hz: float, species: str = None) -> str:
+#!/usr/bin/env python3
+# update_mapper.py - Atualiza vocalization_mapper.py com suporte a species
+content = '''def classify_vocalization(frequency_hz: float, species: str = None) -> str:
     if frequency_hz < 50:
         return "infrassom_social" if (species or "").lower() in ("blue_whale", "fin_whale") else "infrassom_navegacao"
     elif frequency_hz < 500:
@@ -21,3 +23,7 @@ def map_cetacean_vocalization(frequencies, f0_base=25.0, harmonic_order=16, spec
             'interpretation': classify_vocalization(f, species)
         })
     return results
+'''
+with open('src/hmal/bioacoustics/vocalization_mapper.py', 'w', encoding='utf-8') as f:
+    f.write(content)
+print("? vocalization_mapper.py atualizado")
