@@ -1,131 +1,149 @@
-# Hubstry Marine Acoustic Layer (HMAL)
+# GuruDev Core · Hubstry-DeepTech
 
-> Protocolo de comunicacao acustica subaquatica baseado em series harmonicas racionais
+> **Idioma**: **Português** | [English](README_EN.md)
 
-[![License: BSL 1.1](https://img.shields.io/badge/License-BSL_1.1-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-17_passed-green)](tests/)
-[![Zenodo](https://img.shields.io/badge/DOI-10.5281/zenodo.placeholder-blue)](https://zenodo.org/doi/10.5281/zenodo.placeholder)
-
-**Versao**: 0.1.0-alpha | **TRL**: 4.5 (desk-study + simulacao) | **Status**: Funcional
+**GuruDev** é uma linguagem de programação holística e ontológica, criada integralmente por **Guilherme Gonçalves Machado** — desde a concepção teórica até a arquitetura completa, incluindo a invenção da **GuruMatrix** (álgebra hexarrelacional π√f(A)) e toda a fundamentação ontológica que diferencia a linguagem. Desenvolvida sob o guarda-chuva da deep tech **Hubstry-DeepTech**, GuruDev não é um "port" ou wrapper de nenhuma linguagem existente — é uma criação original, construída do zero.
 
 ---
 
-## Visao Geral
+## Visão
 
-O HMAL adapta o protocolo [HPG 1.0](https://github.com/Hubstry-DeepTech/iot-hubstry-protocol) para o meio aquatico, utilizando series harmonicas racionais como espaco de canais fisicamente nativo a propagacao acustica subaquatica. Integra-se com o [GuruDev Core](https://github.com/Hubstry-DeepTech/gurudev-core) para analise semantica ontologica de vocalizacoes.
+GuruDev integra linguística, inteligência artificial, epistemologia e engenharia de software para criar um paradigma de programação **multimodal e semântico**, alinhado às demandas da próxima geração de sistemas computacionais. Sua sintaxe única de blocos ontológicos, anotações semânticas e interoperabilidade multilíngue a diferencia de qualquer outra linguagem de programação existente.
 
-### Ecossistema Hubstry
-| Repositorio | Funcao | Status |
-|-------------|--------|--------|
-| [iot-hubstry-protocol](https://github.com/Hubstry-DeepTech/iot-hubstry-protocol) | HPG 1.0: base matematica de series harmonicas racionais | Publicado |
-| [hubstry-marine-acoustic-layer](https://github.com/Hubstry-DeepTech/hubstry-marine-acoustic-layer) | HMAL: adaptacao aquatico do HPG 1.0 | Funcional |
-| [gurudev-core](https://github.com/Hubstry-DeepTech/gurudev-core) | Plataforma semantica para analise ontologica | Publicado |
-
-### Casos de Uso HMAL
-| Caso | Descricao | Status |
-|------|-----------|--------|
-| Bioacustica cientifica | Mapeamento de vocalizacoes cetaceas para canais racionais a/b | Funcional |
-| Monitoramento ambiental | Sensores subaquaticos para conservacao | Funcional |
-| Comunicacao segura offshore | Auth ~200B + anti-jamming + gateway JANUS | Funcional |
-| Interface homem-cetaceo | Analise semantica via GuruDev Core | Em desenvolvimento |
+A ideia central é usar GuruDev com IA para que a máquina capture nível semântico — transcendendo a execução puramente sintática e alcançando compreensão ontológica do código.
 
 ---
 
-## Instalacao Rapida
+## O Diferencial Ontológico
 
-    git clone https://github.com/Hubstry-DeepTech/hubstry-marine-acoustic-layer.git
-    cd hubstry-marine-acoustic-layer
-    python -m pip install numpy scipy ply pytest
-    python -m pytest tests/ -v
+GuruDev não é "Python em português". É uma linguagem com identidade própria, fundamentada em três pilares acadêmicos publicados no Zenodo:
 
----
+### 1. Programação Comparada — Fundamentos Teóricos
+A linguagem se baseia na análise estrutural de 15+ linguagens de programação, extraindo padrões semânticos universais para criar uma gramática que é simultaneamente acessível e expressiva.
 
-## Uso Basico
+📄 **doi:** [10.5281/zenodo.20028887](https://doi.org/10.5281/zenodo.20028887)
 
-    from hmal.core import HarmonicProtocol, RationalChannel
-    from hmal.bioacoustics import map_cetacean_vocalization
+### 2. IMIP — Interface de Múltiplas Interpretações Paramétricas
+O **DISPATCH_ON_HERMENEUTICS** (§4.3 do IMIP) define 7 níveis de interpretação para texto computacional, permitindo que a mesma expressão seja compreendida em múltiplas camadas semânticas. A **Contenção Constitucional** (§5.5) restringe tokens por instância, garantindo segurança ontológica.
 
-    hp = HarmonicProtocol(f0_base=25.0, mode="whale")
-    result = map_cetacean_vocalization([22.3], hp.f0_adaptive, species="blue_whale")[0]
-    print(f"22.3 Hz -> {result['channel_ratio']} | P={result['priority']:.3f}")
+📄 **doi:** [10.5281/zenodo.19772798](https://doi.org/10.5281/zenodo.19772798)
 
-### Exemplos Prontos
-| Arquivo | Descricao | Executar |
-|---------|-----------|----------|
-| examples/demo.py | Demo interativa para pitch | python examples/demo.py |
-| examples/whale_detection.py | Pipeline de deteccao de baleia | python examples/whale_detection.py |
+### 3. π√f(A) — Álgebra Hexarrelacional (GuruMatrix)
+A **GuruMatrix** é um tensor de 5 dimensões que rastreia operações por categoria, semântica e nível de interpretação — a estrutura de dados central que dá poder à máquina de capturar nível semântico. Este trabalho também explora a interseção com computação quântica.
+
+📄 **doi:** [10.5281/zenodo.19775021](https://doi.org/10.5281/zenodo.19775021)
+📄 **doi:** [10.5281/zenodo.18776401](https://doi.org/10.5281/zenodo.18776401)
 
 ---
 
-## Resultados Tecnicos (Desk-Study v1.1.0)
+## Sintaxe Ontológica — O Motor
 
-| Metrica | Baleia-Azul | Golfinho |
-|---------|-------------|----------|
-| Cobertura H16 (<200 ppm) | 87,3% [85,1-89,5%] | 84,1% [82,0-86,2%] |
-| Erro medio de mapeamento | 89 ppm | 142 ppm |
+A sintaxe da GuruDev permite **blocos ontológicos** com capacidade de subescrita, compensação e interoperabilidade:
 
-*IC 95% via bootstrap (n=1000). Dados: NOAA PMEL + OBIS-SEAMAP.*
-
----
-
-## Integracao com Ecossistema Hubstry
-
-### Com HPG 1.0 (iot-hubstry-protocol)
-O HMAL herda a estrutura matematica do [HPG 1.0](https://github.com/Hubstry-DeepTech/iot-hubstry-protocol):
-- Series harmonicas racionais H_N = {a/b | 1<=a,b<=N, gcd(a,b)=1}
-- Metrica de prioridade P(a/b) = 1/(a+b)
-- Janela de sincronizacao T_sync = lcm(b1,...,bk)/f0
-
-### Com GuruDev Core (analise semantica)
-O pipeline ontologico conecta HMAL -> GuruDev:
-    from hmal.gurudev import ontology_bridge
-    semantic_vector = ontology_bridge.map_vocalization_to_ontology(
-        mapped_channel, 
-        dispatch_level=5
-    )
-Detalhes: [gurudev-core/README.md](https://github.com/Hubstry-DeepTech/gurudev-core)
+| Construto | Sintaxe | Descrição |
+|---|---|---|
+| Bloco | `[$$bloco$$]` ... `[$$/bloco$$]` | Unidade ontológica principal |
+| Sobrescrita | `[$$sobrescrita$$]` ... `[$$/sobrescrita$$]` | Redefine comportamento de operações |
+| Código GuruDev | `¡codigo!` ... `!/codigo!` | Código nativo dentro do bloco |
+| Subescrita Python | `¿python?` ... `?/python?` | Interoperabilidade com Python (exec()) |
+| Compensação | `$$compensacao$$` ... `$$/compensacao$$` | Fallback automático em caso de erro |
+| Tratamento de erro | `$$erro]` | Captura falhas com AST executável |
 
 ---
 
-## Citacao (Apos Publicacao Zenodo)
+## Verticais de Negócio
 
-    @article{machado2026hmal,
-      title={Mapeamento Harmonico Racional de Vocalizacoes Cetaceas: Protocolo HMAL},
-      author={Machado, Guilherme Goncalves},
-      journal={Zenodo},
-      year={2026},
-      doi={10.5281/zenodo.placeholder},
-      url={https://github.com/Hubstry-DeepTech/hubstry-marine-acoustic-layer}
-    }
+GuruDev foi projetada com foco em quatro verticais estratégicas:
+
+- **Segurança Cibernética** — Blocos ontológicos com contenção constitucional proporcionam segurança em nível semântico, impedindo interpretações não autorizadas de código.
+- **Games** — A multimodalidade da linguagem e a capacidade de redefinir comportamentos via sobrescrita permitem criar sistemas de regras dinâmicos e adaptáveis para engines de jogos.
+- **Interoperabilidade entre Linguagens** — Subescritas permitem executar Python, JavaScript, Rust e outras linguagens dentro de blocos ontológicos, com rastreamento semântico via GuruMatrix.
+- **IA Geral** — A integração nativa com o DISPATCH_ON_HERMENEUTICS permite que modelos de IA operem em múltiplos níveis de interpretação, capturando semântica e não apenas sintaxe.
 
 ---
 
-## Roadmap do Ecossistema
-- HPG 1.0 publicado (Maio 2026)
-- HMAL desk-study + 17 testes (Maio 2026)
-- Publicacao Zenodo HMAL (Maio 2026)
-- Integracao GuruDev em prototipo (Q3 2026)
-- Validacao em campo com parceiros (Jul-Dez 2026)
+## Estado Atual do Projeto (Maio 2026)
+
+### Funcionalidades Implementadas
+- **38/38 testes passando** — suite completa de testes automatizados
+- **Lexer (PLY)** — máquina de estados com 9 estados léxicos dedicados
+- **Parser (PLY)** — gramática completa incluindo blocos ontológicos
+- **Interpretador** — execução completa com motor ontológico ativo
+- **REPL interativo** — modo read-eval-print com auto-finalização
+- **CLI** — `gurudev run`, `gurudev test`, `gurudev repl`
+- **Métodos String** (18) — `tamanho()`, `maiusculo()`, `minusculo()`, `contem()`, `substituir()`, `fatiar()`, `dividir()`, `remover_espacos()`, `inverter()`, `repetir()`, `comeca_com()`, `termina_com()`, `indice_de()`, `ultima_posicao()`, `para_maiusculo()`, `para_minusculo()`, `eh_numero()`, `eh_vazio()`
+- **Métodos Array** (17) — `adicionar()`, `remover()`, `tamanho()`, `contem()`, `indice_de()`, `ordenar()`, `inverter()`, `fatiar()`, `juntar()`, `copiar()`, `limpar()`, `primeiro()`, `ultimo()`, `mapa()`, `filtrar()`, `reduzir()`, `plano()`
+- **Classes** — `isto`, `this`, `iniciar()`, propriedades, métodos
+- **Motor Ontológico** — blocos, subescritas, compensação ativos
+
+### Instalação
+
+```bash
+git clone https://github.com/Hubstry-DeepTech/gurudev-core.git
+cd gurudev-core
+python -m pip install -e .
+```
+
+### Uso
+
+```bash
+# Executar arquivo .guru
+gurudev run examples/calc.guru
+
+# Exemplo ontológico
+gurudev run examples/ontologico.guru
+
+# REPL interativo
+gurudev repl
+
+# Suite de testes
+gurudev test
+```
 
 ---
 
-## Licenca e Etica
-| Componente | Licenca | Uso Permitido |
-|------------|---------|--------------|
-| Dataset + Paper | CC-BY-4.0 | Pesquisa, educacao, conservacao |
-| Security modules | BSL-1.1 | Uso comercial requer autorizacao |
-| Core protocol | MIT | Pesquisa e desenvolvimento aberto |
+## Estrutura do Repositório
 
-**Clausula Etica**: Uso proibido em vigilancia nao-consentida de cetaceos.
+```
+gurudev-core/
+├── src/
+│   ├── lexer/                  # Máquina de estados PLY
+│   ├── parser.py               # Gramática com blocos ontológicos
+│   ├── interpreter.py          # Interpretador + motor ontológico
+│   ├── ast_nodes.py            # Nós da AST
+│   └── repl.py                 # REPL interativo
+├── examples/
+│   ├── calc.guru               # Exemplo String/Array methods
+│   └── ontologico.guru         # Exemplo motor ontológico
+├── run_interpreter_test.py     # Suite de testes (38)
+├── pyproject.toml
+├── README.md                   # Este arquivo (PT-BR)
+├── README_EN.md                # Versão em inglês
+└── LICENSE                     # Business Source License 1.1
+```
 
 ---
 
-## Contato
-- **Autor**: Guilherme Goncalves Machado
-- **Email**: guilhermemachado.ceo@hubstry.dev
-- **ORCID**: [0009-0008-1083-0784](https://orcid.org/0009-0008-1083-0784)
-- **Site**: [hubstry.dev](https://hubstry.dev)
-- **Ecossistema**: [Hubstry-DeepTech](https://github.com/Hubstry-DeepTech)
+## Links Oficiais
 
-(c) 2026 Hubstry Deep Tech - Rio de Janeiro, Brasil
+- **Site Hubstry:** [www.hubstry.dev](https://www.hubstry.dev)
+- **Site GuruDev:** [gurudev-tech.site](https://gurudev-tech.site)
+- **Repositório:** [github.com/Hubstry-DeepTech/gurudev-core](https://github.com/Hubstry-DeepTech/gurudev-core)
+
+---
+
+## Sobre o Criador
+
+**Guilherme Gonçalves Machado** é o criador original da GuruDev — desde a concepção da ideia, passando pela arquitetura, design da linguagem, invenção da GuruMatrix, e toda a fundamentação teórica publicada nos papers acadêmicos. Toda a propriedade intelectual da linguagem, incluindo sua gramática, sintaxe ontológica, motor de interpretação e estruturas de dados, é criação original sua.
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a **Business Source License 1.1 (BSL 1.1)**.
+
+O uso **não comercial** (pesquisa acadêmica, educação, projetos pessoais) é livre e encorajado. O uso comercial (venda, licenciamento, SaaS, integração em produtos comerciais) requer autorização expressa do criador.
+
+Consulte o arquivo [LICENSE](LICENSE) para os termos completos.
+
+© 2024-2026 Guilherme Gonçalves Machado · Hubstry-DeepTech. Todos os direitos reservados.
