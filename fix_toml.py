@@ -1,4 +1,6 @@
-[build-system]
+#!/usr/bin/env python3
+# fix_toml.py - Cria pyproject.toml SEM BOM usando escrita bin?ria ASCII
+content = b"""[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
@@ -11,3 +13,7 @@ dependencies = ["numpy>=1.24", "scipy>=1.10", "ply>=3.11"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4", "black", "mypy"]
+"""
+with open("pyproject.toml", "wb") as f:
+    f.write(content)
+print("OK: pyproject.toml criado sem BOM")
