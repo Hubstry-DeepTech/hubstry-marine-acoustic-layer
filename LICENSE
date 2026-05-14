@@ -1,3 +1,28 @@
 ﻿Business Source License 1.1
 
-Uso acadêmico permitido sob CC-BY-4.0.
+Parameters
+
+Licensor:             Guilherme Gonçalves Machado
+Licensed Work:        Hubstry Marine Acoustic Layer (HMAL) v0.1.0-alpha
+                      The Licensed Work is (c) 2026 Hubstry Deep Tech.
+Additional Use Grant: Academic and conservation use permitted under CC-BY-4.0.
+                      Commercial/defense use requires explicit authorization.
+Change Date:          2029-05-14
+Change License:       MIT
+
+Notice
+
+The Licensed Work is provided under the Business Source License 1.1.
+For academic research, education, and marine conservation projects,
+you may use, modify, and distribute the Licensed Work under the
+terms of CC-BY-4.0.
+
+For commercial deployment, SaaS offerings, or integration into
+defense/security products, please contact:
+  guilhermemachado.ceo@hubstry.dev
+
+Ethical Clause: Use of the security modules (h_challenge.py, janus_gateway.py)
+for surveillance of cetaceans or non-consented monitoring of marine mammals
+is expressly prohibited.
+
+Full license text: https://mariadb.com/bsl11/
