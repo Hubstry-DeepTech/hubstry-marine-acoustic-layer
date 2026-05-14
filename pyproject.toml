@@ -1,0 +1,10 @@
+﻿[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hmal"
+version = "0.1.0-alpha"
+description = "HMAL: protocolo acústico harmônico"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scipy>=1.10", "ply>=3.11"]
