@@ -18,7 +18,7 @@ class HChallengeResponse:
     def compute_response(self, challenge: dict) -> bytes:
         """Computa resposta HMAC-SHA256 truncada (~200B total)."""
         data = challenge["nonce"].encode() + str(challenge["channels"]).encode()
-        return hashlib.sha256(self.secret_seed + data).digest()[:16]  # 128-bit tag
+        return hashlib.sha256(self.secret_seed + data).digest()[:16]
     
     def verify_response(self, challenge: dict, response: bytes) -> bool:
         """Verifica resposta com comparação constante-time."""
