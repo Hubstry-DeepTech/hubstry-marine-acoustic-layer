@@ -32,10 +32,12 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
 from hmal.core.harmonic_protocol import HarmonicProtocol, RationalChannel  # noqa: E402
-from receiver import Receiver, detection_threshold, h_n  # noqa: E402
+from receiver import Receiver, ReceiverV2, detection_threshold, h_n  # noqa: E402
 
 MATRIX = json.loads((HERE / "matrix.json").read_text(encoding="utf-8"))
-RESULTS = HERE / "results"
+RECEIVERS = {"v1": Receiver, "v2": ReceiverV2}
+RECEIVER_VERSION = "v1"
+RESULTS = HERE / "results" / RECEIVER_VERSION
 CRITERIA_VERSION = "0.3.1"
 
 
@@ -56,6 +58,7 @@ def env_info(smoke: bool) -> dict:
         "python": platform.python_version(),
         "numpy": np.__version__,
         "scipy": scipy.__version__,
+        "receiver": RECEIVER_VERSION,
         "definitive": not smoke,
     }
 
@@ -67,7 +70,7 @@ def mode_cfg(name: str) -> dict:
 @lru_cache(maxsize=None)
 def receiver_for(name: str, f0: float | None = None) -> Receiver:
     m = mode_cfg(name)
-    return Receiver(m["fs_hz"], m["duration_s"], m["f0_hz"] if f0 is None else f0)
+    return RECEIVERS[RECEIVER_VERSION](m["fs_hz"], m["duration_s"], m["f0_hz"] if f0 is None else f0)
 
 
 def synth(name: str, channels: list, polarities: list, f0: float | None = None) -> tuple[np.ndarray, float]:
@@ -102,7 +105,7 @@ def exact_recovery(decoded: dict, channels: list) -> bool:
 
 
 def save(name: str, payload: dict) -> None:
-    RESULTS.mkdir(exist_ok=True)
+    RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / f"{name}.json").write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
 
 
@@ -375,9 +378,13 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None, help="limita ensaios por condição (apenas fumaça)")
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--receiver", choices=sorted(RECEIVERS), default="v1")
     a = ap.parse_args()
     if a.limit and not a.smoke:
         ap.error("--limit exige --smoke: execuções reduzidas não são definitivas")
+    global RECEIVER_VERSION, RESULTS
+    RECEIVER_VERSION = a.receiver
+    RESULTS = HERE / "results" / a.receiver
     modes = a.modes.split(",")
     tests = a.tests.split(",")
     snrs = MATRIX["snr_int_db_grid"]

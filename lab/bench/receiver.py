@@ -103,3 +103,48 @@ class Receiver:
     def noise_variance(self, x: np.ndarray) -> float:
         Xk = np.fft.rfft(x)[1 : self.N // 2]
         return float(np.median(np.abs(Xk) ** 2 / self.N) / log(2.0))
+
+
+class ReceiverV2(Receiver):
+    """Receptor v2 (lab/bench/RECEIVER_V2.md): busca de picos antes da associação ao dicionário.
+
+    Mudanças em relação à v1, sem alterar critérios, matriz ou limiares:
+    1. Os K maiores picos locais do espectro (grade de passo 1/(8T)) são localizados primeiro e
+       refinados por Brent em +-1/(8T); só então cada pico é associado ao elemento mais próximo
+       de H_16 e testado contra a tolerância 1/(2T). Um tom fora do dicionário produz um pico
+       fora da tolerância, em vez de vazar para a candidata vizinha.
+    2. Modo com piloto: o pico a até 0,2% de f0 é o piloto; os demais picos recebem razões
+       provisórias por f/f_piloto; f0 final é estimado por mínimos quadrados com o piloto e todos
+       os canais; a associação e a tolerância usam esse f0.
+    """
+
+    GRID = 8  # pontos por bin de 1/T
+
+    def _peaks(self, x: np.ndarray, n_peaks: int) -> list[float]:
+        M = self.GRID * self.N
+        P = np.abs(np.fft.rfft(x, n=M)) ** 2 / self.N
+        df = self.fs / M
+        k = np.arange(1, P.size - 1)
+        is_max = (P[k] > P[k - 1]) & (P[k] >= P[k + 1])
+        idx = k[is_max]
+        top = idx[np.argsort(P[idx])[::-1][:n_peaks]]
+        step = 1.0 / (self.GRID * self.T)
+        return [self.refine(x, float(i) * df, half_width=step) for i in top]
+
+    def decode(self, x: np.ndarray, K: int, pilot: bool = False) -> dict:
+        if not pilot:
+            f_est = sorted(self._peaks(x, K))
+            return {"f0_used": self.f0, "channels": [self.associate(f, self.f0, self.ratios) for f in f_est]}
+        data = tuple(r for r in self.ratios if r != PILOT)
+        peaks = self._peaks(x, K + 1)
+        lo, hi = self.f0 * 0.998, self.f0 * 1.002
+        in_range = [f for f in peaks if lo <= f <= hi]
+        if not in_range:
+            return {"f0_used": self.f0, "f0_pilot": None, "channels": [{"f_est": f, "ratio": None, "accepted": False} for f in peaks[:K]]}
+        f_pilot = min(in_range, key=lambda f: abs(f - self.f0))
+        others = sorted(f for f in peaks if f != f_pilot)[:K]
+        prov = [min(data, key=lambda q: abs(float(q) - f / f_pilot)) for f in others]
+        num = f_pilot + sum(float(r) * f for r, f in zip(prov, others))
+        den = 1.0 + sum(float(r) ** 2 for r in prov)
+        f0_ls = num / den
+        return {"f0_used": f0_ls, "f0_pilot": f_pilot, "channels": [self.associate(f, f0_ls, data) for f in others]}

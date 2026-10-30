@@ -1,4 +1,4 @@
-name: HMAL bench (B1-B5, B7)
+name: HMAL bench (B1-B5, B7) receiver v2
 
 on:
   push:
@@ -28,8 +28,8 @@ jobs:
           pip install pytest
           pytest tests/test_bench_matrix.py -q
       - name: Run definitive bench
-        run: python lab/bench/run_bench.py --modes ${{ matrix.mode }} --workers 4
+        run: python lab/bench/run_bench.py --modes ${{ matrix.mode }} --workers 4 --receiver v2
       - uses: actions/upload-artifact@v4
         with:
-          name: bench-results-${{ matrix.mode }}
+          name: bench-results-v2-${{ matrix.mode }}
           path: lab/bench/results/
