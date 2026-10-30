@@ -16,7 +16,7 @@ def main():
     vocals_whale = [18.5, 22.3, 35.1]
     for f in vocals_whale:
         result = map_cetacean_vocalization([f], hp_whale.f0_adaptive)[0]
-        print(f"  {f:5.1f} Hz -> {result['channel_ratio']:>4} | P={result['priority']:.3f} | {result['interpretation']}")
+        print(f"  {f:5.1f} Hz -> {result['channel_ratio']:>4} | P={result['priority']:.3f} | {result['biological_interpretation']}")
     
     # Modo golfinho
     print("\n🐬 Modo Golfinho (f₀ = 1732 Hz)")
@@ -24,7 +24,7 @@ def main():
     vocals_dolphin = [4500, 8200, 12000]
     for f in vocals_dolphin:
         result = map_cetacean_vocalization([f], hp_dolphin.f0_adaptive)[0]
-        print(f"  {f:5.0f} Hz -> {result['channel_ratio']:>4} | P={result['priority']:.3f} | {result['interpretation']}")
+        print(f"  {f:5.0f} Hz -> {result['channel_ratio']:>4} | P={result['priority']:.3f} | {result['biological_interpretation']}")
     
     # Security demo
     print("\n🔐 Autenticação H-Challenge (~200 B)")
@@ -37,7 +37,7 @@ def main():
     print(f"  Verified: {hcr.verify_response(challenge, response)}")
     
     print("\n" + "=" * 60)
-    print("✅ Demo concluída — pronto para campo e investidores")
+    print("✅ Demo concluída (protótipo computacional; sinais sintéticos)")
 
 if __name__ == "__main__":
     main()
