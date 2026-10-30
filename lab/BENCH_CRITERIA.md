@@ -1,6 +1,8 @@
 # HMAL — Critérios da bancada digital de validação
 
-**Versão:** 0.3.0-draft · **Data:** 30/10/2026 · **Estado:** aguardando nova revisão; congela no commit de aprovação, antes de qualquer execução definitiva
+**Versão:** 0.3.1-draft · **Data:** 30/10/2026 · **Estado:** aguardando nova revisão; congela no commit de aprovação, antes de qualquer execução definitiva
+
+**Mudanças em 0.3.1:** conversão explícita de SNR em dB para linear; registro do `A_k` efetivo em cada execução.
 
 **Mudanças desde 0.2.0:**
 - fator 12 no limite de Cramér–Rao e conversão explícita entre SNR integrado e SNR por amostra;
@@ -50,7 +52,11 @@ Os modos são parâmetros sintéticos da bancada. Não são frequências represe
 
 - **Sinal:** soma de tons de amplitudes iguais gerada por `generate_waveform`. A polaridade de fase de cada tom (0 ou π) vem da matriz. Essa limitação do gerador fica registrada no relatório.
 - **Ruído:** branco, gaussiano, de média zero e variância `σ²` por amostra, em toda a banda de 0 a `fs/2`. É gerado por `numpy.random.default_rng(noise_seed)`.
-- **SNR:** `η_k = A_k²/(2σ²)` é o SNR por amostra do tom `k`, com `A_k` a amplitude depois da normalização do gerador. O SNR integrado é `SNR_int,k = N·η_k`. Para cada SNR-alvo, `σ² = A_k²·N / (2·SNR_int)`.
+- **SNR:** as grades e os limiares de SNR estão em decibéis. Todas as fórmulas usam o valor **linear**, convertido assim:
+
+  $$\mathrm{SNR}_{int,lin} = 10^{\mathrm{SNR}_{int,dB}/10},\qquad \eta_k = \frac{\mathrm{SNR}_{int,lin}}{N},\qquad \sigma^2 = \frac{A_k^2\,N}{2\,\mathrm{SNR}_{int,lin}}$$
+
+  `η_k = A_k²/(2σ²)` é o SNR por amostra do tom `k`. `A_k` é a amplitude **depois** da normalização do gerador, e seu valor efetivo é registrado em cada execução.
 
 ## 4. Receptor especificado
 
@@ -126,6 +132,6 @@ Reprodução do Blue B Call Index do MBARI, conforme o código de processamento 
 ## 10. Reprodutibilidade
 
 - Código em `lab/bench/`, executado pelo CI.
-- Resultados em JSON versionados, com commit, sementes, versões de bibliotecas e data.
+- Resultados em JSON versionados, com commit, sementes, versões de bibliotecas, data e o valor efetivo de `A_k` de cada ensaio.
 - Os limiares e a matriz não mudam depois do congelamento. Qualquer alteração exige nova versão e registro do motivo.
 - LLMs podem ajudar a escrever o código e a revisar, mas não produzem os valores das métricas.
