@@ -1,0 +1,23 @@
+{
+ "env": {
+  "criteria_version": "0.3.1",
+  "matrix_version": "0.3.0",
+  "commit": "972beb694d76ffee188ccf9f7cc3b1c2cf6891f0",
+  "date_utc": "2026-10-30T20:15:32+00:00",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "receiver": "v2",
+  "definitive": true
+ },
+ "results": {
+  "B1": true,
+  "B2": true,
+  "B3": false,
+  "B4": true,
+  "B5": true,
+  "B7": true
+ },
+ "trl_rule": "TRL 3: algum ensaio obrigat\u00f3rio reprovado"
+}
