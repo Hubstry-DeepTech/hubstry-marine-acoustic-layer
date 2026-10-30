@@ -2,7 +2,7 @@
 
 > Hubstry Marine Acoustic Layer — Protocolo de comunicação acústica subaquática baseado em séries harmônicas racionais
 
-**Versão**: 0.1.0-alpha | **Status**: TRL 4.5 (desk-study + simulação) | **Licença**: BSL-1.1 + CC-BY-4.0
+**Versão**: 0.1.0-alpha | **Status**: TRL 3 em demonstração (pacote de evidências E1–E3, previsto em `lab/TRL3_EVIDENCE.md` até 05/11/2026) | **Licença**: BSL-1.1 + CC-BY-4.0
 
 ---
 
@@ -105,13 +105,17 @@ class HChallengeResponse:
 
 ## 4. Integração com Padrões Existentes
 
-### 4.1 Overlay sobre NATO C2/JANUS
+### 4.1 Compatibilidade com JANUS (STANAG 4748) — especificação conceitual
+> Modo descrito em nível de projeto; ainda não testado com modems acústicos reais.
+
 - Faixa JANUS: 7–12 kHz
 - HMAL mapeia canais a/b dentro desta faixa quando `mode="janus_overlay"`
 - Autenticação HSL ocorre antes do payload JANUS padrão
 - Compatibilidade: `JanusCompatibilityMode.OVERLAY` (padrão) ou `STANDALONE`
 
-### 4.2 Ponte com GuruDev Core (Opcional)
+### 4.2 Ponte com GuruDev Core (planejada)
+> Módulo `hmal.gurudev` ainda não incluído neste repositório.
+
 ```python
 from hmal.gurudev import ontology_bridge
 semantic_vector = ontology_bridge.map_vocalization_to_ontology(mapped_channel)
@@ -124,7 +128,7 @@ semantic_vector = ontology_bridge.map_vocalization_to_ontology(mapped_channel)
 
 | Limitação | Impacto | Mitigação |
 |-----------|---------|-----------|
-| Desk-study (sem validação em campo) | Resultados preliminares | Parceria com laboratórios oceanográficos para TRL 5-6 |
+| Desk-study (sem validação em campo) | Resultados preliminares | Parceria com laboratórios oceanográficos para TRL 4–6 |
 | Classificação biológica heurística | Precisão limitada | Treinar ML com dados rotulados por especialistas |
 | H_N limitado a N=32 | Trade-off resolução vs. computação | Otimizar para ARM Cortex-M4 em dispositivos embarcados |
 | Propagação em águas rasas não modelada | Perda de precisão em estuários | Implementar modelo Bellhop-lite em fase futura |
