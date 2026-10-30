@@ -84,7 +84,7 @@ Sinais sintéticos não substituem testes com gravações reais. Uma saída de m
 
 Os módulos de segurança e gateway são experimentais e não foram submetidos a auditoria criptográfica independente. Não devem ser usados para proteger sistemas operacionais, infraestrutura crítica ou operações reais.
 
-A pesquisa nesta fase concentra-se em análise de dados acústicos e validação computacional. Qualquer emissão acústica ativa, experimento com animais, coleta de campo ou uso operacional exigirá avaliação ética, autorizações, análise de impacto e validação técnica apropriadas. As diretrizes éticas vigentes proíbem sonar ativo, dispersão acústica de fauna, pesca acústica, integração com sistemas ASW ou detecção de torpedos e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. A licença exige autorização prévia e expressa para usos comerciais ou de defesa; essa autorização não afasta as proibições éticas específicas. O projeto não reivindica conformidade regulatória.
+A pesquisa nesta fase concentra-se em análise de dados acústicos e validação computacional. Qualquer emissão acústica ativa, experimento com animais, coleta de campo ou uso operacional exigirá avaliação ética, autorizações, análise de impacto e validação técnica apropriadas. As diretrizes éticas vigentes proíbem sonar ativo, dispersão acústica de fauna, pesca acústica e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. A licença exige autorização prévia e expressa para usos comerciais ou de defesa; essa autorização não afasta as proibições éticas específicas. O projeto não reivindica conformidade regulatória.
 
 ## Licença e uso
 
