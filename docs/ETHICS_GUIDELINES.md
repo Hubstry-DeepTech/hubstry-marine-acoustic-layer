@@ -2,10 +2,9 @@
 
 ## 1. Principios Fundamentais
 
-O HMAL (Hubstry Marine Acoustic Layer) opera sob um principio de **nao-interferencia**:
-toda saida acustica e exclusivamente analitica e jamais deve ser transmitida ao ambiente marinho.
-Nenhuma funcionalidade deste software gera sinais acusticos reproduziveis em frequencias audiveis
-por cetaceos, focas ou outras especies marinhas.
+O HMAL (Hubstry Marine Acoustic Layer) opera sob um principio de **nao-interferencia**: a pesquisa e a operação atualmente documentadas concentram-se em processamento e analise passiva de dados acusticos.
+
+A versao atual do software pode gerar vetores digitais de sinais sinteticos para simulacao computacional. Isso nao significa que o repositorio controle transdutores, realize emissao submarina ou esteja autorizado para reproducao acustica no ambiente marinho. Qualquer conversao D/A, reproducao amplificada, emissao ativa ou experimento de campo exige avaliacao etica, autorizacoes e validacao de seguranca acustica proprias.
 
 ## 2. Limites de Exposicao Sonora
 
@@ -18,40 +17,35 @@ por cetaceos, focas ou outras especies marinhas.
 | Golfinho      | 2.000-20.000 | 190 (impulso) / 140 (continuo) |
 | Foca          | 500-5.000    | 185 (impulso) / 130 (continuo) |
 
-Estes limites sao derivados das publicacoes do National Marine Fisheries Service (NMFS) e
-do Office of Naval Research (ONR). O HMAL utiliza estes limiares apenas como referencia
-analitica para classificacao de vocalizacoes gravadas, nunca para calibrar emissoes.
+Os valores acima sao referencias documentais herdadas de versoes anteriores e **nao constituem limites operacionais validados pelo HMAL**, autorizacao de emissao ou demonstracao de conformidade. Antes de qualquer uso que envolva emissao, os criterios aplicaveis devem ser confirmados diretamente nas orientacoes regulatorias vigentes e por profissional competente em bioacustica/acustica submarina.
 
 ### 2.2 Regra de Seguranca
 
-Qualquer modulo que gere dados acusticos para reproducao DEVE incluir um filtro passivo que
-atenue a saida em pelo menos 40 dB nas bandas 10-200 Hz e 2.000-20.000 Hz antes de qualquer
-conversao D/A. Este filtro nao pode ser desabilitado via API.
+Qualquer modulo futuro que exporte sinais para reproducao ou conversao D/A devera passar por avaliacao de seguranca acustica e incluir mecanismos tecnicos de limitacao validados antes de qualquer teste com transdutor. A exigencia historica de atenuacao de 40 dB mencionada em versoes anteriores nao foi validada como criterio suficiente de seguranca e nao deve ser usada como prova de conformidade.
 
 ## 3. Uso Dual e Restricoes
 
-### 3.1 Aplicacoes Proibidas
+### 3.1 Usos Vedados e Limites para Uso de Defesa
 
-O HMAL e proibido de ser utilizado para:
+As diretrizes atuais vedam o uso do HMAL para:
 
 - **Sonar ativo**: Geracao de pulsos acusticos direcionados a fauna marinha.
 - **Dispersao acustica**: Criacao de barreiras sonoras para afastar mamiferos marinhos.
 - **Pesca acustica**: Uso de sinais harmonicos para atrair ou confundir cardumes.
-- **Militar**: Integracao com sistemas de guerra anti-submarino (ASW) ou deteccao de torpedos.
+- **Vigilancia de cetaceos sem consentimento**: Uso dos modulos de seguranca para vigilancia de cetaceos ou monitoramento nao consentido de mamiferos marinhos, conforme a clausula etica do arquivo `LICENSE`.
+
+Estas diretrizes **nao estabelecem uma proibicao generica de todo uso militar ou de defesa**. Isso nao significa que tais usos estejam autorizados: o arquivo `LICENSE` exige autorizacao previa e expressa do licenciante para produtos ou integracoes comerciais/de defesa. Qualquer proposta desse tipo tambem depende de avaliacao etica, juridica e de seguranca independente. Nenhum uso de defesa e concedido automaticamente pelo acesso ao repositorio; as atividades vedadas acima permanecem vedadas.
 
 ### 3.2 Aplicacoes Permitidas
 
 - Analise passiva de gravacoes bioacusticas.
-- Pesquisa cientifica com aprovacao de comite de etica.
-- Monitoramento ambiental em parques marinhos (exclusivamente passivo).
+- Pesquisa cientifica com aprovacao de comite de etica, quando aplicavel.
+- Monitoramento ambiental em parques marinhos (exclusivamente passivo e mediante autorizacoes aplicaveis).
 - Educacao e divulgacao cientifica.
 
 ### 3.3 Verificacao de Licenca
 
-O HMAL utiliza a licenca GPL-3.0-only com clausula adicional de uso etico. Distribuicoes
-binarias devem incluir uma copia deste documento. O codigo fonte nao pode ser incorporado
-em produtos com fins militares ou de exploracao comercial de recursos marinhos sem autorizacao
-explicita do conselho de etica do projeto.
+O licenciamento do software e definido pelo arquivo `LICENSE` na raiz do repositorio: **Business Source License 1.1 (BSL 1.1)**, com concessao adicional para pesquisa academica, educacao e conservacao sob **CC BY 4.0**. Usos comerciais, SaaS e integracoes/produtos de defesa exigem autorizacao explicita do licenciante, conforme o texto da licenca. Esta secao etica acrescenta limites de uso; ela **nao substitui** o arquivo `LICENSE` nem concede direitos adicionais. O acesso ao codigo nao equivale a autorizacao para uso comercial ou de defesa. As atividades vedadas na Secao 3.1 continuam vedadas independentemente de autorizacao comercial.
 
 ## 4. Requisitos de Auditoria
 
@@ -66,34 +60,30 @@ Todo acesso a dados de vocalizacoes deve ser registrado em log estruturado conte
 
 ### 4.2 Revisao Periodica
 
-O conselho de etica do HMAL realiza revisoes trimestrais de:
+Revisoes periodicas de governanca devem considerar:
 - Logs de uso para identificar padroes de uso indevido.
 - Pull requests que modifiquem modulos de geracao de sinais.
 - Novas dependencias externas quanto a licencas e seguranca.
 
 ### 4.3 Divulgacao Responsavel
 
-Vulnerabilidades de seguranca descobertas no HMAL devem ser reportadas via canal privado
-(guilhermemachado@hubstry.onmicrosoft.com) seguindo a politica de divulgacao responsavel
-com prazo minimo de 90 dias antes da divulgacao publica.
+Vulnerabilidades de seguranca descobertas no HMAL devem ser reportadas pelo contato do responsavel do projeto: `guilhermemachado.ceo@hubstry.dev`. A divulgacao publica deve considerar riscos a usuarios, terceiros e ao ambiente marinho.
 
-## 5. Conformidade Legal
+## 5. Marcos Normativos a Avaliar
 
-O HMAL deve estar em conformidade com:
+A depender da atividade, jurisdicao, especie e contexto operacional, podem ser relevantes:
 
-- **MARPOL** Annex V (poluicao acustica marinha, IMO).
-- **Lei dos Mamiferos Marinhos** (Marine Mammal Protection Act, EUA).
-- **Habitats Directive** (Directiva 92/43/CEE, Uniao Europeia).
-- **Lei de Biodiversidade** (Lei 13.123/2015, Brasil).
-- **CITES** Appendix I para especies criticas.
+- **MARPOL** Annex V (prevencao de poluicao por lixo de navios; nao e, por si, norma geral de ruido submarino).
+- **Marine Mammal Protection Act** (EUA).
+- **Habitats Directive** (Diretiva 92/43/CEE, Uniao Europeia).
+- **Lei de Biodiversidade** (Lei 13.123/2015, Brasil), quando houver acesso a patrimonio genetico/conhecimento tradicional associado nos termos de sua aplicabilidade.
+- **CITES** Appendix I, quando houver atividades sujeitas ao regime de comercio internacional de especies listadas.
 
-O descumprimento destas normas e de responsabilidade exclusiva do operador, mas o HMAL
-deve fornecer mecanismos tecnico-organizacionais que facilitem a conformidade.
+Esta lista e indicativa, nao exaustiva e nao constitui parecer juridico, declaracao de aplicabilidade ou certificacao de conformidade do HMAL. A aplicabilidade deve ser avaliada para cada atividade por profissionais competentes.
 
 ## 6. Referencias
 
-1. NOAA NMFS. "Technical Guidance for Assessing the Effects of Anthropogenic Sound on Marine
-   Mammal Hearing." NOAA Technical Memorandum NMFS-OPR-64, 2018.
+1. NOAA NMFS. "Technical Guidance for Assessing the Effects of Anthropogenic Sound on Marine Mammal Hearing." NOAA Technical Memorandum NMFS-OPR-64, 2018.
 2. Southall, B.L. et al. "Marine Mammal Noise Exposure Criteria." Aquatic Mammals, 2019.
 3. ISO 18405:2017. "Underwater acoustics - Terminology."
 4. IUCN. "Guidelines for Minimising Acoustic Disturbance to Marine Mammals from Seismic Surveys."
