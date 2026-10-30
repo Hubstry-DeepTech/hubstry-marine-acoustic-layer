@@ -68,12 +68,12 @@ def download(key: str, dest: Path) -> str:
     return h.hexdigest()
 
 
-def daily_ci(path: Path, day: str) -> dict:
+def daily_ci(path: Path, day: str, export: bool = False) -> dict:
     fs_expected = 2000
     sens = sensitivity(day)
     peak, bg = REF["peak_hz"], REF["background_hz"]
     seg = REF["segment_s"]
-    ci_min, missing = [], []
+    ci_min, missing, spec = [], [], []
     with sf.SoundFile(str(path)) as snd:
         info = {"samplerate": snd.samplerate, "channels": snd.channels, "frames": snd.frames,
                 "duration_s": snd.frames / snd.samplerate, "subtype": snd.subtype}
@@ -95,11 +95,43 @@ def daily_ci(path: Path, day: str) -> dict:
             bk = np.mean([pdb[idx(h)] for h in bg])
             ci_min.append(float(pk / bk) if np.isfinite(pk) and np.isfinite(bk) and bk != 0 else float("nan"))
             missing.append(miss)
+            if export:
+                spec.append(pdb[: 151].astype(np.float32))  # 0-150 Hz, 1 Hz
     ci = np.array(ci_min)
     ok = (np.array(missing) < 0.01) & np.isfinite(ci)
+    if export:
+        write_exports(day, ci, np.array(missing), ok, np.array(spec))
     return {"file_info": info, "minutes": int(ci.size), "valid_minutes": int(ok.sum()),
             "excluded_minutes": int((~ok).sum()), "daily_mean_ci": float(np.mean(ci[ok])) if ok.any() else None,
             "sensitivity_db": sens}
+
+
+def write_exports(day: str, ci, missing, ok, spec) -> None:
+    """Série minuto a minuto (JSON) e espectrograma 0-150 Hz (PNG) para o observatório público."""
+    res = HERE / "results" / "e1"
+    res.mkdir(parents=True, exist_ok=True)
+    series = {"day_utc": day, "minute_utc": list(range(ci.size)),
+              "ci": [None if not np.isfinite(c) else round(float(c), 8) for c in ci],
+              "missing_fraction": [round(float(m), 6) for m in missing], "valid": [bool(v) for v in ok],
+              "note": "CI = média(PSD 43-44 Hz)/média(PSD 37 e 50 Hz), razão entre níveis em dB; índice espectral, não contagem de chamados"}
+    (res / f"series_{day}.json").write_text(json.dumps(series) + "\n", encoding="utf-8")
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(2, 1, figsize=(11, 6), sharex=True, gridspec_kw={"height_ratios": [3, 1]})
+    im = ax[0].imshow(spec.T, origin="lower", aspect="auto", extent=[0, 24, 0, 150], cmap="viridis")
+    for hz in (37, 43, 44, 50):
+        ax[0].axhline(hz, color="white", lw=0.5, ls="--" if hz in (37, 50) else "-")
+    ax[0].set_ylabel("Frequência (Hz)")
+    ax[0].set_title(f"MBARI MARS, {day} (UTC), 2 kHz: nível espectral calibrado (dB re 1 µPa²/Hz)")
+    fig.colorbar(im, ax=ax, pad=0.01, fraction=0.03)
+    hours = np.arange(ci.size) / 60
+    ax[1].plot(hours, np.where(ok, ci, np.nan), lw=0.6)
+    ax[1].set_ylabel("Blue B CI")
+    ax[1].set_xlabel("Hora (UTC)")
+    fig.text(0.01, 0.01, "Fonte: MBARI Pacific Sound (CC BY 4.0). Gravação histórica, não é ao vivo. Processamento: HMAL lab/bench/e1_mbari.py", fontsize=7)
+    fig.savefig(res / f"spectrogram_{day}.png", dpi=110)
+    plt.close(fig)
 
 
 def main() -> None:
@@ -107,6 +139,7 @@ def main() -> None:
     ap.add_argument("--days", default=",".join(CRITERION_DAYS))
     ap.add_argument("--keep", action="store_true", help="manter os WAV baixados")
     ap.add_argument("--wav-dir", default=None)
+    ap.add_argument("--export", action="store_true", help="gera série por minuto e espectrograma para o observatório")
     a = ap.parse_args()
     wav_dir = Path(a.wav_dir) if a.wav_dir else Path(tempfile.mkdtemp(prefix="mbari_"))
     wav_dir.mkdir(parents=True, exist_ok=True)
@@ -125,14 +158,14 @@ def main() -> None:
         path = wav_dir / Path(key).name
         sha = download(key, path) if not path.exists() else hashlib.sha256(path.read_bytes()).hexdigest()
         print(f"{day}: {key} sha256={sha[:12]}", flush=True)
-        r = daily_ci(path, day)
+        r = daily_ci(path, day, export=a.export)
         ref = REF["daily_mean_ci"].get(day)
         rel = abs(r["daily_mean_ci"] - ref) / ref if (ref and r["daily_mean_ci"]) else None
         r.update({"key": key, "sha256": sha, "accessed_utc": out["date_utc"], "reference_ci": ref,
                   "relative_difference": rel, "criterion_day": day in CRITERION_DAYS,
                   "passed": (rel is not None and rel <= REF["tolerance_relative"]) if day in CRITERION_DAYS else None})
         out["days"][day] = r
-        print(f"  CI diário={r['daily_mean_ci']:.6f} ref={ref} dif_rel={rel} minutos válidos={r['valid_minutes']}/{r['minutes']}", flush=True)
+        print(f"  CI diário={r['daily_mean_ci']:.10f} ref={ref} dif_rel={rel} minutos válidos={r['valid_minutes']}/{r['minutes']}", flush=True)
         if not a.keep:
             path.unlink(missing_ok=True)
     crit = [out["days"][d]["passed"] for d in CRITERION_DAYS if d in out["days"]]
