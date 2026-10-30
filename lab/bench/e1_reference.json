@@ -22,5 +22,5 @@
   "2016-11-25": 1.15539602, "2016-11-26": 1.20114181, "2016-11-27": 1.18342288, "2016-11-28": 1.15568718,
   "2016-11-29": 1.08687578, "2016-11-30": 1.11712618
  },
- "notes": "2016-11-19 e NaN na saida publicada (dados ausentes); excluido da comparacao. A primeira execucao compara os dias 01, 11 e 22 (o maior valor do mes, um dos menores e um dos maiores); os demais dias sao reportados sem criterio de aprovacao."
+ "notes": "2016-11-19 e NaN em Out[15]; o notebook recalcula esse dia em In[17] com os minutos de menos de 1% de dados ausentes, mas nao imprime o valor, por isso fica sem referencia numerica e fora da comparacao. A primeira execucao compara os dias 01, 11 e 22 (o maior valor do mes, um dos menores e um dos maiores); os demais dias sao reportados sem criterio de aprovacao."
 }
