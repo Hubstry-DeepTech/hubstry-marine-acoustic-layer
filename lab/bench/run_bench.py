@@ -13,6 +13,7 @@ import argparse
 import datetime as dt
 import json
 import math
+import os
 import platform
 import subprocess
 import sys
@@ -36,7 +37,7 @@ from receiver import Receiver, ReceiverV2, detection_threshold, h_n  # noqa: E40
 
 MATRIX = json.loads((HERE / "matrix.json").read_text(encoding="utf-8"))
 RECEIVERS = {"v1": Receiver, "v2": ReceiverV2}
-RECEIVER_VERSION = "v1"
+RECEIVER_VERSION = os.environ.get("HMAL_RECEIVER", "v1")  # herdado por workers também com start_method "spawn"
 RESULTS = HERE / "results" / RECEIVER_VERSION
 CRITERIA_VERSION = "0.3.1"
 # Ensaios usados no desenvolvimento do receptor v2 (lab/bench/RECEIVER_V2.md): índices 0..DEV-1
@@ -87,7 +88,8 @@ def synth(name: str, channels: list, polarities: list, f0: float | None = None) 
     for (a, b), p in zip(pairs, polarities):
         raw += np.sin(2 * np.pi * (a / b) * f0 * t + (np.pi if p else 0.0))
     A = 1.0 / float(np.max(np.abs(raw)))
-    assert np.allclose(A * raw, s, atol=1e-9), "gerador divergiu da expressão analítica"
+    if not np.allclose(A * raw, s, rtol=0.0, atol=1e-9):
+        raise RuntimeError("gerador divergiu da expressão analítica (tolerância absoluta 1e-9)")
     return s, A
 
 
@@ -147,6 +149,8 @@ def b2_errors(name: str, trial: dict) -> list[float]:
     f0 = mode_cfg(name)["f0_hz"]
     truths = sorted(c[0] / c[1] * f0 for c in trial["channels"])
     ests = sorted(c["f_est"] for c in dec["channels"])
+    if len(ests) != K:  # canal ausente não pode ser mascarado pelo zip
+        return [math.inf] * K
     return [abs(e - t) for e, t in zip(ests, truths)]
 
 
@@ -299,9 +303,9 @@ def run_b4(modes: list[str], limit: int | None, workers: int) -> dict:
 # B5
 # ----------------------------------------------------------------------------------------------
 def run_b5(modes: list[str], limit: int | None) -> dict:
-    res: dict = {"test": "B5", "modes": {}}
+    res: dict = {"test": "B5", "B5_SEED": 5, "note": "o fluxo de números aleatórios é compartilhado entre modos na ordem de --modes", "modes": {}}
     passed = True
-    rng = np.random.default_rng(5)
+    rng = np.random.default_rng(5)  # semente fixa registrada no resultado (B5_SEED)
     for name in modes:
         m = mode_cfg(name)
         f0 = m["f0_hz"]
@@ -338,6 +342,8 @@ def run_b5(modes: list[str], limit: int | None) -> dict:
 def b7_batch(args) -> int:
     name, seeds = args
     rx = receiver_for(name)
+    if len(h_n()) != MATRIX["b7"]["candidates_M"]:
+        raise RuntimeError("cardinalidade de H_16 do receptor diverge de candidates_M da matriz")
     gamma = detection_threshold(MATRIX["b7"]["design_fpr"], MATRIX["b7"]["candidates_M"])
     freqs = np.array([float(r) * rx.f0 for r in h_n()])
     E = rx._steering(freqs)
@@ -404,6 +410,7 @@ def main() -> None:
         ap.error("--limit exige --smoke: execuções reduzidas não são definitivas")
     global RECEIVER_VERSION, RESULTS
     RECEIVER_VERSION = a.receiver
+    os.environ["HMAL_RECEIVER"] = a.receiver
     RESULTS = HERE / "results" / a.receiver
     modes = a.modes.split(",")
     tests = a.tests.split(",")
