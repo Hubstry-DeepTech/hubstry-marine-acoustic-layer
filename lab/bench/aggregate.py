@@ -31,7 +31,11 @@ def main() -> None:
     definitive = all(e.get("definitive") for e in envs.values())
     complete = all(v is not None for t in REQUIRED for v in table[t].values())
     all_pass = complete and all(table[t][m] for t in REQUIRED for m in dirs)
-    if not complete:
+    keys = ("commit", "receiver", "criteria_version", "matrix_version")
+    mismatch = [k for k in keys if len({envs[m].get(k) for m in dirs}) != 1 or None in {envs[m].get(k) for m in dirs}]
+    if mismatch:
+        rule = "INCONSISTENT_RUNS: metadados divergentes ou ausentes entre os modos (" + ", ".join(mismatch) + "); nenhuma conclusão de TRL"
+    elif not complete:
         rule = "INCOMPLETO: falta resultado de algum ensaio ou modo; nenhuma conclusão de TRL"
     elif not definitive:
         rule = "NÃO DEFINITIVO: execução de fumaça; nenhuma conclusão de TRL"
@@ -40,7 +44,7 @@ def main() -> None:
     else:
         failed = [f"{t}/{m}" for t in REQUIRED for m in dirs if not table[t][m]]
         rule = "TRL 3: ensaios obrigatórios reprovados: " + ", ".join(failed)
-    result = {"by_test_and_mode": table, "complete": complete, "definitive": definitive,
+    result = {"by_test_and_mode": table, "metadata_mismatch": mismatch, "complete": complete, "definitive": definitive,
               "receiver": {m: e.get("receiver") for m, e in envs.items()},
               "commit": {m: e.get("commit") for m, e in envs.items()}, "trl_rule": rule}
     out_path.write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
