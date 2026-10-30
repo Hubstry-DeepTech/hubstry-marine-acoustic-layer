@@ -75,7 +75,7 @@ O HMAL está em fase de pesquisa e protótipo. Os resultados de mapeamento são 
 
 ## Ética e licença
 
-A pesquisa atual é exclusivamente passiva: análise de gravações existentes, sem emissão sonora no mar. As diretrizes éticas vedam sonar ativo, dispersão acústica de fauna, pesca acústica e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. Detalhes em [`docs/ETHICS_GUIDELINES.md`](docs/ETHICS_GUIDELINES.md).
+A pesquisa atual é exclusivamente passiva: análise de gravações existentes, sem emissão sonora no mar. As diretrizes éticas vedam sonar ativo, dispersão acústica de fauna, pesca acústica, rastreamento de mamíferos marinhos para caça, captura ou molestamento e monitoramento sem as autorizações ambientais exigidas. Detalhes em [`docs/ETHICS_GUIDELINES.md`](docs/ETHICS_GUIDELINES.md).
 
 Licença: **Business Source License 1.1** ([`LICENSE`](LICENSE)), com concessão sob CC BY 4.0 para pesquisa acadêmica, educação e conservação. Usos comerciais, SaaS (software como serviço) e de defesa dependem de autorização expressa do licenciante.
 
