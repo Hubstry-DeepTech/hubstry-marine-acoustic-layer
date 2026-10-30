@@ -84,17 +84,17 @@ Os pares serão avaliados exclusivamente na ordem pré-registrada da Seção 2.1
 
 Para uma ordem inteira `N >= 1`, define-se:
 
-\[
+$$
 H_N = \left\{q=\frac{a}{b}\;\middle|\;a,b\in\{1,2,\ldots,N\},\;\gcd(a,b)=1\right\}.
-\]
+$$
 
 O conjunto contém razões positivas ordenadas, incluindo valores menores e maiores que 1. Portanto, **não será denominado sequência ou conjunto de frações de Farey**, cuja definição usual restringe as frações ao intervalo de 0 a 1. Neste protocolo, `H_N` será chamado de **dicionário finito de razões racionais reduzidas**.
 
 Sua cardinalidade é:
 
-\[
+$$
 |H_N|=2\sum_{k=1}^{N}\varphi(k)-1,
-\]
+$$
 
 onde `\varphi(k)` é a função totiente de Euler. Valores de referência:
 
@@ -107,9 +107,9 @@ A referência geométrica padrão desta versão utilizará `N=16`, logo `|H_16|=
 
 A métrica de prioridade definida no projeto é:
 
-\[
+$$
 P(a/b)=\frac{1}{a+b}.
-\]
+$$
 
 `P` será tratada como uma convenção matemática interna do HMAL. Não será apresentada como propriedade biológica, preferência acústica ou vantagem energética demonstrada sem evidência independente.
 
@@ -125,16 +125,16 @@ Uma razão `q` só será formada entre duas unidades vocais quando ambas fornece
 
 Para uma unidade de replicação biológica `r`, definida como combinação população/variante × par de unidades vocais comparáveis × temporada, serão estimadas medidas agregadas:
 
-\[
+$$
 \tilde x_{1,r}=\operatorname{median}\{x_e:e\in U_1,r\},\qquad
 \tilde x_{2,r}=\operatorname{median}\{x_e:e\in U_2,r\}.
-\]
+$$
 
 Se — e somente se — `x` representar a mesma grandeza nas duas unidades, a razão estimada será:
 
-\[
+$$
 \hat q_r=\frac{\tilde x_{1,r}}{\tilde x_{2,r}}.
-\]
+$$
 
 Os blocos, dias, sequências e eventos dentro de `r` são subamostras/níveis de observação que contribuem para estimar `\hat q_r`; não são replicações biológicas independentes para inferência sobre a hipótese. Com uma única combinação `r`, o tamanho amostral biológico efetivo é `n_eff=1`, independentemente do número de blocos.
 
@@ -144,13 +144,13 @@ Não será utilizado um `f_0` populacional fixo para normalizar todas as observa
 
 Para `q>0` e um dicionário discreto `D`:
 
-\[
+$$
 \hat q(q;D)=\arg\min_{r\in D}|r-q|,
-\]
+$$
 
-\[
+$$
 \varepsilon_{ppm}(q;D)=10^6\frac{|\hat q(q;D)-q|}{q}.
-\]
+$$
 
 O erro será calculado descritivamente para `H_16` e para o dicionário competidor `D_log`, definidos na Seção 5. Valores `q` fora do suporte `[1/16,16]` serão registrados como `OUT_OF_SUPPORT`, sem truncamento ou projeção artificial para a borda; sua elegibilidade/exclusão deverá ser contabilizada no fluxo de eventos segundo regra congelada antes da análise confirmatória. A regra de desempate, caso existam dois elementos equidistantes, deverá ser determinística e registrada no código antes da análise confirmatória.
 
@@ -193,19 +193,19 @@ Serão mantidas quatro famílias de modelos para referência geométrica e anál
 
 Para cada razão estimada `q`, compara-se o dicionário `H_16` com um competidor logaritmicamente espaçado `D_log` com exatamente 159 pontos no mesmo suporte:
 
-\[
+$$
 [u_{min},u_{max}]=[1/16,16].
-\]
+$$
 
-\[
+$$
 D_{log}=\left\{\exp\left(\ln u_{min}+\frac{j}{158}\ln\frac{u_{max}}{u_{min}}\right):j=0,1,\ldots,158\right\}.
-\]
+$$
 
 Define-se a diferença geométrica:
 
-\[
+$$
 \Delta(q)=\varepsilon_{ppm}(q;D_{log})-\varepsilon_{ppm}(q;H_{16}).
-\]
+$$
 
 Valores positivos indicam que `H_16` tem menor erro de projeção **naquele valor de q**. Esta comparação controla a cardinalidade global e o suporte dos dicionários, mas, para um único `q`, o resultado depende da densidade local e da posição de `q` em relação aos pontos dos dois dicionários. Portanto, `\Delta(q)` é uma **medida descritiva de geometria**, não um teste de que uma população biológica selecionou ou prefere razões racionais.
 
@@ -251,19 +251,19 @@ A tolerância `\eta` **não integra a estatística contínua `\Delta(q)`** e nã
 
 Definam-se:
 
-\[
+$$
 r_H(q)=\arg\min_{r\in H_{16}}|r-q|,\qquad r_D(q)=\arg\min_{r\in D_{log}}|r-q|,
-\]
+$$
 
-\[
+$$
 g(q)=10^6\frac{|r_H(q)-r_D(q)|}{q}\quad\text{ppm}.
-\]
+$$
 
 Seja `U_{95}(q)` a incerteza relativa de 95% da razão, obtida por calibração do pipeline completo e procedimento de propagação validado. O critério operacional de identificabilidade será:
 
-\[
+$$
 U_{95}(q)<\frac{g(q)}{2}.
-\]
+$$
 
 Se a condição não for satisfeita, a observação será marcada como `INSTRUMENTALLY_UNDER_RESOLVED` para a comparação entre os dois dicionários. Além disso, a incerteza de `\Delta(q)` deverá ser propagada sobre a distribuição calibrada de `q`; se a região de incerteza de `\Delta` incluir zero, não haverá discriminação instrumental entre os dicionários. O critério de identificabilidade não é, por si só, teste de hipótese biológica.
 

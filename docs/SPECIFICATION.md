@@ -2,13 +2,21 @@
 
 > Hubstry Marine Acoustic Layer — Protocolo de comunicação acústica subaquática baseado em séries harmônicas racionais
 
-**Versão**: 0.1.0-alpha | **Status**: TRL 4.5 (desk-study + simulação) | **Licença**: BSL-1.1 + CC-BY-4.0
+**Versão**: 0.1.0-alpha | **Status**: maturidade avaliada por componente (ver tabela abaixo) | **Licença**: BSL-1.1 + CC-BY-4.0
+
+
+| Linha | Avaliação atual | Meta |
+|---|---|---|
+| Núcleo computacional racional (`H_N`, canais, formas de onda, sincronização) | Prova de conceito implementada e testada: TRL 3 | TRL 4 do subsistema, conforme `lab/BENCH_CRITERIA.md` |
+| Comunicação acústica submarina | Arquitetura e módulos experimentais, sem cadeia física testada | Bancada eletroacústica (*breadboard*) em parceria |
+| Hipótese bioacústica H1 | Protocolo exploratório pré-registrado; TRL não se aplica a hipótese científica | Avaliação científica com replicação independente |
+| H3 — controle de qualidade de detecções PAMGuard | Aplicação de engenharia em investigação | Benchmark com rótulos independentes |
 
 ---
 
 ## 1. Visão Geral
 
-O HMAL adapta o protocolo HPG 1.0 (Harmonic Protocol Grid) para o meio aquático, utilizando séries harmônicas racionais como espaço de canais nativo. A propagação acústica subaquática segue física ondulatória harmônica — e a comunicação cetácea opera naturalmente neste formalismo.
+O HMAL adapta o protocolo HPG 1.0 (Harmonic Protocol Grid) para o meio aquático, utilizando séries harmônicas racionais como espaço de canais nativo. Se vocalizações de cetáceos guardam relações informativas com esse formalismo é uma pergunta de pesquisa em aberto, tratada no pré-registro (`lab/PREREGISTRATION.md`), e não uma premissa do protocolo.
 
 ### Casos de Uso
 | Caso | Descrição | Prioridade |
@@ -105,13 +113,17 @@ class HChallengeResponse:
 
 ## 4. Integração com Padrões Existentes
 
-### 4.1 Overlay sobre NATO C2/JANUS
+### 4.1 Compatibilidade com JANUS (STANAG 4748) — especificação conceitual
+> Modo descrito em nível de projeto; ainda não testado com modems acústicos reais.
+
 - Faixa JANUS: 7–12 kHz
 - HMAL mapeia canais a/b dentro desta faixa quando `mode="janus_overlay"`
 - Autenticação HSL ocorre antes do payload JANUS padrão
 - Compatibilidade: `JanusCompatibilityMode.OVERLAY` (padrão) ou `STANDALONE`
 
-### 4.2 Ponte com GuruDev Core (Opcional)
+### 4.2 Ponte com GuruDev Core (planejada)
+> Módulo `hmal.gurudev` ainda não incluído neste repositório.
+
 ```python
 from hmal.gurudev import ontology_bridge
 semantic_vector = ontology_bridge.map_vocalization_to_ontology(mapped_channel)
@@ -124,7 +136,7 @@ semantic_vector = ontology_bridge.map_vocalization_to_ontology(mapped_channel)
 
 | Limitação | Impacto | Mitigação |
 |-----------|---------|-----------|
-| Desk-study (sem validação em campo) | Resultados preliminares | Parceria com laboratórios oceanográficos para TRL 5-6 |
+| Desk-study (sem validação em campo) | Resultados preliminares | Parceria com laboratórios oceanográficos para TRL 4–6 |
 | Classificação biológica heurística | Precisão limitada | Treinar ML com dados rotulados por especialistas |
 | H_N limitado a N=32 | Trade-off resolução vs. computação | Otimizar para ARM Cortex-M4 em dispositivos embarcados |
 | Propagação em águas rasas não modelada | Perda de precisão em estuários | Implementar modelo Bellhop-lite em fase futura |
@@ -133,21 +145,17 @@ semantic_vector = ontology_bridge.map_vocalization_to_ontology(mapped_channel)
 
 ## 6. Roadmap Técnico
 
-```mermaid
-gantt
-    title HMAL Roadmap 2026-2027
-    dateFormat  YYYY-MM
-    section Validação
-    Expansão de testes (20+ casos)     :done, 2026-05, 1mo
-    CI/CD automatizado                 :active, 2026-06, 1mo
-    section Campo
-    Piloto em tanque acústico          :2026-07, 2mo
-    Validação com parceiro oceanográfico :2026-09, 3mo
-    section Escala
-    Integração GuruDev em produção     :2026-12, 2mo
-    Submissão journal bioacústica      :2027-02, 1mo
-```
+| Período | Marco | Estado em 30/10/2026 |
+|---|---|---|
+| mai/2026 | Expansão de testes (43 testes) | Concluído |
+| jun/2026 | Integração contínua (Python 3.11–3.13, CodeQL) | Concluído |
+| out/2026 | Pré-registro exploratório, matriz de dados e critérios da bancada digital | Em revisão |
+| nov/2026 | Decisões *go/no-go* de viabilidade (02, 04 e 05/11) e bancada digital B1–B7 | Planejado |
+| 06/11/2026 | Apresentação à COPPE/UFRJ | Agendado |
+| 2027 | Bancada eletroacústica em tanque e validação com parceiro oceanográfico | A definir com parceria |
+| 2027 | Submissão de artigo em bioacústica | Condicionada aos resultados |
+
 
 ---
 
-*Documento gerado em Maio 2026. Para contribuições, consulte CONTRIBUTING.md.*
+*Documento criado em maio de 2026; roteiro atualizado em 30/10/2026.*

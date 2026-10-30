@@ -32,7 +32,7 @@ As diretrizes atuais vedam o uso do HMAL para:
 - **Sonar ativo**: Geracao de pulsos acusticos direcionados a fauna marinha.
 - **Dispersao acustica**: Criacao de barreiras sonoras para afastar mamiferos marinhos.
 - **Pesca acustica**: Uso de sinais harmonicos para atrair ou confundir cardumes.
-- **Vigilancia de cetaceos sem consentimento**: Uso dos modulos de seguranca para vigilancia de cetaceos ou monitoramento nao consentido de mamiferos marinhos, conforme a clausula etica do arquivo `LICENSE`.
+- **Rastreamento para dano e monitoramento irregular**: Uso do HMAL para localizar, rastrear ou seguir cetaceos e outros mamiferos marinhos com fins de caca, captura, perseguicao ou molestamento, ou para monitoramento realizado sem as autorizacoes ambientais exigidas, conforme a clausula etica do arquivo `LICENSE`. No Brasil, a Lei 7.643/1987 proibe a pesca e qualquer forma de molestamento intencional de cetaceos em aguas jurisdicionais brasileiras.
 
 Estas diretrizes **nao estabelecem uma proibicao generica de todo uso militar ou de defesa**. Isso nao significa que tais usos estejam autorizados: o arquivo `LICENSE` exige autorizacao previa e expressa do licenciante para produtos ou integracoes comerciais/de defesa. Qualquer proposta desse tipo tambem depende de avaliacao etica, juridica e de seguranca independente. Nenhum uso de defesa e concedido automaticamente pelo acesso ao repositorio; as atividades vedadas acima permanecem vedadas.
 
