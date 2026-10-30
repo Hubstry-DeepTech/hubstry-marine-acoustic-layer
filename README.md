@@ -1,98 +1,87 @@
 <p align="center">
   <strong>Hubstry Marine Acoustic Layer (HMAL)</strong><br>
-  <em>Protótipo de pesquisa para mapeamento de medidas acústicas e investigação de razões racionais em bioacústica marinha</em>
+  <em>Pesquisa aplicada em bioacústica marinha: razões racionais, dados públicos reais e engenharia reproduzível</em>
 </p>
 
 ---
 
-## Estado do projeto
+**Versão:** `0.1.0-alpha` · **Fase:** pesquisa exploratória com pré-registro · **Instituição:** Hubstry Deep Tech — Rio de Janeiro, Brasil · **Contato:** guilhermemachado.ceo@hubstry.dev
 
-**Versão do software:** `0.1.0-alpha`  
-**Estado científico:** hipótese exploratória; protocolo de viabilidade em preparação  
-**Instituição responsável:** Hubstry Deep Tech — Rio de Janeiro, Brasil  
-**Contato:** guilhermemachado.ceo@hubstry.dev
+## Visão geral
 
-O HMAL é um projeto experimental da Hubstry que investiga se medidas acústicas comparáveis, extraídas de unidades vocais distintas, podem ser descritas de modo informativo por um dicionário finito de razões racionais reduzidas (`H_N`). A pesquisa começa com vocalizações de baleias-azuis.
+O HMAL é um programa de pesquisa e engenharia da Hubstry Deep Tech sobre a estrutura acústica de vocalizações de cetáceos. A pergunta central é original: a razão entre a mesma grandeza acústica, medida em duas unidades vocais distintas, pode ser descrita de forma informativa por um dicionário finito de razões racionais reduzidas (`H_N`)?
 
-**O HMAL ainda não é um protocolo de comunicação submarina validado.** O repositório contém um protótipo computacional e módulos experimentais, mas não demonstra interoperabilidade acústica em campo, comunicação bidirecional funcional, segurança criptográfica validada, desempenho anti-jamming ou conformidade regulatória.
+A pesquisa começa com baleias-azuis, cujas vocalizações são estereotipadas, de baixa frequência e amplamente documentadas em bases públicas. O projeto combina três frentes:
 
-## Pergunta de pesquisa
+1. **Ciência:** uma hipótese bioacústica testável, com pré-registro, critérios de decisão e prazos fixados antes da análise.
+2. **Dados:** um mapa de fontes públicas reais (MBARI, NOAA, Chagos, IBAMA) com licença, proveniência e adequação documentadas.
+3. **Engenharia:** uma biblioteca Python testada e uma linha de aplicação em controle de qualidade para Monitoramento Acústico Passivo (MAP).
 
-A pergunta exploratória é se a razão entre a mesma grandeza acústica medida em duas unidades vocais distintas e identificadas independentemente pode ser descrita por um dicionário finito de razões racionais com propriedades descritivas úteis.
+## O que já está entregue
 
-Harmônicos e sobretons de uma mesma vocalização não são considerados evidência de organização especial: sua presença em sinais periódicos é esperada pela física de produção e propagação sonora. A hipótese exige unidades vocais distintas, variáveis fisicamente comparáveis e controles adequados.
+| Entrega | Onde |
+|---|---|
+| Biblioteca Python `hmal` com dicionário `H_N`, projeção de medidas, erro em ppm (partes por milhão) e métrica interna `P(a/b)` | `src/hmal/` |
+| 43 testes automatizados, executados em integração contínua (CI) nas versões 3.11, 3.12 e 3.13 do Python, com análise de segurança CodeQL | `tests/`, `.github/workflows/` |
+| Pré-registro exploratório com hipóteses, pares vocais candidatos, regras de decisão *go/no-go* e prazos | `lab/PREREGISTRATION.md` |
+| Matriz de dados públicos com licença, acesso e limitações de cada fonte | `lab/DATASETS.md` |
+| Resumo executivo para a reunião com a COPPE/UFRJ | `lab/COPPE_SUMMARY.md` |
+| Diretrizes éticas e de uso dual | `docs/ETHICS_GUIDELINES.md` |
+| Publicação de referência com DOI | [Zenodo 10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616) |
 
-O pré-registro associado é `lab/PREREGISTRATION.md` (versão de trabalho v1.3.1-draft). Enquanto não houver congelamento documentado e dados elegíveis, resultados de mapeamento serão tratados como exploratórios, sem confirmação estatística ou biológica.
+## A pergunta científica
 
-## O que o protótipo implementa
-
-O código atual inclui componentes preliminares para:
-
-- construção de um dicionário finito de razões racionais coprimas `H_N`;
-- projeção de uma frequência observada sobre o elemento mais próximo do dicionário;
-- cálculo de erro de aproximação e de uma métrica interna de prioridade `P(a/b)=1/(a+b)`;
-- geração de sinais sintéticos por soma de componentes senoidais;
-- módulos experimentais de gateway e desafio–resposta.
-
-Esses componentes demonstram implementação de software, não validação científica ou operacional. A classificação de vocalizações presente no protótipo é heurística e não deve ser interpretada como identificação biológica validada por especialistas.
-
-### Definição de `H_N`
-
-O conjunto usado pelo protótipo é:
+O conjunto usado pelo projeto é:
 
 $$
 H_N = \left\{\frac{a}{b} \mid 1\leq a,b\leq N,\;\gcd(a,b)=1\right\}.
 $$
 
-A definição inclui razões menores e maiores que 1; portanto, não deve ser chamada simplesmente de sequência de Farey. Para a implementação com pares ordenados coprimos, as cardinalidades são `|H_16| = 159` e `|H_32| = 647`.
+Ele inclui razões menores e maiores que 1. Com pares ordenados coprimos, `|H_16| = 159` e `|H_32| = 647`.
 
-A métrica `P(a/b)=1/(a+b)` é um escore interno definido pelo projeto. Não há demonstração empírica de que ela represente prioridade biológica, eficiência energética ou robustez acústica em cetáceos.
+O desenho evita a armadilha mais comum da área. Harmônicos de uma mesma vocalização seguem razões inteiras por pura física de sinais periódicos, então não contam como evidência. A hipótese só é testada entre unidades vocais distintas, identificadas de forma independente, com grandezas fisicamente comparáveis. O dicionário `H_N` é comparado com um dicionário concorrente de mesmo tamanho em escala logarítmica (`D_log`), para separar estrutura real de efeito de densidade.
 
-## Plano de validação
+## Rigor metodológico
 
-A validação foi separada em trilhas que respondem a perguntas diferentes:
+O projeto adota práticas de pesquisa confirmatória desde a fase exploratória:
 
-1. **Hipótese bioacústica:** avaliar a viabilidade de medir a mesma grandeza física em unidades vocais distintas, começando com baleias-azuis. Com uma única combinação população × par vocal × temporada, a razão estimada tem `n_eff=1` e não permite confirmação estatística populacional.
-2. **Processamento acústico:** reproduzir métodos convencionais em gravações reais, documentando dados, rótulos, calibração, proveniência e limitações de detecção.
-3. **Comunicação submarina:** em fase posterior, testar sinais sintéticos em canais medidos no mar e compará-los com benchmarks existentes. Isso não será confundido com validação da hipótese bioacústica.
+- **Pré-registro com prazos:** cada par vocal candidato tem data-limite de viabilidade (02/11, 04/11 e 05/11/2026). Sem dados elegíveis no prazo, o resultado é registrado como inconclusivo, sem troca de hipótese depois de ver os dados.
+- **Unidade de replicação explícita:** uma população × par vocal × temporada equivale a uma unidade independente (`n_eff=1`). A fase atual mede viabilidade e precisão. A fase confirmatória exige múltiplas populações.
+- **Limite teórico de precisão:** a estimação de frequência é referida ao limite de Cramér–Rao, que fixa a menor variância possível sob ruído.
+- **Proveniência:** toda fonte é registrada com licença, versão, data de acesso e checksum.
 
-A matriz de dados e recursos está em `lab/DATASETS.md` (rascunho). O acesso público a um registro ou arquivo não implica licença irrestrita, autorização comercial ou adequação à hipótese específica.
+## Aplicação de engenharia: controle de qualidade em MAP
 
-## Aplicação potencial de engenharia: QA para monitoramento acústico passivo
+A hipótese H3 investiga um escore de controle de qualidade para apoiar a revisão de detecções do PAMGuard, software livre de detecção acústica de cetáceos. O objetivo é separar detecções verdadeiras de falsos positivos e ruídos transientes.
 
-Uma hipótese secundária de engenharia (H3) investiga se um escore de controle de qualidade pode apoiar a revisão de detecções geradas por ferramentas como PAMGuard, distinguindo detecções verdadeiras de falsos positivos ou transientes com rótulos independentes.
+O contexto de aplicação é concreto no Brasil. O Guia de Monitoramento da Biota Marinha do IBAMA (Instituto Brasileiro do Meio Ambiente e dos Recursos Naturais Renováveis), de 2018, inclui o MAP entre as medidas de mitigação exigidas no licenciamento de pesquisas sísmicas marítimas. Uma ferramenta que reduza o tempo de revisão humana atende a uma etapa real desse fluxo. A proposta é complementar o PAMGuard e os especialistas, não substituí-los.
 
-Esse caso de uso pode ser relevante para fluxos de Monitoramento Acústico Passivo (MAP) em pesquisas sísmicas marítimas. O Guia de Monitoramento da Biota Marinha do IBAMA (2018) inclui procedimentos de MAP no contexto das medidas de mitigação e das condicionantes de licenças de pesquisa sísmica. Isso representa contexto de aplicação potencial, não validação do HMAL, prova de demanda comercial ou conformidade regulatória. O HMAL não substitui PAMGuard, especialistas, observadores ou procedimentos oficiais.
+## Roteiro
 
-Fontes: [Guia de Monitoramento da Biota Marinha — IBAMA 2018](https://www.gov.br/ibama/pt-br/centrais-de-conteudo/arquivos/arquivos-pdf/2018-11-01-ibama-guia-de-monitoramento-da-biota-marinha-outubro-pdf) · [Diretrizes técnicas do IBAMA](https://www.gov.br/ibama/pt-br/assuntos/laf/procedimentos-e-servicos/arquivos/petroleo-e-gas/diretrizes).
+| Fase | Objetivo | Estado |
+|---|---|---|
+| 1 — Viabilidade | Confirmar pares vocais mensuráveis em dados públicos; medir precisão | Em andamento (prazos até 05/11/2026) |
+| 2 — Observatório público | Painel com dados diários reais do MBARI (espectrograma, Blue B Call Index, proveniência) no Hubstry Digital Research Lab | Planejado |
+| 3 — Confirmatória | Múltiplas populações, modelo nulo biológico, simulação de poder estatístico, novo pré-registro | Requer parceria acadêmica |
+| 4 — Engenharia de canal | Testar sinais sintéticos em canais acústicos submarinos medidos (Watermark, Underwater Acoustic Channel Library) | Futuro |
 
-## Limitações e alegações não sustentadas
+## Parceria buscada
 
-As seguintes alegações não devem ser interpretadas como resultados validados e foram retiradas desta apresentação principal até que exista evidência reproduzível e independente:
+Buscamos interlocução com a COPPE/UFRJ (Instituto Alberto Luiz Coimbra de Pós-Graduação e Pesquisa de Engenharia) em quatro temas: mensuração de vocalizações, desenho de replicação, modelos nulos e estimação de parâmetros em sinais submarinos.
 
-- percentuais de cobertura de `H_16`/`H_32` em vocalizações de baleias ou golfinhos;
-- concentração de vocalizações biologicamente significativas em canais de alta prioridade;
-- overhead, latência ou taxa de falha do handshake como desempenho medido;
-- capacidade de 26,6 kbps como capacidade demonstrada do sistema;
-- autenticação criptográfica segura, anti-replay validado ou resistência a jamming;
-- interoperabilidade real com JANUS ou outros modems acústicos;
-- interpretação semântica de vocalizações cetáceas.
+## Maturidade e escopo
 
-Sinais sintéticos não substituem testes com gravações reais. Uma saída de mapeamento para `H_N` não prova que a vocalização foi produzida, organizada ou selecionada biologicamente segundo razões racionais.
+O HMAL está em fase de pesquisa e protótipo. Os resultados de mapeamento são exploratórios até a conclusão do pré-registro. Os módulos de protocolo e segurança (`src/hmal/core`, `src/hmal/security`) são experimentais e ainda não passaram por teste em campo nem por auditoria criptográfica. A versão 1.0.0 da publicação no Zenodo traz estimativas de desk-study (estudo teórico, sem dados de campo), hoje em revisão sob o pré-registro.
 
-## Segurança, ética e uso dual
+## Ética e licença
 
-Os módulos de segurança e gateway são experimentais e não foram submetidos a auditoria criptográfica independente. Não devem ser usados para proteger sistemas operacionais, infraestrutura crítica ou operações reais.
+A pesquisa atual é exclusivamente passiva: análise de gravações existentes, sem emissão sonora no mar. As diretrizes éticas vedam sonar ativo, dispersão acústica de fauna, pesca acústica e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. Detalhes em [`docs/ETHICS_GUIDELINES.md`](docs/ETHICS_GUIDELINES.md).
 
-A pesquisa nesta fase concentra-se em análise de dados acústicos e validação computacional. Qualquer emissão acústica ativa, experimento com animais, coleta de campo ou uso operacional exigirá avaliação ética, autorizações, análise de impacto e validação técnica apropriadas. As diretrizes éticas vigentes proíbem sonar ativo, dispersão acústica de fauna, pesca acústica e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. A licença exige autorização prévia e expressa para usos comerciais ou de defesa; essa autorização não afasta as proibições éticas específicas. O projeto não reivindica conformidade regulatória.
+Licença: **Business Source License 1.1** ([`LICENSE`](LICENSE)), com concessão sob CC BY 4.0 para pesquisa acadêmica, educação e conservação. Usos comerciais, SaaS (software como serviço) e de defesa dependem de autorização expressa do licenciante.
 
-## Licença e uso
+## Referências e dados
 
-Consulte os arquivos [`LICENSE`](LICENSE) e [`docs/ETHICS_GUIDELINES.md`](docs/ETHICS_GUIDELINES.md). A licença atual do repositório é **Business Source License 1.1**, com uma concessão adicional para usos acadêmicos e de conservação sob CC BY 4.0; usos comerciais, SaaS ou de defesa exigem autorização explícita do licenciante. As diretrizes éticas vedam sonar ativo, dispersão acústica de fauna, pesca acústica e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. Elas não estabelecem uma proibição genérica de todo uso militar/de defesa, mas nenhuma aplicação desse tipo é autorizada automaticamente pelo acesso ao repositório. Isso não equivale a uma licença CC BY irrestrita para todos os usos.
-
-## Referências e recursos
-
-- Machado, G. G. (2026). *Mapeamento Harmônico Racional de Vocalizações Cetáceas: Protocolo HMAL e Aplicações em Bioacústica Subaquática* (versão 1.0.0). [Zenodo, DOI 10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616). **Nota de versão:** a publicação 1.0.0 contém estimativas preliminares de desk-study; essas estimativas estão em revisão à luz do pré-registro exploratório atual e não devem ser interpretadas como resultados empíricos confirmados.
+- Machado, G. G. (2026). *Mapeamento Harmônico Racional de Vocalizações Cetáceas: Protocolo HMAL e Aplicações em Bioacústica Subaquática* (v1.0.0). [Zenodo, DOI 10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616).
 - MBARI, [Pacific Sound — dados 2 kHz](https://docs.mbari.org/pacific-sound/notebooks/data/PacificSound2kHz/).
 - MBARI, [Blue B Call Index](https://docs.mbari.org/pacific-sound/notebooks/bluewhales/classify/blueB/PacificSoundBlueBCallIndex/).
 - MBARI, [Blue A Call Classification](https://docs.mbari.org/pacific-sound/notebooks/bluewhales/classify/blueA/PacificSoundClassifyBlueA/).
@@ -105,7 +94,7 @@ Consulte os arquivos [`LICENSE`](LICENSE) e [`docs/ETHICS_GUIDELINES.md`](docs/E
 
 ## Citação
 
-Para citar o software, indique a versão efetivamente utilizada, a data de acesso e o identificador de commit. Não atribua aos artigos citados resultados experimentais que não tenham sido produzidos pelo HMAL.
+Cite a versão do software, a data de acesso e o identificador de commit utilizados.
 
 ## Responsável
 
