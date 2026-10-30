@@ -2,7 +2,15 @@
 
 > Hubstry Marine Acoustic Layer — Protocolo de comunicação acústica subaquática baseado em séries harmônicas racionais
 
-**Versão**: 0.1.0-alpha | **Status**: TRL 3 em demonstração (pacote de evidências E1–E3, previsto em `lab/TRL3_EVIDENCE.md` até 05/11/2026) | **Licença**: BSL-1.1 + CC-BY-4.0
+**Versão**: 0.1.0-alpha | **Status**: maturidade avaliada por componente (ver tabela abaixo) | **Licença**: BSL-1.1 + CC-BY-4.0
+
+
+| Linha | Avaliação atual | Meta |
+|---|---|---|
+| Núcleo computacional racional (`H_N`, canais, formas de onda, sincronização) | Prova de conceito implementada e testada: TRL 3 | TRL 4 do subsistema, conforme `lab/BENCH_CRITERIA.md` |
+| Comunicação acústica submarina | Arquitetura e módulos experimentais, sem cadeia física testada | Bancada eletroacústica (*breadboard*) em parceria |
+| Hipótese bioacústica H1 | Protocolo exploratório pré-registrado; TRL não se aplica a hipótese científica | Avaliação científica com replicação independente |
+| H3 — controle de qualidade de detecções PAMGuard | Aplicação de engenharia em investigação | Benchmark com rótulos independentes |
 
 ---
 
