@@ -1,162 +1,115 @@
 <p align="center">
-  <a href="https://doi.org/10.5281/zenodo.20184616">
-    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.20184616.svg" alt="DOI">
-  </a>
-  <br>
-  <strong>Hubstry Marine Acoustic Layer (HMAL)</strong>
-  <br>
-  <em>Protocolo de comunicação subaquática baseado em séries harmônicas racionais</em>
+  <strong>Hubstry Marine Acoustic Layer (HMAL)</strong><br>
+  <em>Protótipo de pesquisa para mapeamento de medidas acústicas e investigação de razões racionais em bioacústica marinha</em>
 </p>
 
 ---
 
-## Visão Geral
+## Estado do projeto
 
-O **Hubstry Marine Acoustic Layer (HMAL)** é um protocolo de comunicação acústica subaquática adaptado do **HPG 1.0** (*Harmonic Protocol Grid*, DOI: [10.5281/zenodo.18652888](https://doi.org/10.5281/zenodo.18652888)) para o meio aquático. O HMAL utiliza séries harmônicas racionais como espaço de canais nativo, operando como *overlay* sobre o padrão NATO C2/JANUS, com autenticação leve e anti-jamming harmônico determinístico.
+**Versão do software:** `0.1.0-alpha`  
+**Estado científico:** hipótese exploratória; protocolo de viabilidade em preparação  
+**Instituição responsável:** Hubstry Deep Tech — Rio de Janeiro, Brasil  
+**Contato:** guilhermemachado.ceo@hubstry.dev
 
-O HMAL é parte do ecossistema **Hubstry**, integrando-se ao **GuruDev Core** (DOI: [10.5281/zenodo.19772798](https://doi.org/10.5281/zenodo.19772798)) para análise semântica de vocalizações cetáceas.
+O HMAL é um projeto experimental da Hubstry que investiga se medidas acústicas comparáveis, extraídas de unidades vocais distintas, podem ser descritas de modo informativo por um dicionário finito de razões racionais reduzidas (`H_N`). A pesquisa começa com vocalizações de baleias-azuis.
 
-### Publicação
+**O HMAL ainda não é um protocolo de comunicação submarina validado.** O repositório contém um protótipo computacional e módulos experimentais, mas não demonstra interoperabilidade acústica em campo, comunicação bidirecional funcional, segurança criptográfica validada, desempenho anti-jamming ou conformidade regulatória.
 
-O paper de referência do HMAL v1.0.0 está publicado no Zenodo:
+## Pergunta de pesquisa
 
-> **Mapeamento Harmônico Racional de Vocalizações Cetáceas: Protocolo HMAL e Aplicações em Bioacústica Subaquática**
-> Guilherme Gonçalves Machado (2026). Hubstry Deep Tech.
-> DOI: [10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616)
+A pergunta exploratória é se a razão entre a mesma grandeza acústica medida em duas unidades vocais distintas e identificadas independentemente pode ser descrita por um dicionário finito de razões racionais com propriedades descritivas úteis.
 
----
+Harmônicos e sobretons de uma mesma vocalização não são considerados evidência de organização especial: sua presença em sinais periódicos é esperada pela física de produção e propagação sonora. A hipótese exige unidades vocais distintas, variáveis fisicamente comparáveis e controles adequados.
 
-## Arquitetura do Ecossistema Hubstry
+O pré-registro associado é `lab/PREREGISTRATION.md` (versão de trabalho v1.3.1-draft). Enquanto não houver congelamento documentado e dados elegíveis, resultados de mapeamento serão tratados como exploratórios, sem confirmação estatística ou biológica.
 
-- **HPG 1.0** ([10.5281/zenodo.18652888](https://doi.org/10.5281/zenodo.18652888)): base matemática — séries harmônicas racionais como espaço de canais.
-- **GuruDev Core** ([10.5281/zenodo.19772798](https://doi.org/10.5281/zenodo.19772798)): linguagem de programação ontológica — análise semântica, interoperabilidade entre semioses.
-- **HMAL** ([10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616)): adaptação do HPG 1.0 para o meio aquático — protocolo de comunicação subaquática.
+## O que o protótipo implementa
 
----
+O código atual inclui componentes preliminares para:
 
-## Fundamentação Teórica
+- construção de um dicionário finito de razões racionais coprimas `H_N`;
+- projeção de uma frequência observada sobre o elemento mais próximo do dicionário;
+- cálculo de erro de aproximação e de uma métrica interna de prioridade `P(a/b)=1/(a+b)`;
+- geração de sinais sintéticos por soma de componentes senoidais;
+- módulos experimentais de gateway e desafio–resposta.
 
-### Séries Harmônicas Racionais
+Esses componentes demonstram implementação de software, não validação científica ou operacional. A classificação de vocalizações presente no protótipo é heurística e não deve ser interpretada como identificação biológica validada por especialistas.
 
-O conjunto harmônico de ordem *N* é definido como:
+### Definição de `H_N`
 
-> H_N = { a/b | 1 <= a,b <= N, mdc(a,b) = 1 }
+O conjunto usado pelo protótipo é:
 
-Cada elemento *a/b* define um canal de frequência *f = (a/b) · f₀*, onde *f₀* é a frequência fundamental adaptativa ao contexto de aplicação.
+$$
+H_N = \left\{\frac{a}{b} \mid 1\leq a,b\leq N,\;\gcd(a,b)=1\right\}.
+$$
 
-### Métrica de Prioridade
+A definição inclui razões menores e maiores que 1; portanto, não deve ser chamada simplesmente de sequência de Farey. Para a implementação com pares ordenados coprimos, as cardinalidades são `|H_16| = 159` e `|H_32| = 647`.
 
-> P(a/b) = 1 / (a + b)
+A métrica `P(a/b)=1/(a+b)` é um escore interno definido pelo projeto. Não há demonstração empírica de que ela represente prioridade biológica, eficiência energética ou robustez acústica em cetáceos.
 
-Canais com menor soma *a + b* correspondem a harmônicos de baixa ordem — os mais relevantes biologicamente por sua eficiência energética e robustez à atenuação diferencial do canal aquático.
+## Plano de validação
 
-### Espécies de Referência
+A validação foi separada em trilhas que respondem a perguntas diferentes:
 
-| Espécie | *f₀* | Faixa Vocal | Amostra |
-|---------|------|-------------|---------|
-| Baleia-azul (*Balaenoptera musculus*) | 25 Hz | 10–40 Hz (infrassom) | n ≈ 1 247 |
-| Golfinho-nariz-de-garrafa (*Tursiops truncatus*) | 1 732 Hz | 200 Hz–150 kHz | n ≈ 3 891 |
+1. **Hipótese bioacústica:** avaliar a viabilidade de medir a mesma grandeza física em unidades vocais distintas, começando com baleias-azuis. Com uma única combinação população × par vocal × temporada, a razão estimada tem `n_eff=1` e não permite confirmação estatística populacional.
+2. **Processamento acústico:** reproduzir métodos convencionais em gravações reais, documentando dados, rótulos, calibração, proveniência e limitações de detecção.
+3. **Comunicação submarina:** em fase posterior, testar sinais sintéticos em canais medidos no mar e compará-los com benchmarks existentes. Isso não será confundido com validação da hipótese bioacústica.
 
-> **Nota**: os valores de *n* são estimativas de *desk-study* pendentes de confirmação direta com os repositórios NOAA PMEL e OBIS-SEAMAP. Consulte a Seção 3.1 do paper ([DOI: 10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616)) para detalhes.
+A matriz de dados e recursos está em `lab/DATASETS.md` (rascunho). O acesso público a um registro ou arquivo não implica licença irrestrita, autorização comercial ou adequação à hipótese específica.
 
----
+## Aplicação potencial de engenharia: QA para monitoramento acústico passivo
 
-## Resultados Principais
+Uma hipótese secundária de engenharia (H3) investiga se um escore de controle de qualidade pode apoiar a revisão de detecções geradas por ferramentas como PAMGuard, distinguindo detecções verdadeiras de falsos positivos ou transientes com rótulos independentes.
 
-- **Cobertura H₁₆**: >87% das frequências fundamentais de baleias-azuis e >84% das de golfinhos mapeadas com erro < 200 ppm.
-- **Cobertura H₃₂**: >94% (baleias) e >91% (golfinhos).
-- **Canais de alta prioridade** (P > 0,1): concentram >68% das vocalizações biologicamente significativas.
-- **Handshake HSL**: ~200 B de *overhead*, latência < 2,1 s, taxa de falha < 1,2%.
-- **Capacidade de canal**: ~26,6 kbps (teórico, B = 4 kHz, SNR = 20 dB).
+Esse caso de uso pode ser relevante para fluxos de Monitoramento Acústico Passivo (MAP) em pesquisas sísmicas marítimas. O Guia de Monitoramento da Biota Marinha do IBAMA (2018) inclui procedimentos de MAP no contexto das medidas de mitigação e das condicionantes de licenças de pesquisa sísmica. Isso representa contexto de aplicação potencial, não validação do HMAL, prova de demanda comercial ou conformidade regulatória. O HMAL não substitui PAMGuard, especialistas, observadores ou procedimentos oficiais.
 
----
+Fontes: [Guia de Monitoramento da Biota Marinha — IBAMA 2018](https://www.gov.br/ibama/pt-br/centrais-de-conteudo/arquivos/arquivos-pdf/2018-11-01-ibama-guia-de-monitoramento-da-biota-marinha-outubro-pdf) · [Diretrizes técnicas do IBAMA](https://www.gov.br/ibama/pt-br/assuntos/laf/procedimentos-e-servicos/arquivos/petroleo-e-gas/diretrizes).
 
-## Protocolo HMAL
+## Limitações e alegações não sustentadas
 
-### Funcionamento
+As seguintes alegações não devem ser interpretadas como resultados validados e foram retiradas desta apresentação principal até que exista evidência reproduzível e independente:
 
-O HMAL opera como *overlay* sobre o padrão NATO C2/JANUS (7–12 kHz):
+- percentuais de cobertura de `H_16`/`H_32` em vocalizações de baleias ou golfinhos;
+- concentração de vocalizações biologicamente significativas em canais de alta prioridade;
+- overhead, latência ou taxa de falha do handshake como desempenho medido;
+- capacidade de 26,6 kbps como capacidade demonstrada do sistema;
+- autenticação criptográfica segura, anti-replay validado ou resistência a jamming;
+- interoperabilidade real com JANUS ou outros modems acústicos;
+- interpretação semântica de vocalizações cetáceas.
 
-1. **Autenticação leve**: handshake HSL de ~200 bytes (vs. TLS > 1 KB).
-2. **Channel hopping** harmônico determinístico: mudança de *a/b* para *c/d* em O(1) — vantagem sobre FHSS pseudoaleatório.
-3. **Verificação espectral de razões**: rejeição de sinal *multipath* distorcido que não satisfaz *a/b ∈ H_N*.
-4. **Rotação de chave LFSR**: determinística, sem troca de chave — ambos os lados avançam o mesmo LFSR independentemente.
+Sinais sintéticos não substituem testes com gravações reais. Uma saída de mapeamento para `H_N` não prova que a vocalização foi produzida, organizada ou selecionada biologicamente segundo razões racionais.
 
-### Comparação com Protocolos Existentes
+## Segurança, ética e uso dual
 
-| Protocolo | Autenticação | Anti-jamming | Espaço de Canais | Adaptação Bioacústica |
-|-----------|-------------|--------------|------------------|----------------------|
-| **HMAL (H₁₆)** | ~200 B | Harm. determinístico | 255 canais rac. | Nativa |
-| NATO C2/JANUS | Nenhuma | Nenhum | FSK 7–12 kHz fixo | Arbitrária |
-| EvoLogics USBL | > 1 KB (TLS) | Parcial (DSSS) | OFDM proprietário | Arbitrária |
-| WHOI Micro-modem | Nenhuma | Nenhum | FSK/PSK fixo | Arbitrária |
+Os módulos de segurança e gateway são experimentais e não foram submetidos a auditoria criptográfica independente. Não devem ser usados para proteger sistemas operacionais, infraestrutura crítica ou operações reais.
 
----
+A pesquisa nesta fase concentra-se em análise de dados acústicos e validação computacional. Qualquer emissão acústica ativa, experimento com animais, coleta de campo ou uso operacional exigirá avaliação ética, autorizações, análise de impacto e validação técnica apropriadas. As diretrizes éticas vigentes proíbem sonar ativo, dispersão acústica de fauna, pesca acústica, integração com sistemas ASW ou detecção de torpedos e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. A licença exige autorização prévia e expressa para usos comerciais ou de defesa; essa autorização não afasta as proibições éticas específicas. O projeto não reivindica conformidade regulatória.
 
-## Integração com GuruDev Core
+## Licença e uso
 
-O HMAL opera na **camada de transporte** (captura, autenticação e roteamento de sinais acústicos). A **camada semântica** é fornecida pelo GuruDev Core (DOI: [10.5281/zenodo.19772798](https://doi.org/10.5281/zenodo.19772798)):
+Consulte os arquivos [`LICENSE`](LICENSE) e [`docs/ETHICS_GUIDELINES.md`](docs/ETHICS_GUIDELINES.md). A licença atual do repositório é **Business Source License 1.1**, com uma concessão adicional para usos acadêmicos e de conservação sob CC BY 4.0; usos comerciais, SaaS ou de defesa exigem autorização explícita do licenciante. As diretrizes éticas vedam sonar ativo, dispersão acústica de fauna, pesca acústica e vigilância de cetáceos ou monitoramento não consentido de mamíferos marinhos. Elas não estabelecem uma proibição genérica de todo uso militar/de defesa, mas nenhuma aplicação desse tipo é autorizada automaticamente pelo acesso ao repositório. Isso não equivale a uma licença CC BY irrestrita para todos os usos.
 
-1. **Captura**: hidrofone autentica via HSL, encaminha sinal para processamento.
-2. **Decomposição espectral**: FFT e mapeamento de componentes para canais H_N.
-3. **Interpretação ontológica**: GuruDev recebe a sequência de canais e aplica 7 níveis de interpretação semântica.
-4. **GuruMatrix 5D**: rastreamento por categoria aristotélica, nível semântico e perfil de delegação quântica.
-5. **Alexandria**: vocalização cetácea como 26ª linguagem no *LanguageAnalyzer*, com perfil hexarrelacional próprio.
+## Referências e recursos
 
-> O resultado não é tradução direta — é mapeamento ontológico: identificação de estruturas funcionais análogas entre a semiose cetácea e semioses humanas computacionais.
+- Machado, G. G. (2026). *Mapeamento Harmônico Racional de Vocalizações Cetáceas: Protocolo HMAL e Aplicações em Bioacústica Subaquática* (versão 1.0.0). [Zenodo, DOI 10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616). **Nota de versão:** a publicação 1.0.0 contém estimativas preliminares de desk-study; essas estimativas estão em revisão à luz do pré-registro exploratório atual e não devem ser interpretadas como resultados empíricos confirmados.
+- MBARI, [Pacific Sound — dados 2 kHz](https://docs.mbari.org/pacific-sound/notebooks/data/PacificSound2kHz/).
+- MBARI, [Blue B Call Index](https://docs.mbari.org/pacific-sound/notebooks/bluewhales/classify/blueB/PacificSoundBlueBCallIndex/).
+- MBARI, [Blue A Call Classification](https://docs.mbari.org/pacific-sound/notebooks/bluewhales/classify/blueA/PacificSoundClassifyBlueA/).
+- Leroy et al. (2021), [canto de baleias-azuis-pigmeias de Chagos](https://doi.org/10.1038/s41598-021-88062-5).
+- Jancovich & Rogers (2026), [dados derivados de Chagos — Zenodo](https://doi.org/10.5281/zenodo.22654272).
+- Mellinger & Clark (2003), [vocalizações de baleias-azuis no Atlântico Norte](https://pubmed.ncbi.nlm.nih.gov/12942988/).
+- FFI, [Watermark benchmark](https://www.ffi.no/en/research/watermark).
+- Li et al. (2026), [Underwater Acoustic Channel Library — arXiv:2609.03207](https://arxiv.org/abs/2609.03207).
+- IBAMA, [Guia de Monitoramento da Biota Marinha — 2018](https://www.gov.br/ibama/pt-br/centrais-de-conteudo/arquivos/arquivos-pdf/2018-11-01-ibama-guia-de-monitoramento-da-biota-marinha-outubro-pdf).
 
----
+## Citação
 
-## Ética e Governança Dual-Use
+Para citar o software, indique a versão efetivamente utilizada, a data de acesso e o identificador de commit. Não atribua aos artigos citados resultados experimentais que não tenham sido produzidos pelo HMAL.
 
-O HMAL adota o **Princípio de Não-Interferência** como fronteira ética inviolável:
+## Responsável
 
-- Emissão ativa restrita a < 180 dB re 1 µPa @ 1 m (limiar NOAA NMFS-OPR-55).
-- Faixas críticas de vocalização (40 Hz baleias, 8–16 kHz golfinhos) excluídas do *channel hopping* por padrão.
-- Logs imutáveis de emissão para auditoria (IBAMA, NOAA, IMO).
-- Uso dual militar: exclusivamente comunicações táticas. Nenhuma aplicação em sistemas de armas.
-
----
-
-## Datasets e Reprodutibilidade
-
-- **Baleias-azuis**: NOAA PMEL — Pacific Ocean Acoustics Group. Acesso: <https://www.pmel.noaa.gov/acoustics/>
-- **Golfinhos**: OBIS-SEAMAP — repositório DolphinBank. Acesso: <https://seamap.env.duke.edu/>
-- **Paper e código**: disponíveis no Zenodo — DOI: [10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616)
-
----
-
-## Licença
-
-Este projeto é distribuído sob a licença **CC-BY-4.0** (Creative Commons Atribuição 4.0 Internacional).
-
----
-
-## Autor
-
-**Guilherme Gonçalves Machado**
-Hubstry Deep Tech — Rio de Janeiro, Brasil
-ORCID: [0009-0008-1083-0784](https://orcid.org/0009-0008-1083-0784)
+**Guilherme Gonçalves Machado**  
+Hubstry Deep Tech — Rio de Janeiro, Brasil  
+ORCID: [0009-0008-1083-0784](https://orcid.org/0009-0008-1083-0784)  
 E-mail: guilhermemachado.ceo@hubstry.dev
-Web: <https://hubstry.dev>
-
----
-
-## Como Citar
-
-```bibtex
-@misc{machado2026hmal,
-  author       = {Machado, Guilherme Gonçalves},
-  title        = {Mapeamento Harmônico Racional de Vocalizações Cetáceas:
-                  Protocolo HMAL e Aplicações em Bioacústica Subaquática},
-  year         = {2026},
-  publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.20184616},
-  version      = {1.0.0}
-}
-| Recurso | DOI | Link |
-|---------|-----|------|
-| **HPG 1.0** (base matemática) | 10.5281/zenodo.18652888 | [Zenodo](https://doi.org/10.5281/zenodo.18652888) |
-| **GuruDev Core** (ontologia) | 10.5281/zenodo.19772798 | [Zenodo](https://doi.org/10.5281/zenodo.19772798) |
-| **Semiografia** | 10.5281/zenodo.19546051 | [Zenodo](https://doi.org/10.5281/zenodo.19546051) |
-| **HMAL** (este trabalho) | 10.5281/zenodo.20184616 | [Zenodo](https://doi.org/10.5281/zenodo.20184616) |
