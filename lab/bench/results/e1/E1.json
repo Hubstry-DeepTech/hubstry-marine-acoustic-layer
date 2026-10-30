@@ -1,0 +1,83 @@
+{
+ "experiment": "E1",
+ "criteria_version": "0.3.1",
+ "commit": "e02008f1877a0caf92638fa1816bafbaada3f946",
+ "date_utc": "2026-10-30T22:09:57+00:00",
+ "env": {
+  "python": "3.12.3",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "soundfile": "0.14.0",
+  "platform": "Linux-7.0.0-1014-gcp-x86_64-with-glibc2.39"
+ },
+ "source": "https://pacific-sound-2khz.s3.amazonaws.com",
+ "license": "CC BY 4.0 (MBARI)",
+ "tolerance_relative": 0.02,
+ "noverlap": "padrão do SciPy (nperseg//2), pois o notebook não especifica",
+ "days": {
+  "2016-11-01": {
+   "file_info": {
+    "samplerate": 2000,
+    "channels": 1,
+    "frames": 172800000,
+    "duration_s": 86400.0,
+    "subtype": "PCM_24"
+   },
+   "minutes": 1440,
+   "valid_minutes": 1440,
+   "excluded_minutes": 0,
+   "daily_mean_ci": 1.2146849376937376,
+   "sensitivity_db": -168.8,
+   "key": "2016/11/MARS-20161101T000000Z-2kHz.wav",
+   "sha256": "1f74718fa23361bfc4cbbf8956132e3af484693ce8df89e765a92e4ca494733e",
+   "accessed_utc": "2026-10-30T22:09:57+00:00",
+   "reference_ci": 1.21468493,
+   "relative_difference": 6.333936856345407e-09,
+   "criterion_day": true,
+   "passed": true
+  },
+  "2016-11-11": {
+   "file_info": {
+    "samplerate": 2000,
+    "channels": 1,
+    "frames": 172800000,
+    "duration_s": 86400.0,
+    "subtype": "PCM_24"
+   },
+   "minutes": 1440,
+   "valid_minutes": 1440,
+   "excluded_minutes": 0,
+   "daily_mean_ci": 1.0983386702874554,
+   "sensitivity_db": -168.8,
+   "key": "2016/11/MARS-20161111T000000Z-2kHz.wav",
+   "sha256": "cfda7a138a9d0b83d4929fdaee36d107405e4d2208b6db1bdbdeb223aca3515e",
+   "accessed_utc": "2026-10-30T22:09:57+00:00",
+   "reference_ci": 1.09833866,
+   "relative_difference": 9.36637824625745e-09,
+   "criterion_day": true,
+   "passed": true
+  },
+  "2016-11-22": {
+   "file_info": {
+    "samplerate": 2000,
+    "channels": 1,
+    "frames": 172800000,
+    "duration_s": 86400.0,
+    "subtype": "PCM_24"
+   },
+   "minutes": 1440,
+   "valid_minutes": 1440,
+   "excluded_minutes": 0,
+   "daily_mean_ci": 1.2056214110252321,
+   "sensitivity_db": -168.8,
+   "key": "2016/11/MARS-20161122T000000Z-2kHz.wav",
+   "sha256": "b78ddbc8304615d44d826b768fd9f16e7c5a9e471f744aa0c38ff87beb19bdab",
+   "accessed_utc": "2026-10-30T22:09:57+00:00",
+   "reference_ci": 1.2056214,
+   "relative_difference": 9.144854313838753e-09,
+   "criterion_day": true,
+   "passed": true
+  }
+ },
+ "passed": true
+}
