@@ -23,8 +23,15 @@ O receptor é o sistema sob teste. Os critérios de aprovação continuam congel
    - `f0_LS = (f_piloto + Σ r_i·f_i) / (1 + Σ r_i²)`, a solução de mínimos quadrados de `f_i = r_i·f0`;
    - associação final e tolerância com `f0_LS`, com o piloto excluído do dicionário de dados.
 
+A v1 e a v2 são **algoritmos diferentes**, avaliados pelos mesmos critérios de aceite; a v2 não é outra implementação da especificação da v1.
+
 O teste de detecção B7a não usa o decodificador. Ele continua idêntico ao da v1: estatística nas 159 candidatas, `σ̂²` pela mediana e limiar `γ ≈ 10,365`.
 
 ## Transparência sobre o desenvolvimento
 
-As verificações de desenvolvimento da v2 usaram os primeiros 20 a 30 ensaios de B3 e B4 da matriz e os 158 pontos médios de B7b. As mudanças são estruturais (ordem das etapas e estimador de escala), e nenhum parâmetro numérico foi ajustado a esses resultados. O passo de grade `1/(8T)` e a faixa de ±0,2% do piloto já constavam da v1. Ainda assim, essa sobreposição fica registrada. Numa próxima iteração, o desenvolvimento deve usar sementes fora da matriz.
+As verificações de desenvolvimento da v2 usaram, em cada modo:
+- B4: ensaios de índice 0 a 29 de `k1` e de `k2` (sementes `noise_seed` correspondentes em `matrix.json`), com SNR integrado de 20 dB e os cinco valores de ε;
+- B3: ensaios de índice 0 a 19 de `k1`, `k2`, `k3` e de cada par de pior caso, com SNR integrado de 20, 24 e 30 dB (pares de pior caso: 20 e 30 dB);
+- B7b: os 158 pontos médios.
+
+O relatório apresenta, além do resultado integral, a taxa de recuperação só nos ensaios **não usados no desenvolvimento** (B3 a partir do índice 20; B4 a partir do índice 30). O B7b não tem conjunto independente: seu resultado vale como teste de regressão, não como validação cega. As mudanças são estruturais (ordem das etapas e estimador de escala), e nenhum parâmetro numérico foi ajustado a esses resultados. O passo de grade `1/(8T)` e a faixa de ±0,2% do piloto já constavam da v1. Ainda assim, essa sobreposição fica registrada. Numa próxima iteração, o desenvolvimento deve usar sementes fora da matriz.

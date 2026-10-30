@@ -39,6 +39,9 @@ RECEIVERS = {"v1": Receiver, "v2": ReceiverV2}
 RECEIVER_VERSION = "v1"
 RESULTS = HERE / "results" / RECEIVER_VERSION
 CRITERIA_VERSION = "0.3.1"
+# Ensaios usados no desenvolvimento do receptor v2 (lab/bench/RECEIVER_V2.md): índices 0..DEV-1
+DEV_B3 = 20
+DEV_B4 = 30
 
 
 # ----------------------------------------------------------------------------------------------
@@ -181,9 +184,13 @@ def b3_trial(args) -> dict:
     f0 = mode_cfg(name)["f0_hz"]
     truth = trial["channels"][0][0] / trial["channels"][0][1] * f0
     out = {"A": A, "noise_free": exact_recovery(rx.decode(s, K), trial["channels"]), "ok": [], "err": []}
+    out["fail_diag"] = []
     for snr in snrs:
         dec = rx.decode(s + sigma_for(A, N, snr) * w, K)
-        out["ok"].append(exact_recovery(dec, trial["channels"]))
+        ok = exact_recovery(dec, trial["channels"])
+        out["ok"].append(ok)
+        if not ok and snr >= 20:
+            out["fail_diag"].append({"snr_int_db": snr, "true": trial["channels"], "decoded": dec})
         if K == 1:
             out["err"].append(dec["channels"][0]["f_est"] - truth)
     return out
@@ -216,6 +223,10 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
                 "criterion_a_noise_free_100": c_a,
                 "criterion_b_ge99_at_snr_ge20": c_b,
                 "A_effective": [r["A"] for r in rows],
+                "per_trial_ok": ok.astype(int).tolist(),
+                "holdout_first_index": DEV_B3,
+                "holdout_recovery_rate": ok[DEV_B3:].mean(axis=0).tolist() if len(rows) > DEV_B3 else None,
+                "failures_snr_ge20": [dict(d, trial_index=i, noise_seed=trials[i]["noise_seed"]) for i, r in enumerate(rows) for d in r["fail_diag"]][:50],
             }
             cond_pass = c_a and c_b
             if cname == "k1":
@@ -245,13 +256,16 @@ def b4_trial(args) -> dict:
     chans = [[1, 1]] + trial["channels"]
     pols = [0] + trial["polarities"]
     w = np.random.default_rng(trial["noise_seed"]).standard_normal(rx.N)
-    oks, As = [], []
+    oks, As, diags = [], [], []
     for eps in eps_list:
         s, A = synth(name, chans, pols, f0=m["f0_hz"] * (1 + eps))
         dec = rx.decode(s + sigma_for(A, rx.N, snr) * w, K, pilot=True)
-        oks.append(exact_recovery(dec, trial["channels"]))
+        ok = exact_recovery(dec, trial["channels"])
+        oks.append(ok)
         As.append(A)
-    return {"ok": oks, "A": As}
+        if not ok:
+            diags.append({"epsilon": eps, "f0_true": m["f0_hz"] * (1 + eps), "true": trial["channels"], "decoded": dec})
+    return {"ok": oks, "A": As, "fail_diag": diags}
 
 
 def run_b4(modes: list[str], limit: int | None, workers: int) -> dict:
@@ -269,7 +283,13 @@ def run_b4(modes: list[str], limit: int | None, workers: int) -> dict:
             rate = np.array([r["ok"] for r in rows]).mean(axis=0).tolist()
             ok = all(r >= 0.99 for r in rate)
             passed &= ok
-            res["modes"][name][k] = {"n_trials": len(rows), "recovery_rate": rate, "passed": ok, "A_effective": [r["A"] for r in rows]}
+            okm = np.array([r["ok"] for r in rows])
+            res["modes"][name][k] = {
+                "n_trials": len(rows), "recovery_rate": rate, "passed": ok, "A_effective": [r["A"] for r in rows],
+                "per_trial_ok": okm.astype(int).tolist(), "holdout_first_index": DEV_B4,
+                "holdout_recovery_rate": okm[DEV_B4:].mean(axis=0).tolist() if len(rows) > DEV_B4 else None,
+                "failures": [dict(d, trial_index=i, noise_seed=trials[i]["noise_seed"]) for i, r in enumerate(rows) for d in r["fail_diag"]][:50],
+            }
             print(f"  B4 {name}/{k}: min_rate={min(rate):.3f} passed={ok}", flush=True)
     res["passed"] = passed
     return res
@@ -405,9 +425,7 @@ def main() -> None:
         save(t, r)
         summary["results"][t] = r["passed"]
         print(f"   {t} passed={r['passed']}", flush=True)
-    req = [t for t in ("B1", "B2", "B3", "B4", "B5", "B7")]
-    if all(t in summary["results"] for t in req):
-        summary["trl_rule"] = "TRL 4 (autoavaliação) do subsistema" if all(summary["results"][t] for t in req) else "TRL 3: algum ensaio obrigatório reprovado"
+    summary["note"] = "resultado por modo; a regra de TRL só é aplicada por lab/bench/aggregate.py com os dois modos"
     save("summary", summary)
 
 

@@ -3,7 +3,7 @@ name: HMAL bench (B1-B5, B7) receiver v2
 on:
   push:
     branches: [lab/bench-run]
-    paths: ["lab/bench/run_bench.py", "lab/bench/receiver.py", ".github/workflows/bench.yml"]
+    paths: ["lab/bench/run_bench.py", "lab/bench/receiver.py", "lab/bench/aggregate.py", ".github/workflows/bench.yml"]
   workflow_dispatch:
 
 jobs:
@@ -33,3 +33,18 @@ jobs:
         with:
           name: bench-results-v2-${{ matrix.mode }}
           path: lab/bench/results/
+
+  aggregate:
+    needs: bench
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Aggregate hf + lf and apply TRL rule
+        run: python lab/bench/aggregate.py artifacts/bench-results-v2-hf/v2 artifacts/bench-results-v2-lf/v2 aggregate.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-aggregate-v2
+          path: aggregate.json
