@@ -41,15 +41,52 @@ def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
 
+HEX64 = re.compile(r"^[0-9a-f]{64}$")
+# Arquivos que o pipeline consome de cada tipo de conjunto: precisam estar cobertos pelo manifesto
+REQUIRED_BENCH = [f"{m}/{t}.json" for m in ("hf", "lf") for t in ("summary", "B1", "B2", "B3", "B4", "B5", "B7")]
+REQUIRED_E1 = ["E1.json"]
+
+
+def safe_path(results: Path, rel: str) -> Path:
+    """Aceita só caminhos relativos, sem travessia, que resolvam dentro de lab/bench/results."""
+    pr = Path(rel)
+    if pr.is_absolute() or ".." in pr.parts or "\\" in rel or not rel or rel != pr.as_posix():
+        raise BuildError(f"{rel!r}: caminho inválido no manifesto")
+    full = (results / pr).resolve()
+    if results.resolve() not in full.parents:
+        raise BuildError(f"{rel!r}: caminho fora de lab/bench/results")
+    return full
+
+
 def verify_manifest(manifest: dict, results: Path = RESULTS) -> None:
+    seen: set[str] = set()
     for name, s in manifest["results"].items():
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
+            raise BuildError(f"{name!r}: nome de conjunto inválido")
+        files = s.get("files") or {}
+        prefix = f"{name}/"
+        if any(not rel.startswith(prefix) for rel in files):
+            raise BuildError(f"{name}: arquivo listado fora do diretório do conjunto")
+        required = REQUIRED_E1 if name == "e1" else REQUIRED_BENCH
+        if name == "e1":
+            e1 = json.loads(safe_path(results, f"{name}/E1.json").read_text(encoding="utf-8")) if f"{name}/E1.json" in files else {}
+            required = required + [f"{k}_{d}{ext}" for d in e1.get("days", {}) for k, ext in (("series", ".json"), ("spectrogram", ".png"))]
+        missing = [r for r in required if f"{prefix}{r}" not in files]
+        if missing:
+            raise BuildError(f"{name}: arquivos consumidos pelo pipeline sem cobertura no manifesto: {missing}")
+        for rel in files:
+            if rel in seen:
+                raise BuildError(f"{rel}: caminho duplicado no manifesto")
+            seen.add(rel)
         for key in ("execution_type", "experiment_commit", "experiment_commit_basis", "files"):
             if not s.get(key):
                 raise BuildError(f"{name}: proveniência incompleta ({key})")
         if s["execution_type"] == "github_actions" and not s.get("execution_run_id"):
             raise BuildError(f"{name}: execução no GitHub Actions sem identificador")
         for rel, digest in s["files"].items():
-            p = results / rel
+            if not isinstance(digest, str) or not HEX64.match(digest):
+                raise BuildError(f"{rel}: SHA-256 malformado no manifesto")
+            p = safe_path(results, rel)
             if not p.exists():
                 raise BuildError(f"{rel}: listado no manifesto, mas ausente")
             if sha256(p) != digest:

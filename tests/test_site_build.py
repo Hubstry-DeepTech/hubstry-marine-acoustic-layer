@@ -52,3 +52,36 @@ def test_statuses_come_from_aggregator_without_conversion():
 def test_unknown_aggregator_rule_fails():
     with pytest.raises(bd.BuildError):
         bd.status_of("TRL 5 de algum jeito")
+
+
+@pytest.mark.parametrize("bad", ["e1/../../../README.md", "/etc/passwd", "e1/./E1.json", "e1\\\\E1.json"])
+def test_path_traversal_rejected(bad):
+    m = copy.deepcopy(MANIFEST)
+    m["results"]["e1"]["files"][bad] = "0" * 64
+    with pytest.raises(bd.BuildError):
+        bd.verify_manifest(m)
+
+
+def test_malformed_hash_rejected():
+    m = copy.deepcopy(MANIFEST)
+    k = next(iter(m["results"]["e1"]["files"]))
+    m["results"]["e1"]["files"][k] = "ABC"
+    with pytest.raises(bd.BuildError, match="malformado"):
+        bd.verify_manifest(m)
+
+
+@pytest.mark.parametrize("name,rel", [("v2-run41131667005", "v2-run41131667005/lf/B4.json"),
+                                      ("v1-run41120505952", "v1-run41120505952/hf/summary.json"),
+                                      ("e1", "e1/series_2016-11-11.json")])
+def test_required_files_must_be_covered(name, rel):
+    m = copy.deepcopy(MANIFEST)
+    del m["results"][name]["files"][rel]
+    with pytest.raises(bd.BuildError, match="cobertura"):
+        bd.verify_manifest(m)
+
+
+def test_file_outside_set_directory_rejected():
+    m = copy.deepcopy(MANIFEST)
+    m["results"]["e1"]["files"]["v2-run41131667005/hf/B3.json"] = MANIFEST["results"]["v2-run41131667005"]["files"]["v2-run41131667005/hf/B3.json"]
+    with pytest.raises(bd.BuildError, match="fora do diretório"):
+        bd.verify_manifest(m)
