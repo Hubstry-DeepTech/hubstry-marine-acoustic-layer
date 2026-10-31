@@ -44,7 +44,7 @@ Para cada modo e cada condição de B3:
 
 ## 5. Receptor a submeter
 
-O receptor a submeter à v0.4 deve ser declarado e congelado **antes** da execução sobre a nova matriz. Candidato em avaliação: a v3 experimental (`ReceiverV3` em `lab/bench/receiver.py`). Ela faz a seleção nas 159 candidatas como a v1, refina com máximo global na janela, rejeita canais mais de 10 dB abaixo do maior pico do espectro (o primeiro lóbulo lateral da janela retangular fica em −13,3 dB) e usa no modo com piloto o estimador de mínimos quadrados da v2.
+O receptor a submeter à v0.4 deve ser declarado e congelado **antes** da execução sobre a nova matriz. Receptor escolhido por Guilherme Machado em 31/10/2026: a v3 (`ReceiverV3` em `lab/bench/receiver.py`). Ela faz a seleção nas 159 candidatas como a v1, refina com máximo global na janela, rejeita canais mais de 10 dB abaixo do maior pico do espectro (o primeiro lóbulo lateral da janela retangular fica em −13,3 dB) e usa no modo com piloto o estimador de mínimos quadrados da v2.
 
 Nos testes de desenvolvimento com sementes fora de qualquer matriz de avaliação (91.000.000 e 92.000.000 em diante):
 - a 16 dB, 3 erros grosseiros em 1.000 ensaios por modo, compatível com a referência idealizada;
@@ -53,9 +53,11 @@ Nos testes de desenvolvimento com sementes fora de qualquer matriz de avaliaçã
 
 Esses números são de desenvolvimento e não substituem a execução confirmatória.
 
+Comparação v1 × v2 sob a v0.3.1, com os dados por ensaio: `lab/bench/results/REPORT_v1_v2.md`.
+
 ## 6. Pendências antes do congelamento
 
 1. Revisão da Luna sobre este rascunho.
-2. Decisão do Guilherme sobre o receptor a submeter (v2 ou v3).
+2. Congelamento do código da v3 (commit e hash registrados) antes da execução. Decisão de receptor: v3, tomada em 31/10/2026.
 3. Geração e registro da semente da nova matriz no commit de congelamento.
 4. Execução definitiva nos dois modos, com a regra agregada aplicada por `aggregate.py` com verificação de metadados.

@@ -1,0 +1,31 @@
+{
+ "test": "B2",
+ "modes": {
+  "lf": {
+   "single": {
+    "n": 158,
+    "max_error_hz": 0.00018565575039541926,
+    "limit_hz": 0.0005,
+    "passed": true
+   },
+   "multi": {
+    "n": 100,
+    "max_error_hz": 0.0006964311232473541,
+    "limit_hz": 0.0025,
+    "passed": true
+   }
+  }
+ },
+ "passed": true,
+ "env": {
+  "criteria_version": "0.3.1",
+  "matrix_version": "0.3.0",
+  "commit": "4ba2c059dc092a998abaea7be71bc38797fb1f99",
+  "date_utc": "2026-10-30T20:05:40+00:00",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "definitive": true
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "env": {
+  "criteria_version": "0.3.1",
+  "matrix_version": "0.3.0",
+  "commit": "a691855383779763714f072bf8d3bbe062e48064",
+  "date_utc": "2026-10-30T21:31:39+00:00",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "receiver": "v2",
+  "definitive": true
+ },
+ "results": {
+  "B1": true,
+  "B2": true,
+  "B3": false,
+  "B4": true,
+  "B5": true,
+  "B7": true
+ },
+ "note": "resultado por modo; a regra de TRL s\u00f3 \u00e9 aplicada por lab/bench/aggregate.py com os dois modos"
+}
