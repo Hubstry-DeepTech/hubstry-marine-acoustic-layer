@@ -192,3 +192,9 @@ def test_coherent_dev_run_without_freeze_is_not_definitive(tmp_path):
 def test_definitive_run_without_freeze_is_inconsistent(tmp_path):
     out = agg.aggregate(_write_run(tmp_path / "r", {"hf": _env(), "lf": _env()}), root=tmp_path / "empty")
     assert out["trl_rule"].startswith("INCONSISTENT_RUNS")
+
+
+def test_dev_run_after_freeze_is_not_definitive(tmp_path):
+    env = _env(definitive=False, matrix_file="matrix_dev.json", matrix_sha256="d" * 64)
+    out = agg.aggregate(_write_run(tmp_path / "r", {"hf": env, "lf": copy.deepcopy(env)}), root=_freeze(tmp_path / "repo"))
+    assert out["trl_rule"].startswith("NÃO DEFINITIVO"), out["trl_rule"]

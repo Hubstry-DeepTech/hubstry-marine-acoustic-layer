@@ -92,7 +92,9 @@ def aggregate(dirs: dict[str, Path], root: Path = ROOT) -> dict:
                 # sem congelamento: execução de desenvolvimento é só não definitiva; definitiva é inconsistente
                 if not dev_run:
                     problems.append(f"{spec['freeze']} ausente: sem congelamento registrado")
-            else:
+            elif not dev_run:
+                # a comparação com o congelamento só vale para execuções definitivas; uma execução de
+                # desenvolvimento feita depois do congelamento usa outra matriz e é só NÃO DEFINITIVO
                 fz = json.loads(fp.read_text(encoding="utf-8"))
                 for m in dirs:
                     if envs[m].get("matrix_sha256") != fz.get("matrix_sha256"):
