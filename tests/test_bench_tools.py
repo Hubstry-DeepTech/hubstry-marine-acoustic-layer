@@ -53,5 +53,7 @@ def test_matrix_v04_rebuilds_identically():
     rebuilt = mk.build_matrix(stored["version"], stored["seed"], stored["noise_seed_offset"])
     assert json.loads(json.dumps(rebuilt, separators=(",", ":"))) == stored
     assert _noise_seeds(stored).isdisjoint(_noise_seeds(mk.build_matrix()))
+    assert stored["seed"] not in mk.USED_MATRIX_SEEDS
+    assert stored["noise_seed_offset"] >= mk.CONFIRMATORY_MIN_NOISE_OFFSET
     # sementes de desenvolvimento já usadas: 91.000.000 a 93.000.000 (testes da v3) e deslocamento 500.000.000
     assert all(not (91_000_000 <= s < 93_000_000) and not (500_000_000 <= s < 600_000_000) for s in _noise_seeds(stored))

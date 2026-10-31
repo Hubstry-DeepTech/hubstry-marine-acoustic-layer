@@ -1,8 +1,11 @@
 name: HMAL bench (B1-B5, B7)
 
-# Execução confirmatória: disparada só pelo commit de congelamento que cria ou altera lab/bench/matrix_v04.json.
-# Execução de desenvolvimento: manual (workflow_dispatch) com dev_seed preenchido; a matriz é gerada na hora,
-# com sementes disjuntas da matriz oficial, e o resultado sai marcado como não definitivo.
+# Dois caminhos separados:
+# - confirmatório: SÓ o evento push do commit de congelamento que cria ou altera lab/bench/matrix_v04.json, com o
+#   receptor e os critérios registrados em lab/bench/FREEZE_v0.4.json;
+# - desenvolvimento: SÓ disparo manual (workflow_dispatch), com dev_seed obrigatório; a matriz é gerada na hora,
+#   copiada para o artefato e a execução é sempre marcada como não definitiva (--smoke).
+# Não existe caminho manual para uma rodada definitiva.
 on:
   push:
     branches: [lab/bench-run]
@@ -11,22 +14,19 @@ on:
     inputs:
       receiver:
         description: "receptor (v1, v2, v3)"
+        required: true
         default: "v3"
       criteria:
         description: "versão dos critérios (0.3.1 ou 0.4.0)"
+        required: true
         default: "0.4.0"
       dev_seed:
-        description: "semente de uma matriz de desenvolvimento (vazio = matriz oficial dos critérios)"
-        default: ""
+        description: "semente da matriz de desenvolvimento (obrigatória)"
+        required: true
       dev_noise_offset:
-        description: "deslocamento das sementes de ruído da matriz de desenvolvimento"
+        description: "deslocamento das sementes de ruído da matriz de desenvolvimento (abaixo de 1000000000)"
+        required: true
         default: "500000000"
-
-env:
-  RECEIVER: ${{ inputs.receiver || 'v3' }}
-  CRITERIA: ${{ inputs.criteria || '0.4.0' }}
-  DEV_SEED: ${{ inputs.dev_seed || '' }}
-  DEV_OFFSET: ${{ inputs.dev_noise_offset || '500000000' }}
 
 jobs:
   bench:
@@ -46,19 +46,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install pytest
-      - name: Verify matrices
-        run: pytest tests/test_bench_matrix.py tests/test_bench_tools.py -q
+      - name: Verify matrices and tools
+        run: pytest tests/test_bench_matrix.py tests/test_bench_tools.py tests/test_bench_integrity.py -q
+      - name: Resolve run kind
+        id: kind
+        env:
+          EVENT: ${{ github.event_name }}
+          IN_RECEIVER: ${{ inputs.receiver }}
+          IN_CRITERIA: ${{ inputs.criteria }}
+          IN_SEED: ${{ inputs.dev_seed }}
+          IN_OFFSET: ${{ inputs.dev_noise_offset }}
+        run: python lab/bench/resolve_run.py
       - name: Run bench
-        run: |
-          EXTRA=""
-          if [ -n "$DEV_SEED" ]; then
-            python lab/bench/make_matrix.py --version "dev-$DEV_SEED" --seed "$DEV_SEED" --noise-offset "$DEV_OFFSET" --out /tmp/matrix_dev.json
-            EXTRA="--matrix /tmp/matrix_dev.json --smoke"
-          fi
-          python lab/bench/run_bench.py --modes ${{ matrix.mode }} --workers 4 --receiver "$RECEIVER" --criteria "$CRITERIA" --out out $EXTRA
+        run: python lab/bench/run_bench.py --modes ${{ matrix.mode }} --workers 4 ${{ steps.kind.outputs.args }} --out out
+      - name: Keep development matrix with the results
+        if: steps.kind.outputs.kind == 'dev'
+        run: cp /tmp/matrix_dev.json out/
       - uses: actions/upload-artifact@v4
         with:
-          name: bench-${{ env.RECEIVER }}-${{ env.CRITERIA }}${{ env.DEV_SEED && '-dev' || '' }}-${{ matrix.mode }}
+          name: bench-${{ steps.kind.outputs.label }}-${{ matrix.mode }}
           path: out/
 
   aggregate:
@@ -71,9 +77,9 @@ jobs:
           path: artifacts
       - name: Aggregate hf + lf and apply TRL rule
         run: |
-          P="bench-$RECEIVER-$CRITERIA${DEV_SEED:+-dev}"
-          python lab/bench/aggregate.py "artifacts/$P-hf" "artifacts/$P-lf" aggregate.json
+          HF=$(ls -d artifacts/bench-*-hf); LF=$(ls -d artifacts/bench-*-lf)
+          python lab/bench/aggregate.py "$HF" "$LF" aggregate.json
       - uses: actions/upload-artifact@v4
         with:
-          name: bench-aggregate-${{ env.RECEIVER }}-${{ env.CRITERIA }}${{ env.DEV_SEED && '-dev' || '' }}
+          name: bench-aggregate
           path: aggregate.json

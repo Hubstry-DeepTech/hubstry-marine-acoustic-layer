@@ -26,6 +26,10 @@ MODES = {
 }
 
 MATRIX_PATH = Path(__file__).with_name("matrix.json")
+# Sementes e faixas de ruído já usadas em desenvolvimento ou em matrizes anteriores. Uma matriz confirmatória
+# não pode reutilizá-las (lab/BENCH_CRITERIA_v0.4-draft.md, Seção 3).
+USED_MATRIX_SEEDS = {SEED, 20261031, 777001}
+CONFIRMATORY_MIN_NOISE_OFFSET = 1_000_000_000
 
 
 def h_n(n: int) -> list[Fraction]:
@@ -149,6 +153,11 @@ def main() -> None:
     a = ap.parse_args()
     if a.version != VERSION and (a.seed == SEED or a.noise_offset == 0):
         ap.error("uma versão nova exige semente e deslocamento de ruído novos")
+    if not a.version.startswith("dev"):
+        if a.seed in USED_MATRIX_SEEDS:
+            ap.error(f"semente {a.seed} já usada; uma matriz confirmatória exige semente nova")
+        if a.noise_offset < CONFIRMATORY_MIN_NOISE_OFFSET:
+            ap.error(f"uma matriz confirmatória exige --noise-offset >= {CONFIRMATORY_MIN_NOISE_OFFSET}")
     matrix = build_matrix(a.version, a.seed, a.noise_offset)
     text = json.dumps(matrix, separators=(",", ":")) + "\n"
     a.out.write_text(text, encoding="utf-8")

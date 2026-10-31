@@ -73,12 +73,25 @@ Comparação v1 × v2 sob a v0.3.1, com os dados por ensaio: `lab/bench/results/
 
 Nenhuma declaração de TRL 4 antes da execução confirmatória e da agregação.
 
-## 7. Estado do código (31/10/2026)
+## 7. Estado do código (31/10/2026, após a revisão técnica da Luna)
 
-- `run_bench.py`: opções `--receiver v3`, `--criteria 0.4.0` (matriz `matrix_v04.json`, B3(c) a partir de 20 dB), `--matrix` (só desenvolvimento, nunca definitiva) e `--out`; grava `matrix_file`, `matrix_sha256` e `b3c_min_snr_db` nos metadados; grava as métricas diagnósticas da Seção 4. Os critérios v0.3.1 continuam executáveis sem alteração.
-- `make_matrix.py`: parâmetros de versão, semente e deslocamento de ruído; com os valores padrão, reconstrói a matriz v0.3.0 idêntica.
-- `aggregate.py`: verifica também arquivo e SHA-256 da matriz e o corte do B3(c).
-- `bench.yml`: disparo por `matrix_v04.json` (confirmatório) ou manual com semente de desenvolvimento (não definitivo).
+- `run_bench.py`:
+  - opções `--receiver v3`, `--criteria 0.4.0` (matriz `matrix_v04.json`, B3(c) a partir de 20 dB), `--matrix` (só desenvolvimento, nunca definitiva) e `--out`;
+  - grava nos metadados `matrix_file`, `matrix_sha256`, `matrix_seed`, `noise_seed_offset` e `b3c_min_snr_db`;
+  - separa, em todas as condições de B3, três taxas: identificação incorreta (canal aceito com razão errada), rejeição ou perda (canal verdadeiro não aceito) e falha total de recuperação;
+  - para `K = 1`, grava o erro de frequência de cada ensaio, o que permite recalcular de forma independente o RMS global e o RMS entre os ensaios com identificação correta e canal aceito;
+  - os critérios v0.3.1 continuam executáveis sem alteração.
+- `make_matrix.py`: com os valores padrão, reconstrói a matriz v0.3.0 idêntica. Uma matriz não marcada como desenvolvimento exige semente fora das já usadas (20261030, 20261031, 777001) e deslocamento de ruído ≥ 1.000.000.000.
+- `aggregate.py`:
+  - compara o bloco de metadados de cada artefato com o `summary.json` do seu diretório, e o veredito de cada artefato com o do resumo;
+  - exige, conforme a versão de critérios, os campos obrigatórios e os valores esperados (`matrix_v04.json` e 20 dB na v0.4);
+  - na v0.4, confere o SHA-256 da matriz e o receptor com `FREEZE_v0.4.json`;
+  - sem congelamento registrado, não emite conclusão.
+- `bench.yml` e `resolve_run.py`:
+  - a rodada confirmatória só parte do push do commit de congelamento, com receptor e critérios lidos de `FREEZE_v0.4.json`;
+  - o disparo manual exige semente de desenvolvimento, gera a matriz com deslocamento abaixo de 1.000.000.000, copia a matriz para o artefato e sempre marca a execução como não definitiva;
+  - não há caminho manual para uma rodada definitiva.
+- `tests/test_bench_integrity.py`: testes para cada um desses casos.
 
 ## 8. Pendências
 

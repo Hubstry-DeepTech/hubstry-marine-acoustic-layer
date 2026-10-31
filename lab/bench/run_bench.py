@@ -75,6 +75,8 @@ def env_info(smoke: bool) -> dict:
         "matrix_version": MATRIX["version"],
         "matrix_file": MATRIX_PATH.name,
         "matrix_sha256": hashlib.sha256(MATRIX_TEXT.encode("utf-8")).hexdigest(),
+        "matrix_seed": MATRIX.get("seed"),
+        "noise_seed_offset": MATRIX.get("noise_seed_offset", 0),
         "b3c_min_snr_db": B3C_MIN_SNR,
         "commit": commit,
         "date_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -127,6 +129,17 @@ def exact_recovery(decoded: dict, channels: list) -> bool:
     got = sorted(tuple(c["ratio"]) for c in decoded["channels"] if c["accepted"])
     want = sorted(tuple(c) for c in channels)
     return len(got) == len(decoded["channels"]) and got == want
+
+
+def outcome(decoded: dict, channels: list) -> str:
+    """Classifica um ensaio: "ok" (recuperação exata), "misidentified" (algum canal aceito com razão errada)
+    ou "rejected" (nenhuma razão errada aceita, mas algum canal verdadeiro não foi aceito)."""
+    if exact_recovery(decoded, channels):
+        return "ok"
+    want = {tuple(c) for c in channels}
+    if any(c["accepted"] and tuple(c["ratio"] or ()) not in want for c in decoded["channels"]):
+        return "misidentified"
+    return "rejected"
 
 
 def save(name: str, payload: dict) -> None:
@@ -207,12 +220,14 @@ def b3_trial(args) -> dict:
     w = np.random.default_rng(trial["noise_seed"]).standard_normal(N)
     f0 = mode_cfg(name)["f0_hz"]
     truth = trial["channels"][0][0] / trial["channels"][0][1] * f0
-    out = {"A": A, "noise_free": exact_recovery(rx.decode(s, K), trial["channels"]), "ok": [], "err": []}
+    out = {"A": A, "noise_free": exact_recovery(rx.decode(s, K), trial["channels"]), "ok": [], "err": [], "cls": []}
     out["fail_diag"] = []
     for snr in snrs:
         dec = rx.decode(s + sigma_for(A, N, snr) * w, K)
-        ok = exact_recovery(dec, trial["channels"])
+        cls = outcome(dec, trial["channels"])
+        ok = cls == "ok"
         out["ok"].append(ok)
+        out["cls"].append(cls)
         if not ok and snr >= 20:
             out["fail_diag"].append({"snr_int_db": snr, "true": trial["channels"], "decoded": dec})
         if K == 1:
@@ -240,8 +255,14 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
             hi = [i for i, s in enumerate(snrs) if s >= 20]
             c_a = nf == 1.0
             c_b = all(rate[i] >= 0.99 for i in hi)
+            cls = np.array([r["cls"] for r in rows])
             entry = {
                 "n_trials": len(rows),
+                # diagnóstico: separação entre identificação incorreta (canal aceito com razão errada),
+                # rejeição/perda (canal verdadeiro não aceito) e falha total de recuperação (soma das duas)
+                "diagnostic_misidentification_rate": (cls == "misidentified").mean(axis=0).tolist(),
+                "diagnostic_rejection_rate": (cls == "rejected").mean(axis=0).tolist(),
+                "diagnostic_total_recovery_failure_rate": (cls != "ok").mean(axis=0).tolist(),
                 "noise_free_recovery": nf,
                 "recovery_rate": rate,
                 "criterion_a_noise_free_100": c_a,
@@ -266,9 +287,12 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
                 entry.update({
                     "rms_error_hz": rms, "acrb_hz": bound, "rms_over_acrb": [r / b for r, b in zip(rms, bound)],
                     f"criterion_c_rms_le_1p5_acrb_snr_ge{B3C_MIN_SNR}": c_c,
-                    "diagnostic_channel_error_rate": (1.0 - ok.mean(axis=0)).tolist(),
                     "diagnostic_gross_errors_gt_1_over_T": gross,
-                    "diagnostic_rms_conditional_over_acrb": [None if c is None else c / b for c, b in zip(cond, bound)],
+                    # RMS só entre os ensaios com identificação correta E canal aceito; não é a precisão de todos
+                    "diagnostic_rms_given_correct_and_accepted_over_acrb": [None if c is None else c / b for c, b in zip(cond, bound)],
+                    # erro de frequência por ensaio (Hz), linhas = ensaios, colunas = grade de SNR: permite
+                    # recalcular de forma independente o RMS global e o condicional
+                    "per_trial_freq_error_hz": err.tolist(),
                 })
                 cond_pass &= c_c
             entry["passed"] = cond_pass
