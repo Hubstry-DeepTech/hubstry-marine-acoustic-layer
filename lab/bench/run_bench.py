@@ -79,7 +79,6 @@ def env_info(smoke: bool) -> dict:
         "noise_seed_offset": MATRIX.get("noise_seed_offset", 0),
         "b3c_min_snr_db": B3C_MIN_SNR,
         "commit": commit,
-        "date_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "platform": platform.platform(),
         "python": platform.python_version(),
         "numpy": np.__version__,
@@ -235,7 +234,10 @@ def b3_trial(args) -> dict:
     return out
 
 
-def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -> dict:
+B3_CONDITIONS = ("k1", "k2", "k3", "worst_pair_0", "worst_pair_1")
+
+
+def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int], only: list[str] | None = None) -> dict:
     res: dict = {"test": "B3", "snr_int_db": snrs, "modes": {}}
     passed = True
     for name in modes:
@@ -245,6 +247,8 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
         for p, trials in enumerate(m["b3"]["worst_pairs"]):
             conds[f"worst_pair_{p}"] = trials
         res["modes"][name] = {}
+        if only:
+            conds = {k: v for k, v in conds.items() if k in only}
         for cname, trials in conds.items():
             trials = trials[:limit] if limit else trials
             with Pool(workers) as pool:
@@ -462,6 +466,8 @@ def main() -> None:
     ap.add_argument("--criteria", choices=sorted(CRITERIA), default="0.3.1")
     ap.add_argument("--matrix", type=Path, default=None, help="matriz alternativa (desenvolvimento); exige --smoke")
     ap.add_argument("--out", type=Path, default=None, help="diretório de saída (padrão: results/<receptor>)")
+    ap.add_argument("--b3-conditions", default=None,
+                    help="subconjunto das condições do B3 (execução dividida em partes; junção por merge_parts.py)")
     a = ap.parse_args()
     if a.limit and not a.smoke:
         ap.error("--limit exige --smoke: execuções reduzidas não são definitivas")
@@ -483,11 +489,16 @@ def main() -> None:
     tests = a.tests.split(",")
     snrs = MATRIX["snr_int_db_grid"]
     env = env_info(a.smoke)
-    summary = {"env": env, "results": {}}
+    b3_only = a.b3_conditions.split(",") if a.b3_conditions else None
+    if b3_only and (set(b3_only) - set(B3_CONDITIONS) or len(set(b3_only)) != len(b3_only)):
+        ap.error(f"--b3-conditions inválido: use itens distintos de {B3_CONDITIONS}")
+    started = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    # env identifica a configuração (igual em todas as partes de uma rodada); a data fica fora dele
+    summary = {"env": env, "date_utc": started, "tests": tests, "b3_conditions": b3_only or list(B3_CONDITIONS), "results": {}}
     runners = {
         "B1": lambda: run_b1(),
         "B2": lambda: run_b2(modes, a.limit),
-        "B3": lambda: run_b3(modes, a.limit, a.workers, snrs),
+        "B3": lambda: run_b3(modes, a.limit, a.workers, snrs, b3_only),
         "B4": lambda: run_b4(modes, a.limit, a.workers),
         "B5": lambda: run_b5(modes, a.limit),
         "B7": lambda: run_b7(modes, a.limit, a.workers),
@@ -496,6 +507,9 @@ def main() -> None:
         print(f"== {t}", flush=True)
         r = runners[t]()
         r["env"] = env
+        r["date_utc"] = started
+        if t == "B3":
+            r["conditions"] = b3_only or list(B3_CONDITIONS)
         save(t, r)
         summary["results"][t] = r["passed"]
         print(f"   {t} passed={r['passed']}", flush=True)

@@ -68,7 +68,7 @@ Comparação v1 × v2 sob a v0.3.1, com os dados por ensaio: `lab/bench/results/
 2. Revisão da Luna sobre o código da bancada (`run_bench.py`, `make_matrix.py`, `aggregate.py`, `receiver.py`, `ideal_pe.py`, `bench.yml`) e sobre o resultado da validação de desenvolvimento.
 3. Sorteio de `S` e `O` com `secrets`, geração de `matrix_v04.json` e registro do SHA-256 da matriz.
 4. **Commit de congelamento** contendo, ao mesmo tempo: este documento renomeado para `lab/BENCH_CRITERIA_v0.4.md` com estado "congelado", `ReceiverV3`, runner, agregador, workflow, testes, `matrix_v04.json` e `lab/bench/FREEZE_v0.4.json` (semente, deslocamento, SHA-256 da matriz e dos arquivos de código).
-5. O workflow da bancada dispara só pelo commit que cria `matrix_v04.json`. As execuções hf e lf partem exatamente desse commit; nada é alterado durante a rodada.
+5. O workflow da bancada dispara só pelo commit que cria `matrix_v04.json`. As execuções partem exatamente desse commit; nada é alterado durante a rodada. Cada modo roda em seis partes paralelas (B1, B2, B4, B5 e B7 numa parte; cada condição do B3 numa parte), juntadas por `merge_parts.py`, que exige configuração idêntica em todas as partes e cada ensaio e condição exatamente uma vez. A divisão não altera ensaios, limiares, matriz nem receptor.
 6. `aggregate.py` só emite conclusão de TRL quando commit, receptor, versão de critérios, arquivo e SHA-256 da matriz e corte do B3(c) coincidem nos dois modos.
 
 Nenhuma declaração de TRL 4 antes da execução confirmatória e da agregação.
@@ -92,6 +92,8 @@ Nenhuma declaração de TRL 4 antes da execução confirmatória e da agregaçã
   - o disparo manual exige semente de desenvolvimento, gera a matriz com deslocamento abaixo de 1.000.000.000, copia a matriz para o artefato e sempre marca a execução como não definitiva;
   - não há caminho manual para uma rodada definitiva.
 - `tests/test_bench_integrity.py`: testes para cada um desses casos.
+- `merge_parts.py` e `tests/test_bench_merge.py` (31/10/2026): execução dividida em partes paralelas, porque a validação de desenvolvimento levou 5 h 04 min no modo hf, perto do limite de 340 min por job. A data da execução saiu do bloco `env`, que passa a identificar só a configuração; ela fica em `date_utc` de cada artefato e do resumo.
+- Validação de desenvolvimento da v3 (`lab/bench/results/dev-v3-run41188079573/REPORT_V3_DEV.md`): seis ensaios aprovados nos dois modos, nenhuma rejeição de canal verdadeiro; não definitiva.
 
 ## 8. Pendências
 

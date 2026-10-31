@@ -29,6 +29,9 @@ on:
         default: "500000000"
 
 jobs:
+  # Cada modo é dividido em seis partes paralelas para caber no limite de tempo por job: os ensaios B1, B2,
+  # B4, B5 e B7 numa parte, e cada condição do B3 numa parte. A junção (merge_parts.py) confere que o env é
+  # idêntico em todas as partes e que cada ensaio e cada condição aparecem exatamente uma vez.
   bench:
     runs-on: ubuntu-latest
     timeout-minutes: 340
@@ -36,6 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: [hf, lf]
+        part: [base, k1, k2, k3, worst_pair_0, worst_pair_1]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -47,7 +51,7 @@ jobs:
           pip install -e .
           pip install pytest
       - name: Verify matrices and tools
-        run: pytest tests/test_bench_matrix.py tests/test_bench_tools.py tests/test_bench_integrity.py -q
+        run: pytest tests/test_bench_matrix.py tests/test_bench_tools.py tests/test_bench_integrity.py tests/test_bench_merge.py -q
       - name: Resolve run kind
         id: kind
         env:
@@ -57,29 +61,44 @@ jobs:
           IN_SEED: ${{ inputs.dev_seed }}
           IN_OFFSET: ${{ inputs.dev_noise_offset }}
         run: python lab/bench/resolve_run.py
-      - name: Run bench
-        run: python lab/bench/run_bench.py --modes ${{ matrix.mode }} --workers 4 ${{ steps.kind.outputs.args }} --out out
+      - name: Run bench part
+        env:
+          PART: ${{ matrix.part }}
+        run: |
+          if [ "$PART" = "base" ]; then SEL="--tests B1,B2,B4,B5,B7"; else SEL="--tests B3 --b3-conditions $PART"; fi
+          python lab/bench/run_bench.py --modes ${{ matrix.mode }} --workers 4 ${{ steps.kind.outputs.args }} $SEL --out out
       - name: Keep development matrix with the results
         if: steps.kind.outputs.kind == 'dev'
         run: cp /tmp/matrix_dev.json out/
       - uses: actions/upload-artifact@v4
         with:
-          name: bench-${{ steps.kind.outputs.label }}-${{ matrix.mode }}
+          name: part-${{ matrix.mode }}-${{ matrix.part }}
           path: out/
 
-  aggregate:
+  merge-and-aggregate:
     needs: bench
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - uses: actions/download-artifact@v4
         with:
-          path: artifacts
-      - name: Aggregate hf + lf and apply TRL rule
+          path: parts
+          pattern: part-*
+      - name: Merge parts per mode and apply TRL rule
         run: |
-          HF=$(ls -d artifacts/bench-*-hf); LF=$(ls -d artifacts/bench-*-lf)
-          python lab/bench/aggregate.py "$HF" "$LF" aggregate.json
+          set -e
+          for m in hf lf; do
+            python lab/bench/merge_parts.py "results/$m" parts/part-$m-base parts/part-$m-k1 parts/part-$m-k2 parts/part-$m-k3 parts/part-$m-worst_pair_0 parts/part-$m-worst_pair_1
+          done
+          if ls parts/*/matrix_dev.json >/dev/null 2>&1; then
+            test "$(sha256sum parts/*/matrix_dev.json | cut -d' ' -f1 | sort -u | wc -l)" = "1"
+            cp "$(ls parts/*/matrix_dev.json | head -1)" results/
+          fi
+          python lab/bench/aggregate.py results/hf results/lf results/aggregate.json
       - uses: actions/upload-artifact@v4
         with:
-          name: bench-aggregate
-          path: aggregate.json
+          name: bench-results
+          path: results/
