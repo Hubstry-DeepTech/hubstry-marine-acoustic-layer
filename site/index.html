@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HMAL Lab</title>
+  <meta name="description" content="Evidências públicas e auditáveis do HMAL (Hubstry Marine Acoustic Layer): bancada digital, reprodução de dados do MBARI, critérios e proveniência." />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png" />
+  <link rel="apple-touch-icon" href="./brand/apple-touch-icon.png" />
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+  <header class="top">
+    <a class="brand" href="#inicio">
+      <picture>
+        <source srcset="./brand/hubstry-logo-white.png" media="(prefers-color-scheme: dark)" />
+        <img src="./brand/hubstry-logo.png" alt="Hubstry" width="1600" height="196" />
+      </picture>
+      <span>HMAL Lab</span>
+    </a>
+    <nav aria-label="Seções">
+      <a href="#maturidade">Maturidade</a>
+      <a href="#bancada">Bancada digital</a>
+      <a href="#e1">Baleia-azul (E1)</a>
+      <a href="#metodo">Método</a>
+      <a href="#etica">Ética e licenças</a>
+    </nav>
+  </header>
+
+  <main id="conteudo">
+    <section id="inicio" class="hero">
+      <h1>HMAL Lab</h1>
+      <p class="lede">Evidências públicas do <abbr title="Hubstry Marine Acoustic Layer">HMAL</abbr> (Hubstry Marine Acoustic Layer, camada acústica marinha da Hubstry). Cada número desta página leva ao arquivo, ao commit e ao critério que o sustentam.</p>
+      <figure class="ruler-fig">
+        <div id="ruler" class="ruler" role="img" aria-label="Os 159 canais do dicionário H16 dispostos em escala logarítmica entre 1/16 e 16."></div>
+        <figcaption>Os 159 canais do dicionário <i>H</i><sub>16</sub>: todas as razões irredutíveis <i>a</i>/<i>b</i> com <i>a</i> e <i>b</i> de 1 a 16, multiplicadas por uma frequência de base, em escala logarítmica. Quanto mais simples a razão, mais alto o traço.</figcaption>
+      </figure>
+
+      <div class="three">
+        <div>
+          <h2 class="q">O que é</h2>
+          <p>Um projeto de pesquisa e engenharia de processamento acústico que investiga estruturas harmônicas racionais e suas possíveis aplicações, da comunicação submarina à bioacústica.</p>
+        </div>
+        <div>
+          <h2 class="q">O que já demonstrou</h2>
+          <p>A reprodução de um índice acústico do <abbr title="Monterey Bay Aquarium Research Institute">MBARI</abbr> em três dias de gravações históricas e uma bancada digital com aprovações e reprovações documentadas.</p>
+        </div>
+        <div>
+          <h2 class="q">O que ainda não demonstrou</h2>
+          <p>Comunicação acústica submarina em operação, validação biológica da hipótese H1 ou aplicação comercial validada.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="maturidade">
+      <h2>Maturidade por componente</h2>
+      <p class="intro">O HMAL não tem um nível único de maturidade. O <abbr title="Technology Readiness Level">TRL</abbr> (Technology Readiness Level, nível de maturidade tecnológica) só se aplica a componentes de engenharia, e cada avaliação depende da versão de critérios usada.</p>
+      <div class="table-wrap">
+        <table class="maturity">
+          <thead><tr><th scope="col">Componente</th><th scope="col">Situação</th><th scope="col">Próximo marco</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Núcleo computacional de processamento racional</th><td id="core-status">Avaliação de TRL conforme a versão de critérios indicada na bancada digital</td><td>TRL 4 do subsistema, sob critérios congelados e execução confirmatória</td></tr>
+            <tr><th scope="row">Comunicação acústica submarina</th><td>Arquitetura e módulos experimentais, sem validação física da cadeia completa</td><td>Bancada eletroacústica em parceria</td></tr>
+            <tr><th scope="row">Hipótese bioacústica H1</th><td>Hipótese científica em aberto; TRL não se aplica</td><td>Protocolo exploratório pré-registrado e replicação independente</td></tr>
+            <tr><th scope="row">Controle de qualidade de detecções (H3)</th><td>Aplicação de engenharia em investigação</td><td>Comparação com rótulos independentes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="bancada">
+      <h2>Bancada digital</h2>
+      <p class="intro">A bancada gera sinais sintéticos com canais do dicionário, soma ruído em níveis controlados e mede se o receptor recupera os canais. São seis ensaios obrigatórios (B1 a B5 e B7), cada um em dois modos: alta frequência (hf, base de 1.732 Hz) e baixa frequência (lf, base de 25 Hz). O nível de maturidade só é declarado pelo agregador, quando todos passam nos dois modos.</p>
+      <div id="bench-runs"></div>
+      <div id="bench-detail"></div>
+    </section>
+
+    <section id="e1">
+      <h2>Baleia-azul: reprodução de um índice do MBARI (E1)</h2>
+      <p class="intro">Gravações históricas de novembro de 2016 do observatório submarino MARS (Monterey Accelerated Research System), na baía de Monterey. Não são dados ao vivo. O experimento recalcula o Blue B Call Index, uma razão entre níveis espectrais na faixa do canto B da baleia-azul e em faixas vizinhas. O índice indica presença de canto, mas não conta vocalizações individuais.</p>
+      <div id="e1-body"></div>
+    </section>
+
+    <section id="metodo">
+      <h2>Método e documentos</h2>
+      <div id="docs"></div>
+    </section>
+
+    <section id="etica">
+      <h2>Ética e licenças</h2>
+      <div class="two">
+        <div>
+          <h3>Cláusula ética do software</h3>
+          <p>A licença do HMAL proíbe usá-lo para localizar, rastrear ou seguir cetáceos e outros mamíferos marinhos com fins de caça, captura, perseguição ou molestamento, e para monitorá-los sem as autorizações ambientais exigidas por lei.</p>
+          <ul class="links"><li><a id="lnk-license" href="#">Texto da licença</a></li><li><a id="lnk-ethics" href="#">Diretrizes éticas</a></li></ul>
+        </div>
+        <div>
+          <h3>Duas licenças distintas</h3>
+          <p><strong>Software HMAL:</strong> Business Source License 1.1, com concessão adicional para uso acadêmico e de conservação nos termos da CC BY 4.0 (Creative Commons Atribuição 4.0). Uso comercial ou de defesa exige autorização.</p>
+          <p><strong>Dados do E1:</strong> MBARI Pacific Sound, sob <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br">CC BY 4.0</a>. Gravações do MARS fornecidas pelo MBARI; processadas e visualizadas pela Hubstry.</p>
+        </div>
+      </div>
+      <h3>Privacidade</h3>
+      <p>Sem formulários, cookies de rastreamento ou perfilamento. A hospedagem e os serviços de infraestrutura podem realizar registros técnicos de segurança, conforme suas políticas de privacidade.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-brand">
+      <a href="https://hubstry.dev">
+        <picture>
+          <source srcset="./brand/hubstry-logo-white.png" media="(prefers-color-scheme: dark)" />
+          <img class="foot-logo" src="./brand/hubstry-logo.png" alt="Hubstry" width="1600" height="196" loading="lazy" />
+        </picture>
+      </a>
+      <figure class="inception">
+        <img src="./brand/nvidia-inception-badge.svg" alt="Selo NVIDIA Inception Program" width="500" height="216" loading="lazy" />
+        <figcaption>A Hubstry participa do NVIDIA Inception, programa da NVIDIA para startups.</figcaption>
+      </figure>
+    </div>
+    <p id="foot-prov">Carregando proveniência…</p>
+  </footer>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>

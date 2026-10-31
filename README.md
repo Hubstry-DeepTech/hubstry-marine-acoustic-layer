@@ -1,7 +1,23 @@
 <p align="center">
+  <a href="https://hubstry.dev">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hubstry-logo-white.png">
+      <img src="docs/assets/hubstry-logo.png" alt="Hubstry" width="360">
+    </picture>
+  </a>
+</p>
+
+<p align="center">
   <strong>Hubstry Marine Acoustic Layer (HMAL)</strong><br>
   <em>Pesquisa aplicada em bioacústica marinha: razões racionais, dados públicos reais e engenharia reproduzível</em>
 </p>
+
+<p align="center">
+  <img src="docs/assets/nvidia-inception-badge.svg" alt="NVIDIA Inception Program" width="180"><br>
+  <sub>A Hubstry participa do NVIDIA Inception, programa da NVIDIA para startups.</sub>
+</p>
+
+<p align="center"><a href="https://hmal.hubstry.dev">HMAL Lab</a>: evidências públicas, resultados da bancada digital e proveniência de cada número.</p>
 
 ---
 

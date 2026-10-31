@@ -1,0 +1,48 @@
+name: HMAL Lab (verificação em PR)
+
+# Monta a página inteira em cada pull request para o main, sem publicar nada: gera os dados a partir das
+# evidências versionadas (manifesto, SHA-256, agregador) e compila o site. A publicação continua restrita
+# ao push no main (.github/workflows/pages.yml).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "lab/bench/results/**"
+      - "lab/bench/aggregate.py"
+      - "lab/bench/make_manifest.py"
+      - "lab/BENCH_CRITERIA*.md"
+      - "lab/PREREGISTRATION.md"
+      - "docs/SPECIFICATION.md"
+      - "docs/ETHICS_GUIDELINES.md"
+      - "LICENSE"
+      - "tests/test_site_build.py"
+      - ".github/workflows/pages.yml"
+      - ".github/workflows/site-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install
+        run: |
+          pip install pillow pytest
+          cd site && npm ci
+      - name: Test data pipeline
+        run: pytest tests/test_site_build.py -q
+      - name: Build data from versioned evidence
+        run: python site/build_data.py
+      - name: Build page (no deploy)
+        run: cd site && npm run build
