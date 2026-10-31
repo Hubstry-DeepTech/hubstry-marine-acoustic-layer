@@ -35,3 +35,9 @@ As verificações de desenvolvimento da v2 usaram, em cada modo:
 - B7b: os 158 pontos médios.
 
 O relatório apresenta, além do resultado integral, a taxa de recuperação só nos ensaios **não usados no desenvolvimento** (B3 a partir do índice 20; B4 a partir do índice 30). O B7b não tem conjunto independente: seu resultado vale como teste de regressão, não como validação cega. As mudanças são estruturais (ordem das etapas e estimador de escala), e nenhum parâmetro numérico foi ajustado a esses resultados. O passo de grade `1/(8T)` e a faixa de ±0,2% do piloto já constavam da v1. Ainda assim, essa sobreposição fica registrada. Numa próxima iteração, o desenvolvimento deve usar sementes fora da matriz.
+
+## Interface efetiva e decisões registradas após a auditoria do GLM-5.3 (30/10/2026)
+
+- **Interface efetiva:** `Receiver(fs, duration, f0)` / `ReceiverV2(fs, duration, f0)` e o método `decode(x, K, pilot=False) -> dict`, com `channels` = lista de `{f_est, ratio: [a, b] | None, accepted}`, além de `f0_used` (e `f0_pilot` na v2). Difere da forma resumida da Seção 2 dos critérios: `fs`, `f0` e a duração `T` (necessária para a tolerância `1/(2T)`) vão no construtor, e "fora da tolerância" corresponde a `accepted = false`. A semântica é a mesma.
+- **Decisão de aprovação:** segue os critérios congelados, sobre os 1.000 ensaios de cada condição. A taxa no hold-out (B3 a partir do índice 20; B4 a partir do 30) é reportada ao lado e não altera a decisão. Uma divergência entre as duas taxas será apontada no relatório.
+- **Riscos registrados fora das condições congeladas:** se houver mais de um pico na faixa de ±0,2%, o piloto é o mais próximo de `f0` nominal (no modo AF, um lóbulo lateral do piloto cabe nessa faixa; nos ensaios B4, com amplitudes iguais e 20 dB, ele não entra entre os `K+1` maiores picos); a busca de picos ignora os bins de DC e Nyquist; uma razão provisória errada contamina `f0_LS` e pode derrubar todos os canais do ensaio.

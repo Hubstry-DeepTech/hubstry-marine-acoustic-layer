@@ -1,0 +1,31 @@
+{
+ "test": "B1",
+ "passed": true,
+ "details": {
+  "H_16": {
+   "cardinality": 159,
+   "expected": 159,
+   "all_coprime": true,
+   "unique_values": true
+  },
+  "H_32": {
+   "cardinality": 647,
+   "expected": 647,
+   "all_coprime": true,
+   "unique_values": true
+  },
+  "min_gap_H16": "1/240"
+ },
+ "env": {
+  "criteria_version": "0.3.1",
+  "matrix_version": "0.3.0",
+  "commit": "a691855383779763714f072bf8d3bbe062e48064",
+  "date_utc": "2026-10-30T21:31:43+00:00",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "receiver": "v2",
+  "definitive": true
+ }
+}

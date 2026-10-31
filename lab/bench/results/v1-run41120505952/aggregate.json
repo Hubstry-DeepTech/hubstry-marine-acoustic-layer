@@ -1,0 +1,43 @@
+{
+ "by_test_and_mode": {
+  "B1": {
+   "hf": true,
+   "lf": true
+  },
+  "B2": {
+   "hf": true,
+   "lf": true
+  },
+  "B3": {
+   "hf": false,
+   "lf": false
+  },
+  "B4": {
+   "hf": false,
+   "lf": false
+  },
+  "B5": {
+   "hf": true,
+   "lf": true
+  },
+  "B7": {
+   "hf": false,
+   "lf": false
+  }
+ },
+ "metadata_mismatch": [
+  "receiver"
+ ],
+ "wrong_mode": [],
+ "complete": true,
+ "definitive": true,
+ "receiver": {
+  "hf": null,
+  "lf": null
+ },
+ "commit": {
+  "hf": "4ba2c059dc092a998abaea7be71bc38797fb1f99",
+  "lf": "4ba2c059dc092a998abaea7be71bc38797fb1f99"
+ },
+ "trl_rule": "INCONSISTENT_RUNS: metadados divergentes ou ausentes entre os modos (receiver); nenhuma conclusão de TRL"
+}

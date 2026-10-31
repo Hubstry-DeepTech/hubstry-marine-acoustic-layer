@@ -1,0 +1,41 @@
+{
+ "by_test_and_mode": {
+  "B1": {
+   "hf": true,
+   "lf": true
+  },
+  "B2": {
+   "hf": true,
+   "lf": true
+  },
+  "B3": {
+   "hf": false,
+   "lf": false
+  },
+  "B4": {
+   "hf": true,
+   "lf": true
+  },
+  "B5": {
+   "hf": true,
+   "lf": true
+  },
+  "B7": {
+   "hf": true,
+   "lf": true
+  }
+ },
+ "metadata_mismatch": [],
+ "wrong_mode": [],
+ "complete": true,
+ "definitive": true,
+ "receiver": {
+  "hf": "v2",
+  "lf": "v2"
+ },
+ "commit": {
+  "hf": "972beb694d76ffee188ccf9f7cc3b1c2cf6891f0",
+  "lf": "972beb694d76ffee188ccf9f7cc3b1c2cf6891f0"
+ },
+ "trl_rule": "TRL 3: ensaios obrigatórios reprovados: B3/hf, B3/lf"
+}

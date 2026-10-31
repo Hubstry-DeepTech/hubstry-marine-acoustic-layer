@@ -1,0 +1,41 @@
+{
+ "test": "B7",
+ "gamma": 10.364732107424409,
+ "design_fpr": 0.005,
+ "modes": {
+  "lf": {
+   "calibration": {
+    "n": 10000,
+    "false_positives": 50,
+    "fpr": 0.005,
+    "clopper_pearson_upper_95": 0.006324499770793831
+   },
+   "evaluation": {
+    "n": 10000,
+    "false_positives": 56,
+    "fpr": 0.0056,
+    "clopper_pearson_upper_95": 0.00699115107361816
+   },
+   "midpoints": {
+    "n": 158,
+    "flagged_out_of_tolerance": 158,
+    "passed": true
+   },
+   "criterion_a_cp_upper_le_1pct": true,
+   "passed": true
+  }
+ },
+ "passed": true,
+ "env": {
+  "criteria_version": "0.3.1",
+  "matrix_version": "0.3.0",
+  "commit": "972beb694d76ffee188ccf9f7cc3b1c2cf6891f0",
+  "date_utc": "2026-10-30T20:15:28+00:00",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "receiver": "v2",
+  "definitive": true
+ }
+}
