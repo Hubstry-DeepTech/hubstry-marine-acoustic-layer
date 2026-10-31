@@ -1,8 +1,10 @@
-"""Executa os ensaios B1–B5 e B7 da bancada digital HMAL (lab/BENCH_CRITERIA.md v0.3.1).
+"""Executa os ensaios B1–B5 e B7 da bancada digital HMAL.
 
 Uso:
-  python lab/bench/run_bench.py                      # execução completa (definitiva)
-  python lab/bench/run_bench.py --limit 10 --smoke   # ensaio de fumaça; resultados marcados como não definitivos
+  python lab/bench/run_bench.py --criteria 0.3.1 --receiver v2      # critérios v0.3.1, matriz matrix.json
+  python lab/bench/run_bench.py --criteria 0.4.0 --receiver v3      # critérios v0.4, matriz matrix_v04.json
+  python lab/bench/run_bench.py --limit 10 --smoke                  # fumaça; resultados não definitivos
+  python lab/bench/run_bench.py --matrix outra.json --smoke         # matriz de desenvolvimento; nunca definitiva
 
 Saída: lab/bench/results/<ensaio>.json e lab/bench/results/summary.json.
 Os critérios e a matriz não são alterados por este script.
@@ -11,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import math
 import os
@@ -33,21 +36,35 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
 from hmal.core.harmonic_protocol import HarmonicProtocol, RationalChannel  # noqa: E402
-from receiver import Receiver, ReceiverV2, detection_threshold, h_n  # noqa: E402
+from receiver import Receiver, ReceiverV2, ReceiverV3, detection_threshold, h_n  # noqa: E402
 
-MATRIX = json.loads((HERE / "matrix.json").read_text(encoding="utf-8"))
-RECEIVERS = {"v1": Receiver, "v2": ReceiverV2}
-RECEIVER_VERSION = os.environ.get("HMAL_RECEIVER", "v1")  # herdado por workers também com start_method "spawn"
+# Cada versão de critérios fixa sua matriz e o SNR mínimo do critério B3(c). A versão 0.3.1 continua executável.
+CRITERIA = {
+    "0.3.1": {"matrix": "matrix.json", "b3c_min_snr_db": 16},
+    "0.4.0": {"matrix": "matrix_v04.json", "b3c_min_snr_db": 20},
+}
+RECEIVERS = {"v1": Receiver, "v2": ReceiverV2, "v3": ReceiverV3}
+# Variáveis de ambiente: herdadas pelos workers também com start_method "spawn"
+RECEIVER_VERSION = os.environ.get("HMAL_RECEIVER", "v1")
+CRITERIA_VERSION = os.environ.get("HMAL_CRITERIA", "0.3.1")
+MATRIX_PATH = Path(os.environ.get("HMAL_MATRIX") or HERE / CRITERIA[CRITERIA_VERSION]["matrix"])
+MATRIX_TEXT = MATRIX_PATH.read_text(encoding="utf-8") if MATRIX_PATH.exists() else None
+MATRIX = json.loads(MATRIX_TEXT) if MATRIX_TEXT else {}
+B3C_MIN_SNR = CRITERIA[CRITERIA_VERSION]["b3c_min_snr_db"]
 RESULTS = HERE / "results" / RECEIVER_VERSION
-CRITERIA_VERSION = "0.3.1"
-# Ensaios usados no desenvolvimento do receptor v2 (lab/bench/RECEIVER_V2.md): índices 0..DEV-1
-DEV_B3 = 20
-DEV_B4 = 30
+# Ensaios usados no desenvolvimento do receptor v2 (lab/bench/RECEIVER_V2.md): índices 0..DEV-1 da matriz v0.3.0.
+# Matrizes novas declaram seus próprios índices (0 = nenhum ensaio de desenvolvimento).
+DEV_B3 = MATRIX.get("holdout_first_index", {}).get("b3", 20)
+DEV_B4 = MATRIX.get("holdout_first_index", {}).get("b4", 30)
 
 
 # ----------------------------------------------------------------------------------------------
 # utilidades
 # ----------------------------------------------------------------------------------------------
+def matrix_is_official() -> bool:
+    return MATRIX_PATH.resolve() == (HERE / CRITERIA[CRITERIA_VERSION]["matrix"]).resolve()
+
+
 def env_info(smoke: bool) -> dict:
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -56,6 +73,9 @@ def env_info(smoke: bool) -> dict:
     return {
         "criteria_version": CRITERIA_VERSION,
         "matrix_version": MATRIX["version"],
+        "matrix_file": MATRIX_PATH.name,
+        "matrix_sha256": hashlib.sha256(MATRIX_TEXT.encode("utf-8")).hexdigest(),
+        "b3c_min_snr_db": B3C_MIN_SNR,
         "commit": commit,
         "date_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "platform": platform.platform(),
@@ -63,7 +83,7 @@ def env_info(smoke: bool) -> dict:
         "numpy": np.__version__,
         "scipy": scipy.__version__,
         "receiver": RECEIVER_VERSION,
-        "definitive": not smoke,
+        "definitive": (not smoke) and matrix_is_official(),
     }
 
 
@@ -237,9 +257,19 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
                 err = np.array([r["err"] for r in rows])
                 rms = np.sqrt(np.mean(err**2, axis=0)).tolist()
                 bound = [acrb(s, rx.fs, rx.N) for s in snrs]
-                ge16 = [i for i, s in enumerate(snrs) if s >= 16]
-                c_c = all(rms[i] <= 1.5 * bound[i] for i in ge16)
-                entry.update({"rms_error_hz": rms, "acrb_hz": bound, "rms_over_acrb": [r / b for r, b in zip(rms, bound)], "criterion_c_rms_le_1p5_acrb_snr_ge16": c_c})
+                gec = [i for i, s in enumerate(snrs) if s >= B3C_MIN_SNR]
+                c_c = all(rms[i] <= 1.5 * bound[i] for i in gec)
+                # diagnóstico complementar (não entra na decisão): erro de identificação de canal e
+                # RMS condicionado à identificação correta; o RMS global continua sendo o critério
+                cond = [float(np.sqrt(np.mean(err[ok[:, i], i] ** 2))) if ok[:, i].any() else None for i in range(len(snrs))]
+                gross = (np.abs(err) > 1.0 / rx.T).sum(axis=0).astype(int).tolist()
+                entry.update({
+                    "rms_error_hz": rms, "acrb_hz": bound, "rms_over_acrb": [r / b for r, b in zip(rms, bound)],
+                    f"criterion_c_rms_le_1p5_acrb_snr_ge{B3C_MIN_SNR}": c_c,
+                    "diagnostic_channel_error_rate": (1.0 - ok.mean(axis=0)).tolist(),
+                    "diagnostic_gross_errors_gt_1_over_T": gross,
+                    "diagnostic_rms_conditional_over_acrb": [None if c is None else c / b for c, b in zip(cond, bound)],
+                })
                 cond_pass &= c_c
             entry["passed"] = cond_pass
             passed &= cond_pass
@@ -405,13 +435,26 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--receiver", choices=sorted(RECEIVERS), default="v1")
+    ap.add_argument("--criteria", choices=sorted(CRITERIA), default="0.3.1")
+    ap.add_argument("--matrix", type=Path, default=None, help="matriz alternativa (desenvolvimento); exige --smoke")
+    ap.add_argument("--out", type=Path, default=None, help="diretório de saída (padrão: results/<receptor>)")
     a = ap.parse_args()
     if a.limit and not a.smoke:
         ap.error("--limit exige --smoke: execuções reduzidas não são definitivas")
-    global RECEIVER_VERSION, RESULTS
-    RECEIVER_VERSION = a.receiver
+    if a.matrix and not a.smoke:
+        ap.error("--matrix exige --smoke: só a matriz oficial dos critérios produz resultado definitivo")
     os.environ["HMAL_RECEIVER"] = a.receiver
-    RESULTS = HERE / "results" / a.receiver
+    os.environ["HMAL_CRITERIA"] = a.criteria
+    os.environ["HMAL_MATRIX"] = str((a.matrix or HERE / CRITERIA[a.criteria]["matrix"]).resolve())
+    if (a.receiver, a.criteria, os.environ["HMAL_MATRIX"]) != (RECEIVER_VERSION, CRITERIA_VERSION, str(MATRIX_PATH.resolve())):
+        # reexecuta o módulo com as variáveis definidas, para que o processo principal e os workers
+        # carreguem exatamente a mesma matriz e a mesma versão de critérios
+        os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve())] + sys.argv[1:])
+    if not MATRIX:
+        ap.error(f"matriz {MATRIX_PATH} não encontrada")
+    if a.out:
+        global RESULTS
+        RESULTS = a.out
     modes = a.modes.split(",")
     tests = a.tests.split(",")
     snrs = MATRIX["snr_int_db_grid"]
@@ -433,6 +476,8 @@ def main() -> None:
         summary["results"][t] = r["passed"]
         print(f"   {t} passed={r['passed']}", flush=True)
     summary["note"] = "resultado por modo; a regra de TRL só é aplicada por lab/bench/aggregate.py com os dois modos"
+    if not env["definitive"]:
+        summary["note"] += "; execução NÃO definitiva (fumaça ou matriz fora da designada pelos critérios)"
     save("summary", summary)
 
 

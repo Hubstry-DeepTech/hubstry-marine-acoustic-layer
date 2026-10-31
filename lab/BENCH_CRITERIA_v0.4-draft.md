@@ -31,7 +31,9 @@ Esse registro permanece válido e será citado em qualquer apresentação, ao la
 
 O corte de 20 dB foi escolhido depois de observar a matriz oficial. Por isso, uma aprovação sob a v0.4 só vale com **sementes nunca usadas** no desenvolvimento de receptores nem na escolha do corte:
 
-- nova matriz `lab/bench/matrix_v04.json`, gerada por `make_matrix.py` com semente nova, a ser sorteada e registrada no ato do congelamento (por exemplo, a partir do hash do commit de congelamento);
+- nova matriz `lab/bench/matrix_v04.json`, gerada por `make_matrix.py --version 0.4.0 --seed S --noise-offset O`;
+- a semente `S` e o deslocamento `O` das sementes de ruído são sorteados com `secrets` (gerador criptográfico do Python) **antes** do commit de congelamento e registrados nele. Não se deriva a semente do hash do próprio commit, porque isso seria circular;
+- `O` é escolhido acima de 1.000.000.000, de modo que todas as sementes de ruído (B3, B4 e B7) fiquem disjuntas da matriz v0.3.0 e das sementes de desenvolvimento (91.000.000 a 93.000.000 e a faixa de 500.000.000). Um teste automático (`tests/test_bench_tools.py`) verifica a disjunção e a reconstrução idêntica da matriz;
 - a matriz da v0.3.1 continua existindo e não é sobrescrita;
 - o desenvolvimento de receptores, a partir de agora, usa apenas sementes de desenvolvimento declaradas e disjuntas das matrizes de avaliação.
 
@@ -40,7 +42,12 @@ O corte de 20 dB foi escolhido depois de observar a matriz oficial. Por isso, um
 Para cada modo e cada condição de B3:
 - recuperação exata, número de erros grosseiros (|erro| > 1/T) e RMS/ACRB em todos os SNR de −10 a +30 dB, inclusive 16 e 18 dB;
 - os mesmos números no hold-out, quando houver ensaios de desenvolvimento na matriz;
-- a referência idealizada de probabilidade de erro, ao lado da taxa observada.
+- a referência idealizada de probabilidade de erro, ao lado da taxa observada, calculada por `lab/bench/ideal_pe.py` (o script registra seu próprio hash; com `M = 159`: 2,26 × 10⁻³ a 16 dB, 9,83 × 10⁻⁶ a 18 dB e 1,09 × 10⁻⁹ a 20 dB);
+- para `K = 1`, em toda a grade de SNR, duas métricas separadas, como diagnóstico complementar sem efeito na decisão:
+  - taxa de erro de identificação de canal, P(canal incorreto | SNR);
+  - RMS condicionado à identificação correta, dividido pela ACRB.
+
+  O RMS global continua sendo o critério B3(c) e continua publicado, porque mostra o efeito conjunto das duas falhas. O RMS condicional nunca substitui a taxa de erro de identificação, pois excluiria justamente os ensaios que revelam as falhas mais graves.
 
 ## 5. Receptor a submeter
 
@@ -51,13 +58,31 @@ Nos testes de desenvolvimento com sementes fora de qualquer matriz de avaliaçã
 - a 18 dB, RMS/ACRB de 1,04 (hf) e 1,07 (lf), sem erros grosseiros;
 - os 158 pontos médios de B7b rejeitados nos dois modos.
 
-Esses números são de desenvolvimento e não substituem a execução confirmatória.
+Esses testes cobrem só `K = 1` e B7b. Os demais ensaios (B2, B3 com `K = 2` e `3`, B4 com piloto) ainda não foram verificados para a v3; os riscos estão em `lab/bench/RECEIVER_V3.md`. Esses números são de desenvolvimento e não substituem a execução confirmatória.
 
 Comparação v1 × v2 sob a v0.3.1, com os dados por ensaio: `lab/bench/results/REPORT_v1_v2.md`.
 
-## 6. Pendências antes do congelamento
+## 6. Protocolo de congelamento
 
-1. Revisão da Luna sobre este rascunho.
-2. Congelamento do código da v3 (commit e hash registrados) antes da execução. Decisão de receptor: v3, tomada em 31/10/2026.
-3. Geração e registro da semente da nova matriz no commit de congelamento.
-4. Execução definitiva nos dois modos, com a regra agregada aplicada por `aggregate.py` com verificação de metadados.
+1. Validação de desenvolvimento completa da v3 numa matriz com semente declarada, disjunta da oficial (`lab/bench/RECEIVER_V3.md`). Ela serve para descobrir falhas antes do congelamento, não para aprovar.
+2. Revisão da Luna sobre o código da bancada (`run_bench.py`, `make_matrix.py`, `aggregate.py`, `receiver.py`, `ideal_pe.py`, `bench.yml`) e sobre o resultado da validação de desenvolvimento.
+3. Sorteio de `S` e `O` com `secrets`, geração de `matrix_v04.json` e registro do SHA-256 da matriz.
+4. **Commit de congelamento** contendo, ao mesmo tempo: este documento renomeado para `lab/BENCH_CRITERIA_v0.4.md` com estado "congelado", `ReceiverV3`, runner, agregador, workflow, testes, `matrix_v04.json` e `lab/bench/FREEZE_v0.4.json` (semente, deslocamento, SHA-256 da matriz e dos arquivos de código).
+5. O workflow da bancada dispara só pelo commit que cria `matrix_v04.json`. As execuções hf e lf partem exatamente desse commit; nada é alterado durante a rodada.
+6. `aggregate.py` só emite conclusão de TRL quando commit, receptor, versão de critérios, arquivo e SHA-256 da matriz e corte do B3(c) coincidem nos dois modos.
+
+Nenhuma declaração de TRL 4 antes da execução confirmatória e da agregação.
+
+## 7. Estado do código (31/10/2026)
+
+- `run_bench.py`: opções `--receiver v3`, `--criteria 0.4.0` (matriz `matrix_v04.json`, B3(c) a partir de 20 dB), `--matrix` (só desenvolvimento, nunca definitiva) e `--out`; grava `matrix_file`, `matrix_sha256` e `b3c_min_snr_db` nos metadados; grava as métricas diagnósticas da Seção 4. Os critérios v0.3.1 continuam executáveis sem alteração.
+- `make_matrix.py`: parâmetros de versão, semente e deslocamento de ruído; com os valores padrão, reconstrói a matriz v0.3.0 idêntica.
+- `aggregate.py`: verifica também arquivo e SHA-256 da matriz e o corte do B3(c).
+- `bench.yml`: disparo por `matrix_v04.json` (confirmatório) ou manual com semente de desenvolvimento (não definitivo).
+
+## 8. Pendências
+
+1. Validação de desenvolvimento completa da v3 (passo 1 da Seção 6).
+2. Revisão da Luna sobre o código e sobre essa validação.
+3. Aprovação do Guilherme para o commit de congelamento.
+Decisão de receptor: v3, tomada por Guilherme Machado em 31/10/2026.

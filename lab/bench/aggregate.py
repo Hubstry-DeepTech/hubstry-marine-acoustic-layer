@@ -1,4 +1,4 @@
-"""Agrega os resultados dos modos hf e lf e aplica a regra global de maturidade (BENCH_CRITERIA v0.3.1, Seção 8).
+"""Agrega os resultados dos modos hf e lf e aplica a regra global de maturidade (Seção 8 dos critérios, v0.3.1 e v0.4).
 
 Uso: python lab/bench/aggregate.py <dir_hf> <dir_lf> [saida.json]
 Cada diretório contém os JSON de um job (B1.json, B2.json, ...). A regra de TRL só é aplicada aqui,
@@ -36,6 +36,11 @@ def main() -> None:
     all_pass = complete and all(table[t][m] for t in REQUIRED for m in dirs)
     keys = ("commit", "receiver", "criteria_version", "matrix_version")
     mismatch = [k for k in keys if len({envs[m].get(k) for m in dirs}) != 1 or None in {envs[m].get(k) for m in dirs}]
+    # campos gravados a partir da v0.4: se aparecem em algum modo, precisam existir e coincidir em todos
+    for k in ("matrix_sha256", "matrix_file", "b3c_min_snr_db"):
+        vals = {envs[m].get(k) for m in dirs}
+        if vals != {None} and (len(vals) != 1 or None in vals):
+            mismatch.append(k)
     if wrong_mode:
         rule = "INCONSISTENT_RUNS: diretório não contém o modo indicado (" + ", ".join(wrong_mode) + "); nenhuma conclusão de TRL"
     elif mismatch:

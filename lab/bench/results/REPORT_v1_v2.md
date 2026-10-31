@@ -1,6 +1,6 @@
 # Relatório comparativo dos receptores v1 e v2 sob os critérios v0.3.1
 
-**Data:** 31/10/2026 · **Critérios:** `lab/BENCH_CRITERIA.md` v0.3.1 (congelados) · **Matriz:** v0.3.0 · 1.000 ensaios por condição
+**Data:** 31/10/2026 (revisado após parecer da Luna) · **Critérios:** `lab/BENCH_CRITERIA.md` v0.3.1 (congelados) · **Matriz:** v0.3.0 · 1.000 ensaios por condição
 
 | Execução | Receptor | Commit | Diretório |
 |---|---|---|---|
@@ -22,7 +22,7 @@ A execução 41121711705 (v2, `972beb6`, em `v2-run41121711705/`) é anterior à
 
 **Regra agregada da v0.3.1:** TRL 3 (nível de maturidade tecnológica 3) para os dois receptores.
 - **v2:** `aggregate.py` aplicado sobre os dois modos devolve "TRL 3: B3/hf, B3/lf".
-- **v1:** o agregador devolve `INCONSISTENT_RUNS` só porque a execução da v1 é anterior à gravação do campo `receiver` nos metadados. O commit e a versão de critérios e matriz coincidem entre os modos. O veredito por modo, registrado em cada `summary.json`, é TRL 3.
+- **v1:** avaliação de TRL 3 sob os critérios v0.3.1, a partir dos vereditos por modo registrados em cada `summary.json` (B3, B4 e B7 reprovados nos dois modos). O agregador conjunto não emite conclusão: devolve `INCONSISTENT_RUNS` porque a execução da v1 é anterior à gravação do campo `receiver` nos metadados. O commit e as versões de critérios e de matriz coincidem entre os modos.
 
 ## 2. B3: onde está a falha
 
@@ -36,7 +36,7 @@ Os critérios (a) e (b) passam em todas as condições, nos dois receptores e no
 | v2 lf | 0,951 | 49 | 27.956 | 5.271 (2 erros) | 1,02 | 1,008 |
 
 **Leitura:**
-- Sem erros de canal, os dois receptores operam no limite teórico: o RMS/ACRB fica entre 1,00 e 1,03.
+- Nas condições com recuperação integral, o RMS/ACRB fica entre 1,00 e 1,03. A exceção é v2/lf a 18 dB: dois erros grosseiros elevam o RMS/ACRB agregado para 5.271. A partir de 20 dB, os quatro conjuntos apresentam recuperação integral. Os artefatos desta execução registram o RMS agregado e a taxa de recuperação, mas não os erros individuais de frequência; por isso, o RMS condicionado ao acerto não pôde ser calculado aqui. A partir da v0.4, o runner o registra como diagnóstico.
 - Um único canal trocado em 1.000 ensaios leva o RMS a milhares de vezes a ACRB. O critério (c) mede, de fato, a taxa de troca de canal, e não a eficiência da estimativa.
 - A v1 erra perto da referência idealizada de detecção M-ária, que prevê cerca de 2 erros em 1.000 a 16 dB. A v2 erra de 12 a 20 vezes mais na mesma faixa. A busca de picos na grade fina, sem a seleção nas 159 candidatas, perde desempenho em SNR (razão sinal-ruído) baixa.
 - A taxa no hold-out da v2 (ensaios a partir do índice 20) acompanha a taxa integral, por exemplo 0,943 contra 0,941 em `k1`/hf a 16 dB. Não há sinal de sobreajuste aos ensaios de desenvolvimento.
