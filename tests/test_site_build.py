@@ -85,3 +85,21 @@ def test_file_outside_set_directory_rejected():
     m["results"]["e1"]["files"]["v2-run41131667005/hf/B3.json"] = MANIFEST["results"]["v2-run41131667005"]["files"]["v2-run41131667005/hf/B3.json"]
     with pytest.raises(bd.BuildError, match="fora do diretório"):
         bd.verify_manifest(m)
+
+
+def test_reports_hashes_are_verified(tmp_path):
+    bd.verify_reports(MANIFEST)
+    res = tmp_path / "results"
+    shutil.copytree(ROOT / "lab" / "bench" / "results", res)
+    rep = res / "REPORT_v1_v2.md"
+    rep.write_text(rep.read_text(encoding="utf-8") + "\nalteração", encoding="utf-8")
+    with pytest.raises(bd.BuildError, match="relatório"):
+        bd.verify_reports(MANIFEST, res)
+
+
+@pytest.mark.parametrize("name,digest", [("../README.md", "0" * 64), ("REPORT_v1_v2.md", "xyz"), ("AUSENTE.md", "0" * 64)])
+def test_bad_report_entries_rejected(name, digest):
+    m = copy.deepcopy(MANIFEST)
+    m["reports"][name] = digest
+    with pytest.raises(bd.BuildError):
+        bd.verify_reports(m)

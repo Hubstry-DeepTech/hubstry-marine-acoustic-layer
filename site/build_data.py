@@ -93,6 +93,22 @@ def verify_manifest(manifest: dict, results: Path = RESULTS) -> None:
                 raise BuildError(f"{rel}: SHA-256 diverge do manifesto")
 
 
+def verify_reports(manifest: dict, results: Path = RESULTS) -> None:
+    reports = manifest.get("reports")
+    if not reports:
+        raise BuildError("manifesto sem a seção reports")
+    for name, digest in reports.items():
+        if not re.fullmatch(r"[A-Za-z0-9._-]+\.md", name):
+            raise BuildError(f"{name!r}: nome de relatório inválido")
+        if not isinstance(digest, str) or not HEX64.match(digest):
+            raise BuildError(f"{name}: SHA-256 malformado no manifesto")
+        p = safe_path(results, name)
+        if not p.exists():
+            raise BuildError(f"{name}: relatório listado no manifesto, mas ausente")
+        if sha256(p) != digest:
+            raise BuildError(f"{name}: SHA-256 do relatório diverge do manifesto")
+
+
 def run_aggregator(hf: Path, lf: Path) -> dict:
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / "aggregate.json"
@@ -211,6 +227,7 @@ def build(allow_dirty: bool = False) -> dict:
         raise BuildError("há alterações não commitadas nas evidências; o publication_commit não as representaria")
     manifest = json.loads((RESULTS / "MANIFEST.json").read_text(encoding="utf-8"))
     verify_manifest(manifest)
+    verify_reports(manifest)
     bench = [bench_set(n, s, pub) for n, s in manifest["results"].items() if n != "e1"]
     data = {
         "publication_commit": pub,
