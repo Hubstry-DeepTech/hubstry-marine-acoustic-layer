@@ -1,6 +1,6 @@
 # HMAL Lab: plano da interface pública (front-end)
 
-**Versão:** 0.2 · **Data:** 31/10/2026 · **Estado:** aprovado pela Luna com complementos (incorporados nesta versão); implementação condicionada à integração das evidências no `main` (PR #9)
+**Versão:** 0.2 · **Data:** 31/10/2026 · **Estado:** aprovado pela Luna com complementos; Fase 0 implementada no ramo `docs/frontend-plan` (PR #8), aguardando revisão; evidências da v0.3.1 integradas ao `main` pelo PR #9
 
 ## 1. Objetivo
 
