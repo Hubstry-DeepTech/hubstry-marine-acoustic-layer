@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 DEV_MATRIX = "/tmp/matrix_dev.json"
 DEV_MAX_OFFSET = 1_000_000_000  # faixa reservada às matrizes confirmatórias começa aqui
 
@@ -25,7 +26,8 @@ class RunError(ValueError):
     pass
 
 
-def resolve(event: str, inputs: dict, freeze_path: Path = HERE / "FREEZE_v0.4.json") -> dict:
+def resolve(event: str, inputs: dict, root: Path = HERE.parents[1], check_runtime: bool = True) -> dict:
+    freeze_path = root / "lab" / "bench" / "FREEZE_v0.4.json"
     if event == "push":
         if not freeze_path.exists():
             raise RunError("execução confirmatória sem FREEZE_v0.4.json")
@@ -34,6 +36,10 @@ def resolve(event: str, inputs: dict, freeze_path: Path = HERE / "FREEZE_v0.4.js
         if missing:
             raise RunError(f"FREEZE_v0.4.json incompleto: {missing}")
         r, c = fz["receiver"], fz["criteria_version"]
+        from freeze import verify_freeze  # noqa: E402  (mesmo diretório)
+        problems = verify_freeze(root, check_runtime=check_runtime)
+        if problems:
+            raise RunError("congelamento não confere: " + "; ".join(problems))
         if c != "0.4.0":
             raise RunError(f"o congelamento da v0.4 exige criteria_version 0.4.0, não {c!r}")
         if r not in {"v1", "v2", "v3"}:

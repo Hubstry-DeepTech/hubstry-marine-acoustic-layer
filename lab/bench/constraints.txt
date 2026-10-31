@@ -1,0 +1,4 @@
+# Versões exatas validadas na validação de desenvolvimento da v3 (rodadas 41188079573 e 41213316163).
+# Usadas na rodada confirmatória com pip install -c; protegidas pelo congelamento (freeze.py).
+numpy==2.4.6
+scipy==1.17.1

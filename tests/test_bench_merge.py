@@ -81,3 +81,25 @@ def test_artifact_verdict_must_match_part_summary(tmp_path):
     (parts[0] / "summary.json").write_text(json.dumps(s))
     with pytest.raises(mp.MergeError, match="veredito"):
         mp.merge(parts, tmp_path / "out")
+
+
+def test_dev_runs_split_and_unsplit_are_equivalent():
+    spec2 = importlib.util.spec_from_file_location("compare_runs", ROOT / "lab" / "bench" / "compare_runs.py")
+    cr = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(cr)
+    res = ROOT / "lab" / "bench" / "results"
+    assert cr.compare(res / "dev-v3-run41188079573", res / "dev-v3-split-run41213316163") == []
+
+
+def test_compare_detects_numeric_change(tmp_path):
+    import shutil
+    spec2 = importlib.util.spec_from_file_location("compare_runs", ROOT / "lab" / "bench" / "compare_runs.py")
+    cr = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(cr)
+    src = ROOT / "lab" / "bench" / "results" / "dev-v3-split-run41213316163"
+    shutil.copytree(src, tmp_path / "b")
+    p = tmp_path / "b" / "lf" / "B3.json"
+    d = json.loads(p.read_text())
+    d["modes"]["lf"]["k1"]["per_trial_freq_error_hz"][0][0] += 1e-12
+    p.write_text(json.dumps(d))
+    assert cr.compare(src, tmp_path / "b") == ["lf/B3: resultados diferentes"]

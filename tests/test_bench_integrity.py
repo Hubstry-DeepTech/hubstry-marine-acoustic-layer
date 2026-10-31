@@ -11,6 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 BENCH = ROOT / "lab" / "bench"
 sys.path.insert(0, str(BENCH))
+sys.path.insert(0, str(ROOT / "tests"))
 
 
 def _load(name):
@@ -21,17 +22,14 @@ def _load(name):
 
 
 agg = _load("aggregate")
+import freeze_repo  # noqa: E402
 resolve_run = _load("resolve_run")
 TESTS = ["B1", "B2", "B3", "B4", "B5", "B7"]
 SHA = "a" * 64
 
 
 def _env(**kw):
-    env = {"criteria_version": "0.4.0", "matrix_version": "0.4.0", "matrix_file": "matrix_v04.json", "matrix_sha256": SHA,
-           "b3c_min_snr_db": 20, "matrix_seed": 123, "noise_seed_offset": 1_500_000_000, "commit": "c" * 40,
-           "receiver": "v3", "definitive": True}
-    env.update(kw)
-    return env
+    return freeze_repo.run_env(**kw)
 
 
 def _write_run(root: Path, env_by_mode: dict, passed=True, tweak=None):
@@ -51,10 +49,11 @@ def _write_run(root: Path, env_by_mode: dict, passed=True, tweak=None):
     return dirs
 
 
-def _freeze(root: Path, sha=SHA, receiver="v3"):
-    p = root / "lab" / "bench" / "FREEZE_v0.4.json"
-    p.parent.mkdir(parents=True)
-    p.write_text(json.dumps({"matrix_sha256": sha, "receiver": receiver, "criteria_version": "0.4.0"}))
+def _freeze(root: Path, sha=None, receiver="v3"):
+    over = {}
+    if sha:
+        over["matrix_sha256"] = sha
+    freeze_repo.make_repo(root, receiver=receiver, **over)
     return root
 
 
@@ -121,11 +120,9 @@ def test_manual_dispatch_requires_seed_and_is_never_definitive():
 
 def test_confirmatory_only_from_push_with_freeze(tmp_path):
     with pytest.raises(resolve_run.RunError):
-        resolve_run.resolve("push", {}, freeze_path=tmp_path / "missing.json")
-    fz = tmp_path / "FREEZE_v0.4.json"
-    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.4.0", "matrix_file": "matrix_v04.json",
-                              "matrix_sha256": SHA, "matrix_seed": 1, "noise_seed_offset": 1_500_000_000}))
-    res = resolve_run.resolve("push", {}, freeze_path=fz)
+        resolve_run.resolve("push", {}, root=tmp_path / "empty", check_runtime=False)
+    freeze_repo.make_repo(tmp_path / "repo")
+    res = resolve_run.resolve("push", {}, root=tmp_path / "repo", check_runtime=False)
     assert res["kind"] == "confirmatory" and "--smoke" not in res["args"]
     with pytest.raises(resolve_run.RunError):
         resolve_run.resolve("schedule", {})
@@ -155,14 +152,18 @@ def test_outcome_separates_misidentification_from_rejection():
 
 
 def test_freeze_with_other_criteria_version_is_rejected(tmp_path):
-    fz = tmp_path / "FREEZE_v0.4.json"
-    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.3.1", "matrix_file": "matrix_v04.json",
-                              "matrix_sha256": SHA, "matrix_seed": 1, "noise_seed_offset": 1_500_000_000}))
+    freeze_repo.make_repo(tmp_path / "repo", criteria_version="0.3.1")
     with pytest.raises(resolve_run.RunError, match="0.4.0"):
-        resolve_run.resolve("push", {}, freeze_path=fz)
-    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.4.0"}))
-    with pytest.raises(resolve_run.RunError, match="incompleto"):
-        resolve_run.resolve("push", {}, freeze_path=fz)
+        resolve_run.resolve("push", {}, root=tmp_path / "repo", check_runtime=False)
+    freeze_repo.make_repo(tmp_path / "repo2", protected_sha256={})
+    with pytest.raises(resolve_run.RunError, match="protegidos"):
+        resolve_run.resolve("push", {}, root=tmp_path / "repo2", check_runtime=False)
+
+
+def test_confirmatory_refuses_other_runtime(tmp_path):
+    freeze_repo.make_repo(tmp_path / "repo", environment={"python": "0.0.0", "numpy": "0", "scipy": "0", "libc": "x"})
+    with pytest.raises(resolve_run.RunError, match="ambiente"):
+        resolve_run.resolve("push", {}, root=tmp_path / "repo", check_runtime=True)
 
 
 def test_aggregator_checks_freeze_criteria_version(tmp_path):

@@ -16,6 +16,8 @@ No bloco de configuração, a única diferença é o commit. A data saiu do bloc
 
 **Agregador:** NÃO DEFINITIVO nas duas rodadas, como deve ser numa rodada de desenvolvimento.
 
+**Verificação automatizada:** `python lab/bench/compare_runs.py lab/bench/results/dev-v3-run41188079573 lab/bench/results/dev-v3-split-run41213316163` → "idênticos após normalização (12 de 12)". O teste `test_dev_runs_split_and_unsplit_are_equivalent` repete essa comparação na CI. Os arquivos JSON não são idênticos byte a byte, por causa dos metadados citados; os resultados científicos são.
+
 **Conclusão:** a divisão em partes não altera nenhum resultado. Ela muda só o tempo de execução e acrescenta a verificação da junção.
 
 Depois desta rodada, o `bench.yml` passou a fixar as actions por SHA, a mesma prática do `pages.yml`. Essa mudança não afeta o código da bancada.

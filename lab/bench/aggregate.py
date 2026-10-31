@@ -93,16 +93,13 @@ def aggregate(dirs: dict[str, Path], root: Path = ROOT) -> dict:
                 if not dev_run:
                     problems.append(f"{spec['freeze']} ausente: sem congelamento registrado")
             elif not dev_run:
-                # a comparação com o congelamento só vale para execuções definitivas; uma execução de
-                # desenvolvimento feita depois do congelamento usa outra matriz e é só NÃO DEFINITIVO
-                fz = json.loads(fp.read_text(encoding="utf-8"))
+                # execução definitiva: o congelamento inteiro precisa conferir (código, matriz, semente,
+                # deslocamento, receptor, critérios e versões numéricas), para cada modo
+                sys.path.insert(0, str(Path(__file__).resolve().parent))
+                from freeze import verify_freeze  # noqa: E402
                 for m in dirs:
-                    if envs[m].get("matrix_sha256") != fz.get("matrix_sha256"):
-                        problems.append(f"{m}: SHA-256 da matriz difere do congelamento")
-                    if envs[m].get("receiver") != fz.get("receiver"):
-                        problems.append(f"{m}: receptor difere do congelado")
-                    if envs[m].get("criteria_version") != fz.get("criteria_version"):
-                        problems.append(f"{m}: versão de critérios difere do congelamento")
+                    for msg in verify_freeze(root, env=envs[m]):
+                        problems.append(f"{m}: {msg}")
 
     definitive = all(envs[m].get("definitive") is True for m in dirs) and all(
         (r or {}).get("env", {}).get("definitive") is True for m in dirs for r in results[m].values() if r is not None)
