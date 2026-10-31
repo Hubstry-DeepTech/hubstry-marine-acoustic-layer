@@ -1,12 +1,15 @@
 {
- "manifest_version": 1,
+ "manifest_version": 2,
+ "publication_commit": "obtido do checkout do main no build; não gravado aqui para evitar circularidade",
  "results": {
   "v1-run41120505952": {
-   "execution": "github_actions",
-   "run_id": 41120505952,
+   "execution_type": "github_actions",
+   "execution_run_id": 41120505952,
    "receiver": "v1",
-   "note": "execução anterior à gravação do campo receiver; o agregador conjunto devolve INCONSISTENT_RUNS",
    "experiment_commit": "4ba2c059dc092a998abaea7be71bc38797fb1f99",
+   "experiment_commit_basis": "gravado pelo runner no bloco env de cada artefato",
+   "note": "execução anterior à gravação do campo receiver; o agregador conjunto devolve INCONSISTENT_RUNS; a avaliação de TRL 3 sob v0.3.1 decorre dos vereditos por modo (REPORT_v1_v2.md), não do agregador",
+   "files_recording_commit": 14,
    "files": {
     "v1-run41120505952/aggregate.json": "cacc4f8ff8194dcd575d2c8a50c12bebfa6d1d916e1eff618c55733834466997",
     "v1-run41120505952/hf/B1.json": "f99a5915f6b417b919ab5141f776c577fdbc100d28ffb014303f44d645a37587",
@@ -26,10 +29,12 @@
    }
   },
   "v2-run41121711705": {
-   "execution": "github_actions",
-   "run_id": 41121711705,
+   "execution_type": "github_actions",
+   "execution_run_id": 41121711705,
    "receiver": "v2",
    "experiment_commit": "972beb694d76ffee188ccf9f7cc3b1c2cf6891f0",
+   "experiment_commit_basis": "gravado pelo runner no bloco env de cada artefato",
+   "files_recording_commit": 14,
    "files": {
     "v2-run41121711705/aggregate.json": "ad0493912590b1592bcdd04645166b3e71b010c7e444c8bf8905174a910d96f0",
     "v2-run41121711705/hf/B1.json": "287f84fb7baf3aff6d8c908b8141e7554cdc79efcc5a015cbc4b2f9eb9c3a263",
@@ -49,11 +54,13 @@
    }
   },
   "v2-run41131667005": {
-   "execution": "github_actions",
-   "run_id": 41131667005,
+   "execution_type": "github_actions",
+   "execution_run_id": 41131667005,
    "receiver": "v2",
-   "note": "inclui dados por ensaio, hold-out e diagnóstico de falhas",
    "experiment_commit": "a691855383779763714f072bf8d3bbe062e48064",
+   "experiment_commit_basis": "gravado pelo runner no bloco env de cada artefato",
+   "note": "inclui dados por ensaio, hold-out e diagnóstico de falhas",
+   "files_recording_commit": 14,
    "files": {
     "v2-run41131667005/aggregate.json": "2eb2fc29958067899758bcda1995144e2e3e283f27cd151133aad4e9fe6e17db",
     "v2-run41131667005/aggregate_recomputed.json": "b349f59b58cfde7fe6f99c3c344182ac0c187b0625870215f5e097d857d65020",
@@ -74,11 +81,13 @@
    }
   },
   "e1": {
-   "execution": "manual_vm",
-   "run_id": null,
+   "execution_type": "manual_vm",
+   "execution_run_id": null,
    "receiver": null,
-   "note": "execução manual numa VM da GCP (Google Cloud Platform); ver env e hashes dos WAV em E1.json",
    "experiment_commit": "e02008f1877a0caf92638fa1816bafbaada3f946",
+   "experiment_commit_basis": "commit do script versionado lab/bench/e1_mbari.py associado ao experimento, registrado pelo próprio script em E1.json; a execução foi manual numa VM da GCP (Google Cloud Platform) e não há workflow associado",
+   "note": "ambiente, data e SHA-256 dos arquivos WAV de entrada estão em E1.json",
+   "files_recording_commit": 1,
    "files": {
     "e1/E1.json": "62cdaa6f27d3e028ad09124969ae159f59fad3cc25e59ba0cfbde81befbf98ea",
     "e1/series_2016-11-01.json": "960d44ed990a139761485661b242cfbbafe8fb1326da4c2ce6247567caadafe7",
