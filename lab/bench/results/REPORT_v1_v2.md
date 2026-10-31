@@ -59,4 +59,4 @@ O B7a é idêntico nos dois receptores porque o teste de detecção não usa o d
    - a v1 seleciona o canal certo em SNR baixa, porém falha em B4 e em B7b;
    - a v2 resolve B4 e B7b, porém troca mais canais a 16 dB.
 2. Essa combinação motiva o receptor v3, escolhido para a v0.4. A v3 faz a seleção da v1, rejeita picos mais de 10 dB abaixo do maior e usa o estimador de mínimos quadrados da v2 no modo com piloto.
-3. Os dados confirmam o diagnóstico do rascunho v0.4: a 20 dB ou mais, os dois receptores passam no critério (c) nesta matriz. A aprovação, porém, só vale numa execução com matriz e sementes novas, com o receptor v3 congelado antes.
+3. Os dados confirmam o diagnóstico do rascunho v0.4 (ramo `lab/bench-run`, ainda não congelado): a 20 dB ou mais, os dois receptores passam no critério (c) nesta matriz. A aprovação, porém, só vale numa execução com matriz e sementes novas, com o receptor v3 congelado antes.

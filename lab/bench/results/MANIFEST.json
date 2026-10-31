@@ -1,0 +1,96 @@
+{
+ "manifest_version": 1,
+ "results": {
+  "v1-run41120505952": {
+   "execution": "github_actions",
+   "run_id": 41120505952,
+   "receiver": "v1",
+   "note": "execução anterior à gravação do campo receiver; o agregador conjunto devolve INCONSISTENT_RUNS",
+   "experiment_commit": "4ba2c059dc092a998abaea7be71bc38797fb1f99",
+   "files": {
+    "v1-run41120505952/aggregate.json": "cacc4f8ff8194dcd575d2c8a50c12bebfa6d1d916e1eff618c55733834466997",
+    "v1-run41120505952/hf/B1.json": "f99a5915f6b417b919ab5141f776c577fdbc100d28ffb014303f44d645a37587",
+    "v1-run41120505952/hf/B2.json": "21df669b59d5e20d7c36ba609b52f1571dbe12894bc33c7cd450d0f8bdfc9fee",
+    "v1-run41120505952/hf/B3.json": "bf9fc9e7fd31476198374142f38f75dccf2582c7c9967628fbce7702137351c7",
+    "v1-run41120505952/hf/B4.json": "6df7bd4179177f7ea787cedbdd0450e922394100ec7a4d3ac89ae0529703a08a",
+    "v1-run41120505952/hf/B5.json": "af4fd3bcd29be320a59fd1525cbd67ad205eb1e9a8f1de49c2d8a55890488bff",
+    "v1-run41120505952/hf/B7.json": "7726af27d0e2bebd9b346a576e57e430149697223a18558c31f645e805d8ba3b",
+    "v1-run41120505952/hf/summary.json": "247371f235c4119ffa5b1a80158559a9a5765b2263c729002a6eef01625f3384",
+    "v1-run41120505952/lf/B1.json": "bbf4fced890c44c4270ef0109342b0392ac8d9b1c63c23211bcda875ec48cf67",
+    "v1-run41120505952/lf/B2.json": "dc84c523cf37fbe38c57b1932b683ab61be32dfa775952413868eb82384b2eed",
+    "v1-run41120505952/lf/B3.json": "d94fb03a5e737014bc60f729835517f7f96d149685b5ebbbb8c1db806d2c574c",
+    "v1-run41120505952/lf/B4.json": "81117c272a46c32df1ab315861686b586fd7d2474244584f6989b8a3a94bcabe",
+    "v1-run41120505952/lf/B5.json": "5531a6ae30b673fcd2369379163f70f62eb0700936fd59964dceb7851a575ee7",
+    "v1-run41120505952/lf/B7.json": "43ded6d7c8b146999b530c55a75c9b4b38da56304050d8885fcd713ff8e66826",
+    "v1-run41120505952/lf/summary.json": "e60358271520b341e7cbf22e7d3c5835f91423a2e26c9f1c5eed7cb39aad4baf"
+   }
+  },
+  "v2-run41121711705": {
+   "execution": "github_actions",
+   "run_id": 41121711705,
+   "receiver": "v2",
+   "experiment_commit": "972beb694d76ffee188ccf9f7cc3b1c2cf6891f0",
+   "files": {
+    "v2-run41121711705/aggregate.json": "ad0493912590b1592bcdd04645166b3e71b010c7e444c8bf8905174a910d96f0",
+    "v2-run41121711705/hf/B1.json": "287f84fb7baf3aff6d8c908b8141e7554cdc79efcc5a015cbc4b2f9eb9c3a263",
+    "v2-run41121711705/hf/B2.json": "6f49e9d0ad2bd73b29699249f89dcf1f7670a8f5733af41f547286b0779d1dd5",
+    "v2-run41121711705/hf/B3.json": "53883143c819833779586b8b1aac0c90efa69a285009cfe609296fdcfd8ecff6",
+    "v2-run41121711705/hf/B4.json": "02755042e6c205ce102015d10b1fe06c8b7636e4b07ed460b787343453da92ab",
+    "v2-run41121711705/hf/B5.json": "463d8b7c342fd5b5a555b3997bb9a81023ebca7f6b40f55354bb93486fb27f6c",
+    "v2-run41121711705/hf/B7.json": "77236d8eff7ff3941e3e90b36a29b8b26544bc133f0d145c66d51ec52a5790b6",
+    "v2-run41121711705/hf/summary.json": "5aa4f1c43dfb90c0883c7621db426b785a3f89d5291521544761b6c3855443cf",
+    "v2-run41121711705/lf/B1.json": "8875c9f3f45f6d2bffaaaf8fe0c500ab5c59653d249d384d4a2cb71d4aa12537",
+    "v2-run41121711705/lf/B2.json": "8e6707ba3d001d6cdda8c519cd05c626ecac096cc3a54a7e5e35cadc241dac65",
+    "v2-run41121711705/lf/B3.json": "3d1c1b47416f7898e8b919eccca3b5855f3a3857370103c3a0338877777db70f",
+    "v2-run41121711705/lf/B4.json": "6dfe384dc1f8b9997fc0eb8c499f3047947b328dd2fc940a3e076e5ff02c5776",
+    "v2-run41121711705/lf/B5.json": "93c526d9933e2444586d9e0695ce50220953eee55e9eaaf43c0b03a4fe351719",
+    "v2-run41121711705/lf/B7.json": "90ab512733e741cbbed41aeff772cad1879bb7a2eb1f2d867d937b4795e8b2fc",
+    "v2-run41121711705/lf/summary.json": "25b09ee55e789d22c018a78d7d2c193b9a503fea73f59d0a851b74f85a4c84e2"
+   }
+  },
+  "v2-run41131667005": {
+   "execution": "github_actions",
+   "run_id": 41131667005,
+   "receiver": "v2",
+   "note": "inclui dados por ensaio, hold-out e diagnóstico de falhas",
+   "experiment_commit": "a691855383779763714f072bf8d3bbe062e48064",
+   "files": {
+    "v2-run41131667005/aggregate.json": "2eb2fc29958067899758bcda1995144e2e3e283f27cd151133aad4e9fe6e17db",
+    "v2-run41131667005/aggregate_recomputed.json": "b349f59b58cfde7fe6f99c3c344182ac0c187b0625870215f5e097d857d65020",
+    "v2-run41131667005/hf/B1.json": "ef9646c373fbbd08d9e0e43c1e0e148b394e0fee06b4f5611e7a6d44fb7b4b4c",
+    "v2-run41131667005/hf/B2.json": "8da16c9b236eb6a3a5b7dd4221ad581d95c7061a9aaa3375539b2dfef3f241fc",
+    "v2-run41131667005/hf/B3.json": "4f46305c57a7deedc8659319a28de9e7e2ce1141d246ee514ed67d85f4897123",
+    "v2-run41131667005/hf/B4.json": "ed96419378f087065c1a44c273a8be09f9636e358f13347b7e0b6b6d9b6a68c2",
+    "v2-run41131667005/hf/B5.json": "5154ee9f79c4affdad1cdf30840d736c7cfac1df5b8395b05a99bdd8ec0abaf7",
+    "v2-run41131667005/hf/B7.json": "b0a68bc96347112a13c5640e55aba4ebb577a8d204a13cef2ad7e5b43b9cc9b4",
+    "v2-run41131667005/hf/summary.json": "ccb2e9a445511d16ea95abea444b5ef1000cacd98defd39230f2e9a6879ecb65",
+    "v2-run41131667005/lf/B1.json": "2731e5002d0f44207e8691bc5fa1ffefe9d87bb519aed8a7c8eeba42839aafa1",
+    "v2-run41131667005/lf/B2.json": "b95c5dcc930d2b1679549e2eb5b696dea9b1010b26f664139336f3d1111dcecd",
+    "v2-run41131667005/lf/B3.json": "8a5feb0c9a09f233a77131af7e76c71c78562520c36e2d51b70b2bbcec112f2e",
+    "v2-run41131667005/lf/B4.json": "31c27ef2778d4388c48cdc73f8cb781e36ee76fb2d319a3af6f00c670acadc33",
+    "v2-run41131667005/lf/B5.json": "d07979f68d5ca6be5da215bb5a71d4ff25fa92c71bef8a6a8a875b2c54263d75",
+    "v2-run41131667005/lf/B7.json": "1865037836ef9454975f1e36e41b77663ec49cc5a8085d862d4cdf6f107fa9b7",
+    "v2-run41131667005/lf/summary.json": "70354ea657f9145833707dc84c9ac42c461210e434983f3f4b3b5a7f4cc779e0"
+   }
+  },
+  "e1": {
+   "execution": "manual_vm",
+   "run_id": null,
+   "receiver": null,
+   "note": "execução manual numa VM da GCP (Google Cloud Platform); ver env e hashes dos WAV em E1.json",
+   "experiment_commit": "e02008f1877a0caf92638fa1816bafbaada3f946",
+   "files": {
+    "e1/E1.json": "62cdaa6f27d3e028ad09124969ae159f59fad3cc25e59ba0cfbde81befbf98ea",
+    "e1/series_2016-11-01.json": "960d44ed990a139761485661b242cfbbafe8fb1326da4c2ce6247567caadafe7",
+    "e1/series_2016-11-11.json": "283fbbca7a918dfbbac3a44f1d0a6132f8c6e5bf8b9524746e36eac3492eb16d",
+    "e1/series_2016-11-22.json": "5bb506e8b7907475c8dd284ac8da9b8e7fc9428973d87228ebc78932e26512cf",
+    "e1/spectrogram_2016-11-01.png": "8c0a765e3c40ea78cdc1bf0bd76081f22617fa1a48780c567961b9d05409a4f6",
+    "e1/spectrogram_2016-11-11.png": "34e5cbd4568340b785aeca9599435058092afc942c7095f930b884403fe7de22",
+    "e1/spectrogram_2016-11-22.png": "69b22948a5403d7bb125899d9a1bd7337b833465311e892a4c6743c1b847c50b"
+   }
+  }
+ },
+ "reports": {
+  "REPORT_v1_v2.md": "c3b42d2970a6cae1a20c3089c9e575dbe1e085ce5ece7b1f494876e8532a6bd5"
+ }
+}
