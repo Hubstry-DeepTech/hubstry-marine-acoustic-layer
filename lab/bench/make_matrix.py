@@ -1,6 +1,8 @@
 """Gera lab/bench/matrix.json: matriz determinística e completa de ensaios da bancada digital HMAL.
 
-Uso: python lab/bench/make_matrix.py
+Uso:
+  python lab/bench/make_matrix.py                    # matriz v0.3.0 (critérios v0.3.1), lab/bench/matrix.json
+  python lab/bench/make_matrix.py --version 0.4.0 --seed S --noise-offset O --out lab/bench/matrix_v04.json
 A saída é versionada. O teste tests/test_bench_matrix.py verifica que o arquivo
 versionado é idêntico ao que build_matrix() reconstrói.
 Qualquer alteração na matriz exige nova versão de lab/BENCH_CRITERIA.md.
@@ -24,6 +26,10 @@ MODES = {
 }
 
 MATRIX_PATH = Path(__file__).with_name("matrix.json")
+# Sementes e faixas de ruído já usadas em desenvolvimento ou em matrizes anteriores. Uma matriz confirmatória
+# não pode reutilizá-las (lab/BENCH_CRITERIA_v0.4.md, Seção 3).
+USED_MATRIX_SEEDS = {SEED, 20261031, 777001}
+CONFIRMATORY_MIN_NOISE_OFFSET = 1_000_000_000
 
 
 def h_n(n: int) -> list[Fraction]:
@@ -49,7 +55,9 @@ def trial(rng: random.Random, channels: list[Fraction], noise_seed: int) -> dict
     }
 
 
-def build_matrix() -> dict:
+def build_matrix(version: str = VERSION, seed: int = SEED, noise_offset: int = 0) -> dict:
+    """Com os valores padrão, reproduz byte a byte a matriz v0.3.0. Para outras versões, `seed` define os
+    sorteios de canais e polaridades e `noise_offset` desloca todas as sementes de ruído (B3, B4 e B7)."""
     hn = h_n(N)
     pilot = Fraction(1, 1)
     data = [r for r in hn if r != pilot]
@@ -59,11 +67,11 @@ def build_matrix() -> dict:
 
     modes: dict = {}
     for m_idx, (name, m) in enumerate(MODES.items()):
-        rng = random.Random(SEED + 1000 * m_idx)
+        rng = random.Random(seed + 1000 * m_idx)
         f_max = float(max(hn)) * m["f0_hz"]
         assert f_max < m["fs_hz"] / 2, f"{name}: f_max {f_max} Hz >= Nyquist"
         sep10 = 10.0 / m["duration_s"] / m["f0_hz"]
-        noise_base = 10_000_000 * (m_idx + 1)
+        noise_base = noise_offset + 10_000_000 * (m_idx + 1)
 
         b2 = {
             "single": [trial(rng, [r], 0) for r in data],
@@ -97,9 +105,9 @@ def build_matrix() -> dict:
         }
 
     midpoints = [float((a + b) / 2) for a, b, _ in gaps]
-    return {
-        "version": VERSION,
-        "seed": SEED,
+    out = {
+        "version": version,
+        "seed": seed,
         "N": N,
         "cardinality": len(hn),
         "min_gap_ratio": str(min_gap),
@@ -120,18 +128,41 @@ def build_matrix() -> dict:
         "b7": {
             "design_fpr": 0.005,
             "candidates_M": len(hn),
-            "calibration_noise_seeds": [0, 9_999],
-            "evaluation_noise_seeds": [1_000_000, 1_009_999],
+            "calibration_noise_seeds": [noise_offset + 0, noise_offset + 9_999],
+            "evaluation_noise_seeds": [noise_offset + 1_000_000, noise_offset + 1_009_999],
             "modes": ["hf", "lf"],
             "midpoints_ratio": midpoints,
         },
     }
+    if version != VERSION:  # campos novos só fora da v0.3.0, para não alterar a matriz congelada
+        out["noise_seed_offset"] = noise_offset
+        out["holdout_first_index"] = {"b3": 0, "b4": 0}
+        out["rules"]["holdout"] = "nenhum ensaio desta matriz foi usado no desenvolvimento de receptores; todos são hold-out"
+    return out
 
 
 def main() -> None:
-    matrix = build_matrix()
-    MATRIX_PATH.write_text(json.dumps(matrix, separators=(",", ":")) + "\n", encoding="utf-8")
-    print(f"{MATRIX_PATH}: |H_{N}|={matrix['cardinality']}, min_gap={matrix['min_gap_ratio']}")
+    import argparse
+    import hashlib
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--version", default=VERSION)
+    ap.add_argument("--seed", type=int, default=SEED)
+    ap.add_argument("--noise-offset", type=int, default=0)
+    ap.add_argument("--out", type=Path, default=MATRIX_PATH)
+    a = ap.parse_args()
+    if a.version != VERSION and (a.seed == SEED or a.noise_offset == 0):
+        ap.error("uma versão nova exige semente e deslocamento de ruído novos")
+    if not a.version.startswith("dev"):
+        if a.seed in USED_MATRIX_SEEDS:
+            ap.error(f"semente {a.seed} já usada; uma matriz confirmatória exige semente nova")
+        if a.noise_offset < CONFIRMATORY_MIN_NOISE_OFFSET:
+            ap.error(f"uma matriz confirmatória exige --noise-offset >= {CONFIRMATORY_MIN_NOISE_OFFSET}")
+    matrix = build_matrix(a.version, a.seed, a.noise_offset)
+    text = json.dumps(matrix, separators=(",", ":")) + "\n"
+    a.out.write_text(text, encoding="utf-8")
+    sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    print(f"{a.out}: versão {a.version}, semente {a.seed}, deslocamento {a.noise_offset}, |H_{N}|={matrix['cardinality']}, sha256 {sha}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,38 @@
+{
+ "test": "B2",
+ "modes": {
+  "lf": {
+   "single": {
+    "n": 158,
+    "max_error_hz": 0.00018565573763251741,
+    "limit_hz": 0.0005,
+    "passed": true
+   },
+   "multi": {
+    "n": 100,
+    "max_error_hz": 0.0007103898873310754,
+    "limit_hz": 0.0025,
+    "passed": true
+   }
+  }
+ },
+ "passed": true,
+ "env": {
+  "criteria_version": "0.4.0",
+  "matrix_version": "0.4.0",
+  "matrix_file": "matrix_v04.json",
+  "matrix_sha256": "f1174c3d03d6357887943209325c6da8449e2fd1f34ca3701305820a590f8678",
+  "matrix_seed": 1538468226,
+  "noise_seed_offset": 4440967960,
+  "b3c_min_snr_db": 20,
+  "commit": "a2361a5b0bacd807b596c8068c0a4d0b378f9e32",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "libc": "glibc2.43",
+  "receiver": "v3",
+  "definitive": true
+ },
+ "date_utc": "2026-10-31T18:55:09+00:00"
+}

@@ -1,0 +1,28 @@
+{
+ "receiver": "v3",
+ "criteria_version": "0.4.0",
+ "matrix_file": "matrix_v04.json",
+ "matrix_sha256": "f1174c3d03d6357887943209325c6da8449e2fd1f34ca3701305820a590f8678",
+ "matrix_seed": 1538468226,
+ "noise_seed_offset": 4440967960,
+ "protected_sha256": {
+  "lab/BENCH_CRITERIA_v0.4.md": "4ca256ffdeaad606bcba13f5ce49cc4ebbe4537f2c6da502a94cd084610f6f7a",
+  "lab/bench/receiver.py": "ed85ad8b3e9baf1b2aa772be099abe2ca8ecf7878a4951d49eae4ad2c71b21f7",
+  "lab/bench/run_bench.py": "1b70575b9e03ed4abe50d52f81240795d65ed0b34f59cbe55575118593faefd6",
+  "lab/bench/aggregate.py": "b66a48e8688f57f80fb25f10b0c6a319e2a536599fb40b3ab0f94511095604f6",
+  "lab/bench/merge_parts.py": "0ea77a2b764023074c0f5bf2a10d5041056efe2d5a5b6c13eb6e0032f2496748",
+  "lab/bench/resolve_run.py": "d8505ad587698c3550873d4abeb269107e28e8e932315cc4af89699971b29307",
+  "lab/bench/make_matrix.py": "9e055040edc761d5d07abd61c0b588a59d81b0bb80ef000d5834f7598ee02f81",
+  "lab/bench/freeze.py": "3fc8626aa37491267dedd8990b89ef78f567c3805bfb46332c956dd7a0d3c032",
+  "lab/bench/constraints.txt": "7af24d7b084f03de0fb4e79ede7e726d9dc450fde0642f06eefc1373636f5ae5",
+  "src/hmal/core/harmonic_protocol.py": "b1f81fd1071dee6bed5bf0119d7fc756a31530ee8fbb4fc862102a2feece526d",
+  ".github/workflows/bench.yml": "3c25344c85b01056abf0cabf0fe8c4fe41440a77fbd82772a03a9ac78b29631c"
+ },
+ "environment": {
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "libc": "glibc2.43"
+ },
+ "note": "o commit que contém este arquivo é o commit de congelamento; seu hash não pode constar aqui sem circularidade"
+}

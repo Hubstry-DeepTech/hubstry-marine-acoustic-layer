@@ -1,8 +1,10 @@
-"""Executa os ensaios B1–B5 e B7 da bancada digital HMAL (lab/BENCH_CRITERIA.md v0.3.1).
+"""Executa os ensaios B1–B5 e B7 da bancada digital HMAL.
 
 Uso:
-  python lab/bench/run_bench.py                      # execução completa (definitiva)
-  python lab/bench/run_bench.py --limit 10 --smoke   # ensaio de fumaça; resultados marcados como não definitivos
+  python lab/bench/run_bench.py --criteria 0.3.1 --receiver v2      # critérios v0.3.1, matriz matrix.json
+  python lab/bench/run_bench.py --criteria 0.4.0 --receiver v3      # critérios v0.4, matriz matrix_v04.json
+  python lab/bench/run_bench.py --limit 10 --smoke                  # fumaça; resultados não definitivos
+  python lab/bench/run_bench.py --matrix outra.json --smoke         # matriz de desenvolvimento; nunca definitiva
 
 Saída: lab/bench/results/<ensaio>.json e lab/bench/results/summary.json.
 Os critérios e a matriz não são alterados por este script.
@@ -11,8 +13,10 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import math
+import os
 import platform
 import subprocess
 import sys
@@ -32,21 +36,35 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
 from hmal.core.harmonic_protocol import HarmonicProtocol, RationalChannel  # noqa: E402
-from receiver import Receiver, ReceiverV2, detection_threshold, h_n  # noqa: E402
+from receiver import Receiver, ReceiverV2, ReceiverV3, detection_threshold, h_n  # noqa: E402
 
-MATRIX = json.loads((HERE / "matrix.json").read_text(encoding="utf-8"))
-RECEIVERS = {"v1": Receiver, "v2": ReceiverV2}
-RECEIVER_VERSION = "v1"
+# Cada versão de critérios fixa sua matriz e o SNR mínimo do critério B3(c). A versão 0.3.1 continua executável.
+CRITERIA = {
+    "0.3.1": {"matrix": "matrix.json", "b3c_min_snr_db": 16},
+    "0.4.0": {"matrix": "matrix_v04.json", "b3c_min_snr_db": 20},
+}
+RECEIVERS = {"v1": Receiver, "v2": ReceiverV2, "v3": ReceiverV3}
+# Variáveis de ambiente: herdadas pelos workers também com start_method "spawn"
+RECEIVER_VERSION = os.environ.get("HMAL_RECEIVER", "v1")
+CRITERIA_VERSION = os.environ.get("HMAL_CRITERIA", "0.3.1")
+MATRIX_PATH = Path(os.environ.get("HMAL_MATRIX") or HERE / CRITERIA[CRITERIA_VERSION]["matrix"])
+MATRIX_TEXT = MATRIX_PATH.read_text(encoding="utf-8") if MATRIX_PATH.exists() else None
+MATRIX = json.loads(MATRIX_TEXT) if MATRIX_TEXT else {}
+B3C_MIN_SNR = CRITERIA[CRITERIA_VERSION]["b3c_min_snr_db"]
 RESULTS = HERE / "results" / RECEIVER_VERSION
-CRITERIA_VERSION = "0.3.1"
-# Ensaios usados no desenvolvimento do receptor v2 (lab/bench/RECEIVER_V2.md): índices 0..DEV-1
-DEV_B3 = 20
-DEV_B4 = 30
+# Ensaios usados no desenvolvimento do receptor v2 (lab/bench/RECEIVER_V2.md): índices 0..DEV-1 da matriz v0.3.0.
+# Matrizes novas declaram seus próprios índices (0 = nenhum ensaio de desenvolvimento).
+DEV_B3 = MATRIX.get("holdout_first_index", {}).get("b3", 20)
+DEV_B4 = MATRIX.get("holdout_first_index", {}).get("b4", 30)
 
 
 # ----------------------------------------------------------------------------------------------
 # utilidades
 # ----------------------------------------------------------------------------------------------
+def matrix_is_official() -> bool:
+    return MATRIX_PATH.resolve() == (HERE / CRITERIA[CRITERIA_VERSION]["matrix"]).resolve()
+
+
 def env_info(smoke: bool) -> dict:
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -55,14 +73,19 @@ def env_info(smoke: bool) -> dict:
     return {
         "criteria_version": CRITERIA_VERSION,
         "matrix_version": MATRIX["version"],
+        "matrix_file": MATRIX_PATH.name,
+        "matrix_sha256": hashlib.sha256(MATRIX_TEXT.encode("utf-8")).hexdigest(),
+        "matrix_seed": MATRIX.get("seed"),
+        "noise_seed_offset": MATRIX.get("noise_seed_offset", 0),
+        "b3c_min_snr_db": B3C_MIN_SNR,
         "commit": commit,
-        "date_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "platform": platform.platform(),
         "python": platform.python_version(),
         "numpy": np.__version__,
         "scipy": scipy.__version__,
+        "libc": "".join(platform.libc_ver()),
         "receiver": RECEIVER_VERSION,
-        "definitive": not smoke,
+        "definitive": (not smoke) and matrix_is_official(),
     }
 
 
@@ -87,7 +110,8 @@ def synth(name: str, channels: list, polarities: list, f0: float | None = None) 
     for (a, b), p in zip(pairs, polarities):
         raw += np.sin(2 * np.pi * (a / b) * f0 * t + (np.pi if p else 0.0))
     A = 1.0 / float(np.max(np.abs(raw)))
-    assert np.allclose(A * raw, s, atol=1e-9), "gerador divergiu da expressão analítica"
+    if not np.allclose(A * raw, s, rtol=0.0, atol=1e-9):
+        raise RuntimeError("gerador divergiu da expressão analítica (tolerância absoluta 1e-9)")
     return s, A
 
 
@@ -105,6 +129,17 @@ def exact_recovery(decoded: dict, channels: list) -> bool:
     got = sorted(tuple(c["ratio"]) for c in decoded["channels"] if c["accepted"])
     want = sorted(tuple(c) for c in channels)
     return len(got) == len(decoded["channels"]) and got == want
+
+
+def outcome(decoded: dict, channels: list) -> str:
+    """Classifica um ensaio: "ok" (recuperação exata), "misidentified" (algum canal aceito com razão errada)
+    ou "rejected" (nenhuma razão errada aceita, mas algum canal verdadeiro não foi aceito)."""
+    if exact_recovery(decoded, channels):
+        return "ok"
+    want = {tuple(c) for c in channels}
+    if any(c["accepted"] and tuple(c["ratio"] or ()) not in want for c in decoded["channels"]):
+        return "misidentified"
+    return "rejected"
 
 
 def save(name: str, payload: dict) -> None:
@@ -147,6 +182,8 @@ def b2_errors(name: str, trial: dict) -> list[float]:
     f0 = mode_cfg(name)["f0_hz"]
     truths = sorted(c[0] / c[1] * f0 for c in trial["channels"])
     ests = sorted(c["f_est"] for c in dec["channels"])
+    if len(ests) != K:  # canal ausente não pode ser mascarado pelo zip
+        return [math.inf] * K
     return [abs(e - t) for e, t in zip(ests, truths)]
 
 
@@ -183,12 +220,14 @@ def b3_trial(args) -> dict:
     w = np.random.default_rng(trial["noise_seed"]).standard_normal(N)
     f0 = mode_cfg(name)["f0_hz"]
     truth = trial["channels"][0][0] / trial["channels"][0][1] * f0
-    out = {"A": A, "noise_free": exact_recovery(rx.decode(s, K), trial["channels"]), "ok": [], "err": []}
+    out = {"A": A, "noise_free": exact_recovery(rx.decode(s, K), trial["channels"]), "ok": [], "err": [], "cls": []}
     out["fail_diag"] = []
     for snr in snrs:
         dec = rx.decode(s + sigma_for(A, N, snr) * w, K)
-        ok = exact_recovery(dec, trial["channels"])
+        cls = outcome(dec, trial["channels"])
+        ok = cls == "ok"
         out["ok"].append(ok)
+        out["cls"].append(cls)
         if not ok and snr >= 20:
             out["fail_diag"].append({"snr_int_db": snr, "true": trial["channels"], "decoded": dec})
         if K == 1:
@@ -196,7 +235,10 @@ def b3_trial(args) -> dict:
     return out
 
 
-def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -> dict:
+B3_CONDITIONS = ("k1", "k2", "k3", "worst_pair_0", "worst_pair_1")
+
+
+def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int], only: list[str] | None = None) -> dict:
     res: dict = {"test": "B3", "snr_int_db": snrs, "modes": {}}
     passed = True
     for name in modes:
@@ -206,6 +248,8 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
         for p, trials in enumerate(m["b3"]["worst_pairs"]):
             conds[f"worst_pair_{p}"] = trials
         res["modes"][name] = {}
+        if only:
+            conds = {k: v for k, v in conds.items() if k in only}
         for cname, trials in conds.items():
             trials = trials[:limit] if limit else trials
             with Pool(workers) as pool:
@@ -216,8 +260,14 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
             hi = [i for i, s in enumerate(snrs) if s >= 20]
             c_a = nf == 1.0
             c_b = all(rate[i] >= 0.99 for i in hi)
+            cls = np.array([r["cls"] for r in rows])
             entry = {
                 "n_trials": len(rows),
+                # diagnóstico: separação entre identificação incorreta (canal aceito com razão errada),
+                # rejeição/perda (canal verdadeiro não aceito) e falha total de recuperação (soma das duas)
+                "diagnostic_misidentification_rate": (cls == "misidentified").mean(axis=0).tolist(),
+                "diagnostic_rejection_rate": (cls == "rejected").mean(axis=0).tolist(),
+                "diagnostic_total_recovery_failure_rate": (cls != "ok").mean(axis=0).tolist(),
                 "noise_free_recovery": nf,
                 "recovery_rate": rate,
                 "criterion_a_noise_free_100": c_a,
@@ -233,9 +283,22 @@ def run_b3(modes: list[str], limit: int | None, workers: int, snrs: list[int]) -
                 err = np.array([r["err"] for r in rows])
                 rms = np.sqrt(np.mean(err**2, axis=0)).tolist()
                 bound = [acrb(s, rx.fs, rx.N) for s in snrs]
-                ge16 = [i for i, s in enumerate(snrs) if s >= 16]
-                c_c = all(rms[i] <= 1.5 * bound[i] for i in ge16)
-                entry.update({"rms_error_hz": rms, "acrb_hz": bound, "rms_over_acrb": [r / b for r, b in zip(rms, bound)], "criterion_c_rms_le_1p5_acrb_snr_ge16": c_c})
+                gec = [i for i, s in enumerate(snrs) if s >= B3C_MIN_SNR]
+                c_c = all(rms[i] <= 1.5 * bound[i] for i in gec)
+                # diagnóstico complementar (não entra na decisão): erro de identificação de canal e
+                # RMS condicionado à identificação correta; o RMS global continua sendo o critério
+                cond = [float(np.sqrt(np.mean(err[ok[:, i], i] ** 2))) if ok[:, i].any() else None for i in range(len(snrs))]
+                gross = (np.abs(err) > 1.0 / rx.T).sum(axis=0).astype(int).tolist()
+                entry.update({
+                    "rms_error_hz": rms, "acrb_hz": bound, "rms_over_acrb": [r / b for r, b in zip(rms, bound)],
+                    f"criterion_c_rms_le_1p5_acrb_snr_ge{B3C_MIN_SNR}": c_c,
+                    "diagnostic_gross_errors_gt_1_over_T": gross,
+                    # RMS só entre os ensaios com identificação correta E canal aceito; não é a precisão de todos
+                    "diagnostic_rms_given_correct_and_accepted_over_acrb": [None if c is None else c / b for c, b in zip(cond, bound)],
+                    # erro de frequência por ensaio (Hz), linhas = ensaios, colunas = grade de SNR: permite
+                    # recalcular de forma independente o RMS global e o condicional
+                    "per_trial_freq_error_hz": err.tolist(),
+                })
                 cond_pass &= c_c
             entry["passed"] = cond_pass
             passed &= cond_pass
@@ -299,9 +362,9 @@ def run_b4(modes: list[str], limit: int | None, workers: int) -> dict:
 # B5
 # ----------------------------------------------------------------------------------------------
 def run_b5(modes: list[str], limit: int | None) -> dict:
-    res: dict = {"test": "B5", "modes": {}}
+    res: dict = {"test": "B5", "B5_SEED": 5, "note": "o fluxo de números aleatórios é compartilhado entre modos na ordem de --modes", "modes": {}}
     passed = True
-    rng = np.random.default_rng(5)
+    rng = np.random.default_rng(5)  # semente fixa registrada no resultado (B5_SEED)
     for name in modes:
         m = mode_cfg(name)
         f0 = m["f0_hz"]
@@ -338,6 +401,8 @@ def run_b5(modes: list[str], limit: int | None) -> dict:
 def b7_batch(args) -> int:
     name, seeds = args
     rx = receiver_for(name)
+    if len(h_n()) != MATRIX["b7"]["candidates_M"]:
+        raise RuntimeError("cardinalidade de H_16 do receptor diverge de candidates_M da matriz")
     gamma = detection_threshold(MATRIX["b7"]["design_fpr"], MATRIX["b7"]["candidates_M"])
     freqs = np.array([float(r) * rx.f0 for r in h_n()])
     E = rx._steering(freqs)
@@ -399,21 +464,42 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--receiver", choices=sorted(RECEIVERS), default="v1")
+    ap.add_argument("--criteria", choices=sorted(CRITERIA), default="0.3.1")
+    ap.add_argument("--matrix", type=Path, default=None, help="matriz alternativa (desenvolvimento); exige --smoke")
+    ap.add_argument("--out", type=Path, default=None, help="diretório de saída (padrão: results/<receptor>)")
+    ap.add_argument("--b3-conditions", default=None,
+                    help="subconjunto das condições do B3 (execução dividida em partes; junção por merge_parts.py)")
     a = ap.parse_args()
     if a.limit and not a.smoke:
         ap.error("--limit exige --smoke: execuções reduzidas não são definitivas")
-    global RECEIVER_VERSION, RESULTS
-    RECEIVER_VERSION = a.receiver
-    RESULTS = HERE / "results" / a.receiver
+    if a.matrix and not a.smoke:
+        ap.error("--matrix exige --smoke: só a matriz oficial dos critérios produz resultado definitivo")
+    os.environ["HMAL_RECEIVER"] = a.receiver
+    os.environ["HMAL_CRITERIA"] = a.criteria
+    os.environ["HMAL_MATRIX"] = str((a.matrix or HERE / CRITERIA[a.criteria]["matrix"]).resolve())
+    if (a.receiver, a.criteria, os.environ["HMAL_MATRIX"]) != (RECEIVER_VERSION, CRITERIA_VERSION, str(MATRIX_PATH.resolve())):
+        # reexecuta o módulo com as variáveis definidas, para que o processo principal e os workers
+        # carreguem exatamente a mesma matriz e a mesma versão de critérios
+        os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve())] + sys.argv[1:])
+    if not MATRIX:
+        ap.error(f"matriz {MATRIX_PATH} não encontrada")
+    if a.out:
+        global RESULTS
+        RESULTS = a.out
     modes = a.modes.split(",")
     tests = a.tests.split(",")
     snrs = MATRIX["snr_int_db_grid"]
     env = env_info(a.smoke)
-    summary = {"env": env, "results": {}}
+    b3_only = a.b3_conditions.split(",") if a.b3_conditions else None
+    if b3_only and (set(b3_only) - set(B3_CONDITIONS) or len(set(b3_only)) != len(b3_only)):
+        ap.error(f"--b3-conditions inválido: use itens distintos de {B3_CONDITIONS}")
+    started = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    # env identifica a configuração (igual em todas as partes de uma rodada); a data fica fora dele
+    summary = {"env": env, "date_utc": started, "tests": tests, "b3_conditions": b3_only or list(B3_CONDITIONS), "results": {}}
     runners = {
         "B1": lambda: run_b1(),
         "B2": lambda: run_b2(modes, a.limit),
-        "B3": lambda: run_b3(modes, a.limit, a.workers, snrs),
+        "B3": lambda: run_b3(modes, a.limit, a.workers, snrs, b3_only),
         "B4": lambda: run_b4(modes, a.limit, a.workers),
         "B5": lambda: run_b5(modes, a.limit),
         "B7": lambda: run_b7(modes, a.limit, a.workers),
@@ -422,10 +508,15 @@ def main() -> None:
         print(f"== {t}", flush=True)
         r = runners[t]()
         r["env"] = env
+        r["date_utc"] = started
+        if t == "B3":
+            r["conditions"] = b3_only or list(B3_CONDITIONS)
         save(t, r)
         summary["results"][t] = r["passed"]
         print(f"   {t} passed={r['passed']}", flush=True)
     summary["note"] = "resultado por modo; a regra de TRL só é aplicada por lab/bench/aggregate.py com os dois modos"
+    if not env["definitive"]:
+        summary["note"] += "; execução NÃO definitiva (fumaça ou matriz fora da designada pelos critérios)"
     save("summary", summary)
 
 

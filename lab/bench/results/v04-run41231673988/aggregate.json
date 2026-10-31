@@ -1,0 +1,45 @@
+{
+ "by_test_and_mode": {
+  "B1": {
+   "hf": true,
+   "lf": true
+  },
+  "B2": {
+   "hf": true,
+   "lf": true
+  },
+  "B3": {
+   "hf": true,
+   "lf": true
+  },
+  "B4": {
+   "hf": true,
+   "lf": true
+  },
+  "B5": {
+   "hf": true,
+   "lf": true
+  },
+  "B7": {
+   "hf": true,
+   "lf": true
+  }
+ },
+ "problems": [],
+ "complete": true,
+ "definitive": true,
+ "criteria_version": "0.4.0",
+ "receiver": {
+  "hf": "v3",
+  "lf": "v3"
+ },
+ "commit": {
+  "hf": "a2361a5b0bacd807b596c8068c0a4d0b378f9e32",
+  "lf": "a2361a5b0bacd807b596c8068c0a4d0b378f9e32"
+ },
+ "matrix_sha256": {
+  "hf": "f1174c3d03d6357887943209325c6da8449e2fd1f34ca3701305820a590f8678",
+  "lf": "f1174c3d03d6357887943209325c6da8449e2fd1f34ca3701305820a590f8678"
+ },
+ "trl_rule": "TRL 4 (autoavaliação) do subsistema computacional sob os critérios 0.4.0: B1-B5 e B7 aprovados nos modos hf e lf"
+}

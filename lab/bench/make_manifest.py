@@ -37,6 +37,11 @@ RUNS = {
         "experiment_commit": "a691855383779763714f072bf8d3bbe062e48064",
         "experiment_commit_basis": "gravado pelo runner no bloco env de cada artefato",
         "note": "inclui dados por ensaio, hold-out e diagnóstico de falhas"},
+    "v04-run41231673988": {
+        "execution_type": "github_actions", "execution_run_id": 41231673988, "receiver": "v3",
+        "experiment_commit": "a2361a5b0bacd807b596c8068c0a4d0b378f9e32",
+        "experiment_commit_basis": "commit de congelamento da v0.4, gravado pelo runner no bloco env de cada artefato e conferido por freeze.verify_freeze()",
+        "note": "rodada confirmatória dos critérios 0.4.0, executada em seis partes paralelas por modo e juntada por merge_parts.py"},
     "e1": {
         "execution_type": "manual_vm", "execution_run_id": None, "receiver": None,
         "experiment_commit": "e02008f1877a0caf92638fa1816bafbaada3f946",

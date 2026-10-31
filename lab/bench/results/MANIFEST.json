@@ -79,6 +79,33 @@
     "v2-run41131667005/lf/summary.json": "70354ea657f9145833707dc84c9ac42c461210e434983f3f4b3b5a7f4cc779e0"
    }
   },
+  "v04-run41231673988": {
+   "execution_type": "github_actions",
+   "execution_run_id": 41231673988,
+   "receiver": "v3",
+   "experiment_commit": "a2361a5b0bacd807b596c8068c0a4d0b378f9e32",
+   "experiment_commit_basis": "commit de congelamento da v0.4, gravado pelo runner no bloco env de cada artefato e conferido por freeze.verify_freeze()",
+   "note": "rodada confirmatória dos critérios 0.4.0, executada em seis partes paralelas por modo e juntada por merge_parts.py",
+   "files_recording_commit": 14,
+   "files": {
+    "v04-run41231673988/REPORT_V04.md": "2904473e55f3efbfde7fc9c0e410d80f68b7562bd1da4b6d5626c32d04cfc7aa",
+    "v04-run41231673988/aggregate.json": "dc5d539e98c01c64e74c4447d888ff440ca964ab3d1d431fbf6d86fd55a3e8a8",
+    "v04-run41231673988/hf/B1.json": "6ccbc569bdc74d5c0a2b97b039de6511ff28cb4c408d2ddd1288e4da55b06358",
+    "v04-run41231673988/hf/B2.json": "2b5a3ed073ca3266a5b23fb2867c22a0d2705da20027bad10df05e98ff89317f",
+    "v04-run41231673988/hf/B3.json": "29d69ccd6d49141eb54f5a40af1676964ac62ab7bd589cde7dba1eff3cb56b85",
+    "v04-run41231673988/hf/B4.json": "d2e9e0e4d2c6efb6f6031235a5a2ccf30e74583d572656d838fd9ead36cc2107",
+    "v04-run41231673988/hf/B5.json": "96e81aa23798753f7b4a10c2f6b3e61e9819b653b89b1c22c31f3ed22621f280",
+    "v04-run41231673988/hf/B7.json": "4e4fb31fac956916aa68273af19b8a8a2a473528039ec86b6696aafe2637d693",
+    "v04-run41231673988/hf/summary.json": "69ef349e4fc0ba684b400b7c1afc1aca9dec54a3ede5a169be02e774c713d00d",
+    "v04-run41231673988/lf/B1.json": "3a177917cfc31b8950dafb922b13877db17a7b6ff6019bb40c883be67e7849f8",
+    "v04-run41231673988/lf/B2.json": "ef46f99fc07c16049ca4f2536a92c198e5606339ad45d27aa1154d2d37f23d23",
+    "v04-run41231673988/lf/B3.json": "608068519580dbeec96631376e009a050032bd184b1ab30c564da8e6302d76bd",
+    "v04-run41231673988/lf/B4.json": "b79d58af616219d33e9ec9f8b79ccbf8aa2b91dc2aa7002ad5219c9b276ce131",
+    "v04-run41231673988/lf/B5.json": "828139348ad873d4580e8c22914f8eaae6441bac587f6a82659c4022666098be",
+    "v04-run41231673988/lf/B7.json": "ce91c6eb55a6a2c067db8a71f522fb81be77ade41ca19536cb487d8c42d5c742",
+    "v04-run41231673988/lf/summary.json": "645acb51f555b2ddb2b0d670937e394647967b6168b984629c0c764793cbfc1b"
+   }
+  },
   "e1": {
    "execution_type": "manual_vm",
    "execution_run_id": null,

@@ -148,3 +148,44 @@ class ReceiverV2(Receiver):
         den = 1.0 + sum(float(r) ** 2 for r in prov)
         f0_ls = num / den
         return {"f0_used": f0_ls, "f0_pilot": f_pilot, "channels": [self.associate(f, f0_ls, data) for f in others]}
+
+
+class ReceiverV3(ReceiverV2):
+    """Receptor v3 (lab/bench/RECEIVER_V3.md): seleção nas candidatas (como a v1), refinamento com máximo
+    global na janela e teste de dominância espectral; modo com piloto igual à v2.
+
+    Motivação: a v2 busca picos no espectro inteiro e, perto do limiar (16-18 dB), às vezes escolhe um pico de
+    ruído longe do tom, o que gera erros enormes e reprova B3(c). A v1 não tem esse problema, mas aceita tons
+    fora do dicionário (B7b). A v3 restringe a busca às candidatas e rejeita o canal quando a potência no ponto
+    refinado está mais de 10 dB abaixo do maior pico do espectro (o primeiro lóbulo lateral da janela
+    retangular fica em -13,3 dB; tons verdadeiros com amplitudes iguais ficam no mesmo nível do maior pico).
+    """
+
+    DOMINANCE_DB = -10.0
+
+    def _refine_global(self, x: np.ndarray, fc: float) -> float:
+        hw, step = 1.0 / self.T, 1.0 / (self.GRID * self.T)
+        offsets = np.arange(-hw, hw + step / 2, step)
+        p = np.abs(self._steering(fc + offsets) @ x) ** 2 / self.N
+        best = fc + float(offsets[int(np.argmax(p))])
+        a, b = max(fc - hw, best - step), min(fc + hw, best + step)
+        f = Receiver.refine(self, x, (a + b) / 2, (b - a) / 2)
+        return f if power_at(x, f, self.fs) >= power_at(x, best, self.fs) else best
+
+    def decode(self, x: np.ndarray, K: int, pilot: bool = False) -> dict:
+        if pilot:
+            return ReceiverV2.decode(self, x, K, pilot=True)
+        p = self.candidate_powers(x, self.f0, self.ratios)
+        top = np.argsort(p)[::-1][:K]
+        pmax = float(np.max(np.abs(np.fft.rfft(x, n=self.GRID * self.N)) ** 2) / self.N)
+        floor = pmax * 10 ** (self.DOMINANCE_DB / 10)
+        out = []
+        for idx in sorted(top, key=lambda i: float(self.ratios[i])):
+            f = self._refine_global(x, float(self.ratios[idx]) * self.f0)
+            ch = self.associate(f, self.f0, self.ratios)
+            pf = power_at(x, f, self.fs)
+            ch["dominance_db"] = float(10 * np.log10(pf / pmax)) if pf > 0 else -np.inf
+            if pf < floor:
+                ch["accepted"] = False
+            out.append(ch)
+        return {"f0_used": self.f0, "channels": out}

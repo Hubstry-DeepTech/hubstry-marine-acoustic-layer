@@ -1,0 +1,45 @@
+{
+ "by_test_and_mode": {
+  "B1": {
+   "hf": true,
+   "lf": true
+  },
+  "B2": {
+   "hf": true,
+   "lf": true
+  },
+  "B3": {
+   "hf": true,
+   "lf": true
+  },
+  "B4": {
+   "hf": true,
+   "lf": true
+  },
+  "B5": {
+   "hf": true,
+   "lf": true
+  },
+  "B7": {
+   "hf": true,
+   "lf": true
+  }
+ },
+ "problems": [],
+ "complete": true,
+ "definitive": false,
+ "criteria_version": "0.4.0",
+ "receiver": {
+  "hf": "v3",
+  "lf": "v3"
+ },
+ "commit": {
+  "hf": "d90f986ebdaf12673469221804bc72eb6331e7f9",
+  "lf": "d90f986ebdaf12673469221804bc72eb6331e7f9"
+ },
+ "matrix_sha256": {
+  "hf": "81fc0e6bec2503563e611c7c2d985d039accc3e426b1941f626b89693219934f",
+  "lf": "81fc0e6bec2503563e611c7c2d985d039accc3e426b1941f626b89693219934f"
+ },
+ "trl_rule": "NÃO DEFINITIVO: execução de fumaça ou de desenvolvimento; nenhuma conclusão de TRL"
+}

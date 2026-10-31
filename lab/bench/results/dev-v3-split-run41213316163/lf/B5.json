@@ -1,0 +1,32 @@
+{
+ "test": "B5",
+ "B5_SEED": 5,
+ "note": "o fluxo de n\u00fameros aleat\u00f3rios \u00e9 compartilhado entre modos na ordem de --modes",
+ "modes": {
+  "lf": {
+   "n_sets": 258,
+   "max_relative_difference": 2.5935468546485953e-12,
+   "limit": 1e-09,
+   "W_is_minimal_period_count": 102,
+   "passed": true
+  }
+ },
+ "passed": true,
+ "env": {
+  "criteria_version": "0.4.0",
+  "matrix_version": "dev-20261031",
+  "matrix_file": "matrix_dev.json",
+  "matrix_sha256": "81fc0e6bec2503563e611c7c2d985d039accc3e426b1941f626b89693219934f",
+  "matrix_seed": 20261031,
+  "noise_seed_offset": 500000000,
+  "b3c_min_snr_db": 20,
+  "commit": "c08f8d63b98d18a6eec335d6e2e2ac79bdb309a5",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "receiver": "v3",
+  "definitive": false
+ },
+ "date_utc": "2026-10-31T15:07:36+00:00"
+}
