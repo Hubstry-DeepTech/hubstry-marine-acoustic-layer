@@ -1,6 +1,6 @@
 # HMAL — Critérios da bancada digital de validação
 
-**Versão:** 0.3.1-draft · **Data:** 30/10/2026 · **Estado:** aguardando nova revisão; congela no commit de aprovação, antes de qualquer execução definitiva
+**Versão:** 0.3.1 · **Data:** 30/10/2026 · **Estado:** congelado no merge do PR #5 (commit `f849a7d`); esta linha de estado é a única alteração posterior, sem efeito sobre ensaios, limiares ou matriz
 
 **Mudanças em 0.3.1:** conversão explícita de SNR em dB para linear; registro do `A_k` efetivo em cada execução.
 
