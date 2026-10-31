@@ -1,4 +1,4 @@
-"""Referência idealizada de erro de identificação de canal (lab/BENCH_CRITERIA_v0.4-draft.md, Seção 2.1).
+"""Referência idealizada de erro de identificação de canal (lab/BENCH_CRITERIA_v0.4.md, Seção 2.1).
 
 Modelo: detecção não coerente M-ária com sinais ortogonais de mesma energia em ruído branco gaussiano.
 Escolhe-se o canal com maior envoltória; erra-se quando alguma das M-1 envoltórias de ruído supera a do canal

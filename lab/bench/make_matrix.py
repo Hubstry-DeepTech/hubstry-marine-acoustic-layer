@@ -27,7 +27,7 @@ MODES = {
 
 MATRIX_PATH = Path(__file__).with_name("matrix.json")
 # Sementes e faixas de ruído já usadas em desenvolvimento ou em matrizes anteriores. Uma matriz confirmatória
-# não pode reutilizá-las (lab/BENCH_CRITERIA_v0.4-draft.md, Seção 3).
+# não pode reutilizá-las (lab/BENCH_CRITERIA_v0.4.md, Seção 3).
 USED_MATRIX_SEEDS = {SEED, 20261031, 777001}
 CONFIRMATORY_MIN_NOISE_OFFSET = 1_000_000_000
 

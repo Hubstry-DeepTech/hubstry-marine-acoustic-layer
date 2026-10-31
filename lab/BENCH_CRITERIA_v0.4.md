@@ -1,8 +1,10 @@
-# HMAL — Critérios da bancada digital, proposta de revisão v0.4
+# HMAL — Critérios da bancada digital v0.4
 
-**Versão:** 0.4.0-draft · **Data:** 30/10/2026 · **Estado:** rascunho para revisão; **não** congelado e **não** aplicável a nenhuma execução até aprovação e congelamento formais
+**Versão:** 0.4.0 · **Data:** 31/10/2026 · **Estado:** congelado no commit que cria `lab/bench/FREEZE_v0.4.json` e `lab/bench/matrix_v04.json`, aprovado pela Luna em 31/10/2026 e por Guilherme Machado; nenhuma alteração de critérios, receptor ou matriz depois desse commit
 
-Este documento propõe mudanças sobre `lab/BENCH_CRITERIA.md` v0.3.1. Tudo o que não é citado aqui permanece idêntico à v0.3.1.
+**Matriz confirmatória:** `lab/bench/matrix_v04.json`, versão 0.4.0, semente 1538468226, deslocamento das sementes de ruído 4.440.967.960 (sorteados com `secrets` em 2026-10-31T18:53:55+00:00), SHA-256 `f1174c3d03d6357887943209325c6da8449e2fd1f34ca3701305820a590f8678`. Receptor: v3.
+
+Este documento altera `lab/BENCH_CRITERIA.md` v0.3.1. Tudo o que não é citado aqui permanece idêntico à v0.3.1.
 
 ## 1. Resultado preservado sob a v0.3.1
 
@@ -101,9 +103,10 @@ Nenhuma declaração de TRL 4 antes da execução confirmatória e da agregaçã
 - `merge_parts.py` e `tests/test_bench_merge.py` (31/10/2026): execução dividida em partes paralelas, porque a validação de desenvolvimento levou 5 h 04 min no modo hf, perto do limite de 340 min por job. A data da execução saiu do bloco `env`, que passa a identificar só a configuração; ela fica em `date_utc` de cada artefato e do resumo.
 - Validação de desenvolvimento da v3 (`lab/bench/results/dev-v3-run41188079573/REPORT_V3_DEV.md`): seis ensaios aprovados nos dois modos, nenhuma rejeição de canal verdadeiro; não definitiva.
 
-## 8. Pendências
+## 8. Registro do congelamento
 
-1. Validação de desenvolvimento completa da v3 (passo 1 da Seção 6).
-2. Revisão da Luna sobre o código e sobre essa validação.
-3. Aprovação do Guilherme para o commit de congelamento.
-Decisão de receptor: v3, tomada por Guilherme Machado em 31/10/2026.
+1. Validação de desenvolvimento completa da v3: concluída (`lab/bench/results/dev-v3-run41188079573/REPORT_V3_DEV.md`). A execução dividida reproduz a execução inteira (`lab/bench/results/dev-v3-split-run41213316163/EQUIVALENCE.md`).
+2. Revisão da Luna sobre o código e sobre essa validação: aprovada em 31/10/2026, no commit `194d921`, com CI completa.
+3. Aprovação do Guilherme para o commit de congelamento: 31/10/2026.
+4. Decisão de receptor: v3, tomada por Guilherme Machado em 31/10/2026.
+5. Rodada confirmatória: disparada pelo próprio commit de congelamento; o resultado só vale depois da agregação por `aggregate.py` com `verify_freeze()` sem divergências.

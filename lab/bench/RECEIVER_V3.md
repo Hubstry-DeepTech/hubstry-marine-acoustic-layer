@@ -1,6 +1,6 @@
 # Receptor v3 da bancada digital HMAL
 
-**Data:** 31/10/2026 · **Critérios a que se destina:** v0.4 (`lab/BENCH_CRITERIA_v0.4-draft.md`), ainda não congelados · **Código:** `ReceiverV3` em `lab/bench/receiver.py`
+**Data:** 31/10/2026 · **Critérios a que se destina:** v0.4 (`lab/BENCH_CRITERIA_v0.4.md`), congelados em 31/10/2026 · **Código:** `ReceiverV3` em `lab/bench/receiver.py`
 
 ## Por que existe uma v3
 
