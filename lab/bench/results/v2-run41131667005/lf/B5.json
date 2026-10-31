@@ -1,0 +1,25 @@
+{
+ "test": "B5",
+ "modes": {
+  "lf": {
+   "n_sets": 258,
+   "max_relative_difference": 2.025677619817177e-12,
+   "limit": 1e-09,
+   "W_is_minimal_period_count": 101,
+   "passed": true
+  }
+ },
+ "passed": true,
+ "env": {
+  "criteria_version": "0.3.1",
+  "matrix_version": "0.3.0",
+  "commit": "a691855383779763714f072bf8d3bbe062e48064",
+  "date_utc": "2026-10-30T21:31:43+00:00",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "python": "3.11.17",
+  "numpy": "2.4.6",
+  "scipy": "1.17.1",
+  "receiver": "v2",
+  "definitive": true
+ }
+}
