@@ -46,6 +46,8 @@ def test_statuses_come_from_aggregator_without_conversion():
     sets = {n: bd.bench_set(n, s, "0" * 40) for n, s in MANIFEST["results"].items() if n != "e1"}
     assert sets["v1-run41120505952"]["aggregate"]["status"] == "inconsistent"
     assert sets["v2-run41131667005"]["aggregate"]["status"] == "trl3"
+    assert sets["v04-run41231673988"]["aggregate"]["status"] == "trl4"
+    assert sets["v04-run41231673988"]["b3c_min_snr_db"] == 20
     assert all(s["definitive"] for s in sets.values())
 
 

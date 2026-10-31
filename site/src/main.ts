@@ -16,7 +16,7 @@ interface Provenance {
   experiment_commit_basis: string; publication_commit: string; files: FileRef[]; note: string | null;
 }
 interface BenchSet {
-  id: string; receiver: string; criteria_version: string; matrix_version: string; date_utc: string; definitive: boolean;
+  id: string; receiver: string; criteria_version: string; matrix_version: string; date_utc: string; definitive: boolean; b3c_min_snr_db: number;
   aggregate: { status: "trl3" | "trl4" | "inconsistent" | "incomplete" | "not_definitive"; rule: string;
                by_test_and_mode: Record<string, Record<Mode, boolean | null>> };
   per_mode_assessment: Record<Mode, string | undefined>;
@@ -57,6 +57,7 @@ const RUN_LABEL: Record<string, string> = {
   "v1-run41120505952": "Receptor v1",
   "v2-run41121711705": "Receptor v2, 1ª execução",
   "v2-run41131667005": "Receptor v2, 2ª execução (com dados por ensaio)",
+  "v04-run41231673988": "Receptor v3, critérios v0.4 (confirmatória)",
 };
 const COND_LABEL: Record<string, string> = {
   k1: "1 canal", k2: "2 canais", k3: "3 canais", worst_pair_0: "par mais próximo (1/16 e 1/15)", worst_pair_1: "par mais próximo (14/15 e 15/16)",
@@ -142,7 +143,7 @@ function drawRuler(): void {
 // ---------------------------------------------------------------------------------------------
 // Bancada
 // ---------------------------------------------------------------------------------------------
-let selectedRun = "v2-run41131667005";
+let selectedRun = "v04-run41231673988";
 
 function renderRuns(d: SiteData): void {
   const rows = d.bench.map((b) => {
@@ -162,7 +163,7 @@ function renderRuns(d: SiteData): void {
     (["hf", "lf"] as Mode[]).map((m) => `<td>${verdict(b.aggregate.by_test_and_mode[t][m])}</td>`).join("")).join("")}</tr>`).join("");
 
   $("bench-runs").innerHTML = `
-    <h3>Execuções definitivas sob os critérios v0.3.1</h3>
+    <h3>Execuções definitivas</h3>
     <div class="table-wrap"><table class="runs">
       <thead><tr><th scope="col">Execução</th><th scope="col">Critérios</th><th scope="col">Status do agregador</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
@@ -170,7 +171,8 @@ function renderRuns(d: SiteData): void {
     <div class="table-wrap"><table class="matrix">
       <thead><tr><th scope="col" rowspan="2">Ensaio</th>${head}</tr><tr>${sub}</tr></thead>
       <tbody>${body}</tbody></table></div>
-    <p class="note">As duas execuções da v2 reprovam só no B3, pelo critério (c): erro de frequência até 1,5 vez o limite teórico a partir de 16 dB. Perto desse nível, uma única troca de canal em mil ensaios eleva o erro médio a milhares de vezes o limite. A v1 recupera melhor com pouco sinal, mas reprova no B4 e no B7. O <a href="${d.reports["REPORT_v1_v2.md"]?.url ?? "#"}">relatório comparativo</a> detalha os números.</p>`;
+    <p class="note">Sob os critérios v0.3.1, as duas execuções da v2 reprovam só no B3, pelo critério (c): erro de frequência até 1,5 vez o limite teórico a partir de 16 dB. Perto desse nível, uma única troca de canal em mil ensaios eleva o erro médio a milhares de vezes o limite. A v1 recupera melhor com pouco sinal, mas reprova no B4 e no B7. O <a href="${d.reports["REPORT_v1_v2.md"]?.url ?? "#"}">relatório comparativo</a> detalha os números.</p>
+    <p class="note">Os critérios v0.4 passaram a aplicar esse critério a partir de 20 dB, uma correção documentada antes da rodada e feita depois de ver os resultados da v0.3.1. Por isso, o receptor v3 foi congelado e avaliado numa matriz nova, com sementes sorteadas só depois do congelamento. O <a href="${d.repo_url}/blob/${d.publication_commit}/lab/bench/results/v04-run41231673988/REPORT_V04.md">relatório da rodada confirmatória</a> traz os números e as limitações. A <a href="${d.repo_url}/blob/${d.publication_commit}/lab/bench/ERRATA_v0.4.md">errata da v0.4</a> corrige uma afirmação da validação de desenvolvimento.</p>`;
 }
 
 function renderDetail(d: SiteData): void {
@@ -185,7 +187,7 @@ function renderDetail(d: SiteData): void {
     ${dataTable("Taxa de recuperação por SNR integrada (dB)", ["SNR (dB)", ...(["hf", "lf"] as Mode[]).flatMap((m) => Object.keys(b.b3_recovery_rate[m]).map((c) => `${m} ${COND_LABEL[c] ?? c}`))],
       b.snr_int_db.map((s, i) => [s, ...(["hf", "lf"] as Mode[]).flatMap((m) => Object.values(b.b3_recovery_rate[m]).map((r) => pct(r[i])))]))}
     <h3>Erro de frequência com um canal, relativo ao limite teórico</h3>
-    <p class="intro">Erro quadrático médio (RMS) dividido pelo limite de Cramér–Rao assintótico (ACRB), em escala logarítmica. O critério B3(c) da v0.3.1 exige até 1,5 a partir de 16 dB. Os saltos para milhares refletem trocas de canal, não imprecisão local.</p>
+    <p class="intro">Erro quadrático médio (RMS) dividido pelo limite de Cramér–Rao assintótico (ACRB), em escala logarítmica. O critério B3(c) exige até 1,5 a partir de ${b.b3c_min_snr_db} dB nos critérios ${b.criteria_version}. Os saltos para milhares refletem trocas de canal, não imprecisão local.</p>
     <div id="chart-rms" class="chart"></div>
     ${dataTable("RMS/ACRB com um canal", ["SNR (dB)", "hf", "lf"], b.snr_int_db.map((s, i) => [s, nf(b.b3_k1_rms_over_acrb.hf[i], 2), nf(b.b3_k1_rms_over_acrb.lf[i], 2)]))}
     ${v1 && b.receiver !== "v1" ? `<h3>Perto do limiar: v1 e ${esc(RUN_LABEL[b.id] ?? b.id)}</h3>
@@ -210,7 +212,7 @@ function renderDetail(d: SiteData): void {
 function errorsAt(b: BenchSet, snr: number): string {
   const i = b.snr_int_db.indexOf(snr);
   const n = (["hf", "lf"] as Mode[]).map((m) => Math.round((1 - b.b3_recovery_rate[m].k1[i]) * 1000));
-  return `${b.receiver === "v1" ? "A v1" : "A v2"} falha ${n[0]} vezes em mil (hf) e ${n[1]} (lf) a ${snr} dB.`;
+  return `A ${b.receiver} falha ${n[0]} vezes em mil (hf) e ${n[1]} (lf) a ${snr} dB.`;
 }
 
 function condColors(): string[] { return [1, 2, 3, 4, 5].map((i) => css(`--c${i}`)); }
@@ -243,8 +245,8 @@ function drawBenchCharts(d: SiteData): void {
     color: { legend: true, domain: Object.values(MODE_LABEL), range: [css("--c1"), css("--c4")] },
     marks: [
       Plot.ruleY([1.5], { stroke: muted, strokeDasharray: "4,3" }),
-      Plot.ruleX([16], { stroke: muted, strokeDasharray: "4,3" }),
-      Plot.text([{ x: 16, y: 1.5 }], { x: "x", y: "y", text: () => "limite do critério (1,5) a partir de 16 dB", dx: 6, dy: -8, textAnchor: "start", fill: muted }),
+      Plot.ruleX([b.b3c_min_snr_db], { stroke: muted, strokeDasharray: "4,3" }),
+      Plot.text([{ x: b.b3c_min_snr_db, y: 1.5 }], { x: "x", y: "y", text: () => `limite do critério (1,5) a partir de ${b.b3c_min_snr_db} dB`, dx: 6, dy: -8, textAnchor: "start", fill: muted }),
       Plot.line(rms, { x: "snr", y: "v", stroke: "modo", strokeWidth: 1.6 }),
       Plot.dot(rms, { x: "snr", y: "v", fill: "modo", r: 2.2 }),
       Plot.frame({ stroke: line }),
@@ -330,10 +332,10 @@ function renderDocs(d: SiteData): void {
       <li><a href="${blob("docs/SPECIFICATION.md")}">Especificação técnica</a>, com a maturidade por componente.</li>
       <li><a href="${blob("lab/bench/results/MANIFEST.json")}">Manifesto de proveniência</a>: tipo e identificador de cada execução, commit do código executado e SHA-256 de cada arquivo.</li>
     </ul>
-    <p>Uma revisão dos critérios (v0.4) está em preparação. Ela só aparecerá aqui depois de congelada, executada sobre uma matriz nova de ensaios e integrada ao ramo principal.</p>`;
+    <p>Os <a href="${blob("lab/BENCH_CRITERIA_v0.4.md")}">critérios v0.4</a> foram congelados com o receptor v3, uma matriz nova e o <a href="${blob("lab/bench/FREEZE_v0.4.json")}">registro de congelamento</a>, que guarda o SHA-256 de cada arquivo que define o experimento. O agregador só emite conclusão quando esse registro confere com o código, a matriz e o ambiente da execução.</p>`;
   ($("lnk-license") as HTMLAnchorElement).href = blob("LICENSE");
   ($("lnk-ethics") as HTMLAnchorElement).href = blob("docs/ETHICS_GUIDELINES.md");
-  $("foot-prov").innerHTML = `Página gerada a partir do commit <a href="${d.publication_commit_url}">${short(d.publication_commit)}</a> do <a href="${d.repo_url}">repositório do HMAL</a>. Os resultados numéricos desta página não são digitados à mão: são lidos dos arquivos versionados nesse commit, com SHA-256 conferido no build. Limiares e parâmetros citados no texto vêm dos critérios v0.3.1.`;
+  $("foot-prov").innerHTML = `Página gerada a partir do commit <a href="${d.publication_commit_url}">${short(d.publication_commit)}</a> do <a href="${d.repo_url}">repositório do HMAL</a>. Os resultados numéricos desta página não são digitados à mão: são lidos dos arquivos versionados nesse commit, com SHA-256 conferido no build. Limiares e parâmetros citados no texto vêm dos critérios v0.3.1 e v0.4.`;
 }
 
 // ---------------------------------------------------------------------------------------------
