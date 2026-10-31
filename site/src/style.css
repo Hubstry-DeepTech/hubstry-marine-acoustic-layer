@@ -172,4 +172,12 @@ ul.links { list-style: none; padding: 0; display: flex; gap: 1.2rem; flex-wrap: 
   table.matrix tbody th { white-space: normal; }
   ul.files { columns: 1; }
 }
-@media (max-width: 600px) { .top { position: static; } html { scroll-padding-top: 0.5rem; } }
+@media (max-width: 600px) {
+  /* navegação compacta: marca numa linha, seções numa única linha rolável */
+  .top { position: static; gap: 0.5rem; padding-top: 0.6rem; padding-bottom: 0.5rem; }
+  .top nav { flex-wrap: nowrap; overflow-x: auto; width: 100%; gap: 1rem; padding-bottom: 0.2rem; scrollbar-width: none; font-size: 0.88rem; }
+  .top nav::-webkit-scrollbar { display: none; }
+  .top nav a { white-space: nowrap; }
+  html { scroll-padding-top: 0.5rem; }
+  .hero { padding-top: 1.6rem; }
+}
