@@ -6,12 +6,19 @@
   <title>HMAL Lab</title>
   <meta name="description" content="Evidências públicas e auditáveis do HMAL (Hubstry Marine Acoustic Layer): bancada digital, reprodução de dados do MBARI, critérios e proveniência." />
   <meta name="color-scheme" content="light dark" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg stroke='%231d6f8a' stroke-width='1.4'%3E%3Cpath d='M2 15V3M5 15V8M8 15V1M11 15V9M14 15V5'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png" />
+  <link rel="apple-touch-icon" href="./brand/apple-touch-icon.png" />
 </head>
 <body>
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
   <header class="top">
-    <a class="brand" href="#inicio">HMAL Lab</a>
+    <a class="brand" href="#inicio">
+      <picture>
+        <source srcset="./brand/hubstry-logo-white.png" media="(prefers-color-scheme: dark)" />
+        <img src="./brand/hubstry-logo.png" alt="Hubstry" width="1600" height="196" />
+      </picture>
+      <span>HMAL Lab</span>
+    </a>
     <nav aria-label="Seções">
       <a href="#maturidade">Maturidade</a>
       <a href="#bancada">Bancada digital</a>
@@ -100,6 +107,18 @@
   </main>
 
   <footer class="foot">
+    <div class="foot-brand">
+      <a href="https://hubstry.dev">
+        <picture>
+          <source srcset="./brand/hubstry-logo-white.png" media="(prefers-color-scheme: dark)" />
+          <img class="foot-logo" src="./brand/hubstry-logo.png" alt="Hubstry" width="1600" height="196" loading="lazy" />
+        </picture>
+      </a>
+      <figure class="inception">
+        <img src="./brand/nvidia-inception-badge.svg" alt="Selo NVIDIA Inception Program" width="500" height="216" loading="lazy" />
+        <figcaption>A Hubstry participa do NVIDIA Inception, programa da NVIDIA para startups.</figcaption>
+      </figure>
+    </div>
     <p id="foot-prov">Carregando proveniência…</p>
   </footer>
   <script type="module" src="./src/main.ts"></script>

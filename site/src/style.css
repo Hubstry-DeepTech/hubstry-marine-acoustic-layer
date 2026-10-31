@@ -71,7 +71,9 @@ abbr[title] { text-decoration: none; }
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line);
 }
-.brand { font: 600 1.15rem/1 var(--serif); color: var(--ink); text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: 0.7rem; font: 600 1.15rem/1 var(--serif); color: var(--ink); text-decoration: none; }
+.brand img { height: 0.95rem; width: auto; display: block; }
+.brand span { border-left: 1px solid var(--line); padding-left: 0.7rem; }
 .top nav { display: flex; flex-wrap: wrap; gap: 0.2rem 1.1rem; font-size: 0.92rem; }
 .top nav a { color: var(--muted); text-decoration: none; }
 .top nav a:hover { color: var(--ink); }
@@ -158,6 +160,11 @@ ul.links { list-style: none; padding: 0; display: flex; gap: 1.2rem; flex-wrap: 
 
 .foot { border-top: 1px solid var(--line); padding: 1.6rem max(1rem, calc((100vw - 64rem) / 2)); font-size: 0.88rem; color: var(--muted); }
 .foot p { max-width: 70ch; margin: 0; }
+.foot-brand { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.2rem 2rem; margin-bottom: 1.4rem; }
+.foot-logo { height: 1.4rem; width: auto; display: block; }
+.inception { display: flex; align-items: center; gap: 0.9rem; margin: 0; }
+.inception img { height: 3.2rem; width: auto; display: block; }
+.inception figcaption { max-width: 24ch; font-size: 0.82rem; }
 
 @media (max-width: 600px) {
   body { font-size: 1rem; }

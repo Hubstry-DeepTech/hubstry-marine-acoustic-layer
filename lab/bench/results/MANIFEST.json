@@ -1,6 +1,5 @@
 {
- "manifest_version": 2,
- "publication_commit": "obtido do checkout do main no build; não gravado aqui para evitar circularidade",
+ "manifest_version": 3,
  "results": {
   "v1-run41120505952": {
    "execution_type": "github_actions",
@@ -100,6 +99,6 @@
   }
  },
  "reports": {
-  "REPORT_v1_v2.md": "c3b42d2970a6cae1a20c3089c9e575dbe1e085ce5ece7b1f494876e8532a6bd5"
+  "REPORT_v1_v2.md": "e63ef18b09d40a9b37cfad278651782bde87e0cd8c0be47f2fceafe6fc2abc44"
  }
 }
