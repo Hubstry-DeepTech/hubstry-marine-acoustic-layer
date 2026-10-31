@@ -39,6 +39,7 @@ PROTECTED = (
     "src/hmal/core/harmonic_protocol.py",
     ".github/workflows/bench.yml",
 )
+ENV_KEYS = ("python", "numpy", "scipy", "libc")
 REQUIRED_KEYS = ("receiver", "criteria_version", "matrix_file", "matrix_sha256", "matrix_seed", "noise_seed_offset",
                  "protected_sha256", "environment")
 
@@ -67,6 +68,9 @@ def verify_freeze(root: Path = ROOT, env: dict | None = None, check_runtime: boo
     problems = [f"campo ausente no congelamento: {k}" for k in REQUIRED_KEYS if k not in fz]
     if problems:
         return problems
+    environment = fz["environment"] if isinstance(fz["environment"], dict) else {}
+    if sorted(environment) != sorted(ENV_KEYS) or not all(isinstance(environment[k], str) and environment[k] for k in environment):
+        problems.append(f"ambiente do congelamento precisa ter exatamente {list(ENV_KEYS)}, todos preenchidos")
     if fz["criteria_version"] != CRITERIA_VERSION:
         problems.append(f"criteria_version {fz['criteria_version']!r} no congelamento; esperado {CRITERIA_VERSION!r}")
     if fz["matrix_file"] != Path(MATRIX_REL).name:
@@ -78,6 +82,8 @@ def verify_freeze(root: Path = ROOT, env: dict | None = None, check_runtime: boo
         if sha256_file(mp) != fz["matrix_sha256"]:
             problems.append("SHA-256 da matriz difere do congelamento")
         m = json.loads(mp.read_text(encoding="utf-8"))
+        if m.get("version") != CRITERIA_VERSION:
+            problems.append(f"versão da matriz {m.get('version')!r} difere de {CRITERIA_VERSION!r}")
         if m.get("seed") != fz["matrix_seed"]:
             problems.append("semente da matriz difere do congelamento")
         if m.get("noise_seed_offset") != fz["noise_seed_offset"]:
@@ -96,13 +102,16 @@ def verify_freeze(root: Path = ROOT, env: dict | None = None, check_runtime: boo
         for ek, fk in pairs.items():
             if env.get(ek) != fz[fk]:
                 problems.append(f"{ek} da execução ({env.get(ek)!r}) difere do congelamento ({fz[fk]!r})")
-        for k in ("python", "numpy", "scipy"):
-            if env.get(k) != fz["environment"].get(k):
-                problems.append(f"{k} da execução ({env.get(k)!r}) difere do congelamento ({fz['environment'].get(k)!r})")
+        if env.get("matrix_version") != CRITERIA_VERSION:
+            problems.append(f"matrix_version da execução ({env.get('matrix_version')!r}) difere de {CRITERIA_VERSION!r}")
+        for k in ENV_KEYS:
+            if env.get(k) is None or env.get(k) != environment.get(k):
+                problems.append(f"{k} da execução ({env.get(k)!r}) difere do congelamento ({environment.get(k)!r})")
     if check_runtime:
         now = current_environment()
-        for k, want in fz["environment"].items():
-            if now.get(k) != want:
+        for k in ENV_KEYS:
+            want = environment.get(k)
+            if want is None or now.get(k) != want:
                 problems.append(f"ambiente: {k} = {now.get(k)!r}, congelado {want!r}")
     return problems
 

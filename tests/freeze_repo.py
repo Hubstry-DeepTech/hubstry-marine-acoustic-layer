@@ -44,6 +44,6 @@ def make_repo(root: Path, receiver: str = "v3", **overrides) -> dict:
 def run_env(**kw) -> dict:
     env = {"criteria_version": "0.4.0", "matrix_version": "0.4.0", "matrix_file": "matrix_v04.json", "matrix_sha256": MATRIX_SHA,
            "b3c_min_snr_db": 20, "matrix_seed": SEED, "noise_seed_offset": OFFSET, "commit": "c" * 40, "receiver": "v3",
-           "definitive": True, "python": ENVIRONMENT["python"], "numpy": ENVIRONMENT["numpy"], "scipy": ENVIRONMENT["scipy"]}
+           "definitive": True, "python": ENVIRONMENT["python"], "numpy": ENVIRONMENT["numpy"], "scipy": ENVIRONMENT["scipy"], "libc": ENVIRONMENT["libc"]}
     env.update(kw)
     return env

@@ -83,6 +83,7 @@ def env_info(smoke: bool) -> dict:
         "python": platform.python_version(),
         "numpy": np.__version__,
         "scipy": scipy.__version__,
+        "libc": "".join(platform.libc_ver()),
         "receiver": RECEIVER_VERSION,
         "definitive": (not smoke) and matrix_is_official(),
     }
