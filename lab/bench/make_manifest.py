@@ -71,8 +71,7 @@ def main() -> None:
             raise SystemExit(f"{name}: commit declarado não confere com os artefatos: {wrong or 'nenhum commit gravado'}")
         files = {str(p.relative_to(RESULTS)): sha256(p) for p in sorted(d.rglob("*")) if p.is_file()}
         sets[name] = {**meta, "files_recording_commit": len(rec), "files": files}
-    out = {"manifest_version": 2,
-           "publication_commit": "obtido do checkout do main no build; não gravado aqui para evitar circularidade",
+    out = {"manifest_version": 3,
            "results": sets, "reports": {p.name: sha256(p) for p in sorted(RESULTS.glob("*.md"))}}
     (RESULTS / "MANIFEST.json").write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"{len(sets)} conjuntos, {sum(len(s['files']) for s in sets.values())} arquivos; commits conferidos")

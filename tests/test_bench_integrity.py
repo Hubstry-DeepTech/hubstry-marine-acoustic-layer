@@ -123,7 +123,8 @@ def test_confirmatory_only_from_push_with_freeze(tmp_path):
     with pytest.raises(resolve_run.RunError):
         resolve_run.resolve("push", {}, freeze_path=tmp_path / "missing.json")
     fz = tmp_path / "FREEZE_v0.4.json"
-    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.4.0"}))
+    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.4.0", "matrix_file": "matrix_v04.json",
+                              "matrix_sha256": SHA, "matrix_seed": 1, "noise_seed_offset": 1_500_000_000}))
     res = resolve_run.resolve("push", {}, freeze_path=fz)
     assert res["kind"] == "confirmatory" and "--smoke" not in res["args"]
     with pytest.raises(resolve_run.RunError):
@@ -151,3 +152,43 @@ def test_outcome_separates_misidentification_from_rejection():
     assert run_bench.outcome(wrong, truth) == "misidentified"
     assert run_bench.outcome(rejected, truth) == "rejected"
     assert run_bench.outcome(rejected_wrong, truth) == "rejected"
+
+
+def test_freeze_with_other_criteria_version_is_rejected(tmp_path):
+    fz = tmp_path / "FREEZE_v0.4.json"
+    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.3.1", "matrix_file": "matrix_v04.json",
+                              "matrix_sha256": SHA, "matrix_seed": 1, "noise_seed_offset": 1_500_000_000}))
+    with pytest.raises(resolve_run.RunError, match="0.4.0"):
+        resolve_run.resolve("push", {}, freeze_path=fz)
+    fz.write_text(json.dumps({"receiver": "v3", "criteria_version": "0.4.0"}))
+    with pytest.raises(resolve_run.RunError, match="incompleto"):
+        resolve_run.resolve("push", {}, freeze_path=fz)
+
+
+def test_aggregator_checks_freeze_criteria_version(tmp_path):
+    root = tmp_path / "repo"
+    p = root / "lab" / "bench" / "FREEZE_v0.4.json"
+    p.parent.mkdir(parents=True)
+    p.write_text(json.dumps({"matrix_sha256": SHA, "receiver": "v3", "criteria_version": "0.3.1"}))
+    out = agg.aggregate(_write_run(tmp_path / "r", {"hf": _env(), "lf": _env()}), root=root)
+    assert out["trl_rule"].startswith("INCONSISTENT_RUNS") and "congelamento" in out["trl_rule"]
+
+
+def test_summary_must_list_every_verdict(tmp_path):
+    dirs = _write_run(tmp_path / "r", {"hf": _env(), "lf": _env()})
+    s = json.loads((dirs["hf"] / "summary.json").read_text())
+    del s["results"]["B4"]
+    (dirs["hf"] / "summary.json").write_text(json.dumps(s))
+    out = agg.aggregate(dirs, root=_freeze(tmp_path / "repo"))
+    assert out["trl_rule"].startswith("INCONSISTENT_RUNS") and "B4/hf" in out["trl_rule"]
+
+
+def test_coherent_dev_run_without_freeze_is_not_definitive(tmp_path):
+    env = _env(definitive=False, matrix_file="matrix_dev.json")
+    out = agg.aggregate(_write_run(tmp_path / "r", {"hf": env, "lf": copy.deepcopy(env)}), root=tmp_path / "empty")
+    assert out["trl_rule"].startswith("NÃO DEFINITIVO"), out["trl_rule"]
+
+
+def test_definitive_run_without_freeze_is_inconsistent(tmp_path):
+    out = agg.aggregate(_write_run(tmp_path / "r", {"hf": _env(), "lf": _env()}), root=tmp_path / "empty")
+    assert out["trl_rule"].startswith("INCONSISTENT_RUNS")

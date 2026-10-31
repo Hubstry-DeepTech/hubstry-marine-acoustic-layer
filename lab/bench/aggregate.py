@@ -59,7 +59,10 @@ def aggregate(dirs: dict[str, Path], root: Path = ROOT) -> dict:
                 continue
             if r.get("env") != envs[m]:
                 problems.append(f"{t}/{m}: env do artefato difere do summary.json")
-            if summaries[m].get("results", {}).get(t) is not None and summaries[m]["results"][t] != r["passed"]:
+            sv = summaries[m].get("results", {}).get(t)
+            if not isinstance(sv, bool):
+                problems.append(f"{t}/{m}: veredito ausente ou não booleano no summary.json")
+            elif sv != r["passed"]:
                 problems.append(f"{t}/{m}: veredito do artefato difere do summary.json")
 
     # 3. metadados entre modos, conforme a versão de critérios
@@ -73,7 +76,12 @@ def aggregate(dirs: dict[str, Path], root: Path = ROOT) -> dict:
             vals = {json.dumps(envs[m].get(k)) for m in dirs}
             if len(vals) != 1 or "null" in vals:
                 problems.append(f"metadado {k} ausente ou divergente entre os modos")
+        # execução não definitiva (desenvolvimento): pode usar outra matriz e não tem congelamento; ela nunca
+        # gera TRL e é classificada como NÃO DEFINITIVO, salvo inconsistência real entre artefatos e modos
+        dev_run = any(envs[m].get("definitive") is not True for m in dirs)
         for k, want in spec["values"].items():
+            if dev_run and k == "matrix_file":
+                continue
             for m in dirs:
                 got = envs[m].get(k)
                 if got is not None and got != want:
@@ -81,7 +89,9 @@ def aggregate(dirs: dict[str, Path], root: Path = ROOT) -> dict:
         if "freeze" in spec:
             fp = root / spec["freeze"]
             if not fp.exists():
-                problems.append(f"{spec['freeze']} ausente: sem congelamento registrado")
+                # sem congelamento: execução de desenvolvimento é só não definitiva; definitiva é inconsistente
+                if not dev_run:
+                    problems.append(f"{spec['freeze']} ausente: sem congelamento registrado")
             else:
                 fz = json.loads(fp.read_text(encoding="utf-8"))
                 for m in dirs:
@@ -89,6 +99,8 @@ def aggregate(dirs: dict[str, Path], root: Path = ROOT) -> dict:
                         problems.append(f"{m}: SHA-256 da matriz difere do congelamento")
                     if envs[m].get("receiver") != fz.get("receiver"):
                         problems.append(f"{m}: receptor difere do congelado")
+                    if envs[m].get("criteria_version") != fz.get("criteria_version"):
+                        problems.append(f"{m}: versão de critérios difere do congelamento")
 
     definitive = all(envs[m].get("definitive") is True for m in dirs) and all(
         (r or {}).get("env", {}).get("definitive") is True for m in dirs for r in results[m].values() if r is not None)

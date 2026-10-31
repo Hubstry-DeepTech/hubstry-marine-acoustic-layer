@@ -18,6 +18,9 @@ DEV_MATRIX = "/tmp/matrix_dev.json"
 DEV_MAX_OFFSET = 1_000_000_000  # faixa reservada às matrizes confirmatórias começa aqui
 
 
+FREEZE_KEYS = ("receiver", "criteria_version", "matrix_file", "matrix_sha256", "matrix_seed", "noise_seed_offset")
+
+
 class RunError(ValueError):
     pass
 
@@ -27,7 +30,14 @@ def resolve(event: str, inputs: dict, freeze_path: Path = HERE / "FREEZE_v0.4.js
         if not freeze_path.exists():
             raise RunError("execução confirmatória sem FREEZE_v0.4.json")
         fz = json.loads(freeze_path.read_text(encoding="utf-8"))
+        missing = [k for k in FREEZE_KEYS if k not in fz]
+        if missing:
+            raise RunError(f"FREEZE_v0.4.json incompleto: {missing}")
         r, c = fz["receiver"], fz["criteria_version"]
+        if c != "0.4.0":
+            raise RunError(f"o congelamento da v0.4 exige criteria_version 0.4.0, não {c!r}")
+        if r not in {"v1", "v2", "v3"}:
+            raise RunError(f"receptor inválido no congelamento: {r!r}")
         return {"kind": "confirmatory", "label": f"conf-{r}-{c}", "args": f"--receiver {r} --criteria {c}", "make": None}
     if event == "workflow_dispatch":
         seed = (inputs.get("dev_seed") or "").strip()
