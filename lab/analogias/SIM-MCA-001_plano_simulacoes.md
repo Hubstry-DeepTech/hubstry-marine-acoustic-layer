@@ -1,6 +1,6 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.1 · **Data:** 01/11/2026 · **Estado:** plano para revisão da Luna; nenhuma linha de código de simulação foi escrita e nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.2 (incorpora o parecer da Luna sobre a v0.1: GO condicional para testes, gerador, cadeia e Bloco 1) · **Data:** 01/11/2026 · **Estado:** em execução: testes automáticos, gerador, cadeia de processamento e piloto do Bloco 1. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;
@@ -31,7 +31,7 @@ As simulações não testam se o canto B é harmônico. Elas testam se o instrum
 `x(t) = Σₙ aₙ(t) · sin(2π · n · ∫₀ᵗ f₀(u) du + φₙ)`, para `n` de 1 até a última ordem abaixo de `f_max`.
 
 - **Contorno da fundamental `f₀(t)`:** linear ou exponencial em `log f`, com inclinação em oitavas por segundo numa grade que inclui o plano e o descendente.
-- **Perfil de amplitudes por ordem:** três perfis fixos. (a) decrescente com a ordem; (b) terceiro harmônico dominante e fundamental fraca; (c) fundamental ausente. O perfil (b) é o caso que motiva a ficha; o (c) testa o erro de oitava.
+- **Perfil de amplitudes por ordem:** quatro perfis fixos. (a) Decrescente com a ordem. (b) Terceiro harmônico dominante e fundamental fraca, o caso que motiva a ficha. (c) Fundamental ausente com periodicidade identificável: ordens 2, 3, 4 e seguintes, cujo período continua sendo `1/f₀`. (d) Fundamental ausente com periodicidade ambígua: só ordens pares. Nesse caso, o sinal é periódico em `1/(2f₀)` e a fundamental física não é identificável a partir dele. Por determinação da Luna, a saída do estimador em (d) é classificada como período do sinal (`2f₀`), fundamental física ou outra, e não é contada como erro.
 - **Envoltória temporal:** subida e descida suaves, para evitar transientes de borda.
 - **Fases `φₙ`:** sorteadas uniformemente.
 
@@ -45,7 +45,10 @@ As simulações não testam se o canto B é harmônico. Elas testam se o instrum
 
 O perfil exige duas famílias, avaliadas em separado.
 
-- **G3 — inarmônico comodulado.** `K` componentes com razões não inteiras sorteadas na mesma banda, todos seguindo a mesma modulação relativa de frequência do G1. É a família mais difícil de rejeitar, porque preserva a comodulação, que também é propriedade dos sinais harmônicos. Para impedir razões acidentalmente próximas de inteiros pequenos, o sorteio exclui uma vizinhança declarada em torno de cada razão `m/n` com `m, n ≤ N`.
+- **G3 — inarmônico comodulado.** `K` componentes cujas frequências iniciais são sorteadas de forma independente com distribuição log-uniforme na banda `[f_lo, f_hi]`. Todos seguem a mesma modulação relativa de frequência do G1, `f_k(t) = f_k(0) · 2^(s·t)`. É a família mais difícil de rejeitar, porque preserva a comodulação, que também é propriedade dos sinais harmônicos.
+  - **Zona de exclusão (formalização exigida pela Luna):** o sorteio é rejeitado e refeito se algum par `i < j` satisfizer `|ln(f_j/f_i) − ln(m/n)| < η` para alguma razão `m/n > 1` com `m, n ≤ n_excl`.
+  - **Valores:** `n_excl = 6` e `η = 3·σ̃`, em que `σ̃` é a incerteza típica de `ln f` fixada no Bloco 1 para a condição de SNR do cenário.
+  - **Por que `n_excl` pequeno:** com `n_excl` igual à ordem máxima `N`, as razões `m/n` cobririam a banda de forma quase densa e nenhum sorteio passaria. A exclusão remove só as coincidências com razões de inteiros pequenos, que tornariam o nulo trivialmente harmônico. As coincidências com razões de ordem mais alta permanecem e fazem parte da taxa de falsa homologia medida, como devem.
 - **G4 — aleatório independente.** `K` componentes com frequências sorteadas uniformemente em log na mesma banda, cada um com modulação própria e independente.
 
 Nas duas famílias, o número de componentes, a banda, a distribuição de amplitudes, a relação sinal-ruído, a duração e o ruído reproduzem os do cenário harmônico com que são comparadas.
@@ -70,7 +73,13 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 5. **Busca de atribuições e `H*`.** Ajuste por mínimos quadrados generalizados para cada atribuição injetiva e mínima, e conjunto `H*` pela margem `Δ_T`.
 6. **Relações.** ρ₁, ρ₂, ρ₃ e ρ₄ exatamente como no perfil v0.1.4.
 
-**Ponto para decisão (D1).** Se `g > 0`, a ordem crescente das frequências impõe ordem crescente das ordens atribuídas. Uma atribuição não monótona só se ajusta dentro da tolerância se dois componentes estiverem praticamente na mesma frequência. Proponho declarar no perfil que `h` é monótona crescente. Isso reduz a busca de todas as funções injetivas para as `C(N, K)` combinações, sem perder nenhuma atribuição plausível.
+**Decisão D1 (aprovada condicionalmente).** Se `g > 0`, a ordem crescente das frequências impõe ordem crescente das ordens atribuídas. A busca usa duas etapas.
+- Enumeração exata das atribuições consistentes com arredondamento: `h = round(f/g)` para `g` em cada intervalo entre os pontos de quebra `f_k/(j + ½)`, com `j` de 0 a `N`. São no máximo `K·(N + 1)` intervalos, em vez de `C(N, K)` combinações.
+- Acréscimo das perturbações de ±1 em cada ordem, para que `H*` inclua atribuições quase ótimas que não são pontos fixos do arredondamento.
+
+A comparação exigida pela Luna com a busca exaustiva sobre todas as funções injetivas, inclusive não monótonas e com covariância não diagonal, é um teste automático (`test_rounding_search_matches_exhaustive_on_small_case`). Ela passa em 20 casos sorteados com `N = 10` e `K = 4`. A comparação em escala maior, com `K` e `N` do canto B, entra no Bloco 2.
+
+**Propriedade verificada nos testes:** um termo comum de covariância `c²·11ᵀ`, que representa a comodulação, não altera o qui-quadrado do ajuste, porque é absorvido pela escala. Ele aumenta apenas a variância de `ln g`. Portanto, a comodulação afeta ρ₁ e a incerteza da escala, mas não a estatística de ρ₂.
 
 ## 5. Blocos de simulação
 
@@ -80,7 +89,7 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 
 - Taxa de detecção e de falsos picos por SNR, perfil de amplitude e taxa de modulação.
 - Viés e dispersão de `ln f_k`; comparação com a `σ_f` declarada.
-- Erro de `f̂₀` e taxa de erro de oitava, com e sem fundamental, e o critério de confiabilidade de `f̂₀`.
+- Erro de `f̂₀`, taxa de erro de oitava e de fator 3, e o critério de confiabilidade de `f̂₀`, nos três cenários determinados pela Luna: fundamental presente; fundamental ausente com periodicidade identificável; fundamental ausente com periodicidade ambígua. No terceiro, a saída esperada é indisponibilidade ou o período do sinal, e nada é contado como erro.
 - Verificação de `f_max` com ruído branco processado pela cadeia de decimação.
 - Verificação do limite de identificabilidade: acima da ordem prevista por `ln((n + 1)/n) > 2σ`, a taxa de atribuição errada de ordem adjacente deve subir.
 
@@ -122,7 +131,7 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 
 **Fixa:** `m_r`, `m_t`, o método final do intervalo de `β` e o número de réplicas do bootstrap.
 
-**Ponto para decisão (D2).** As margens precisam de um critério de relevância, e não apenas de calibração estatística. Proponho um critério físico: na maior ordem identificável `N`, a tendência acumulada `|β| · (N − 1)` deve ficar abaixo de metade da separação entre ordens adjacentes, `½ · ln((N + 1)/N)`. Abaixo disso, a tendência não chega a confundir ordens vizinhas. Critério análogo para `m_r`. A simulação mede então o poder com essas margens.
+**Decisão D2 (aprovada parcialmente).** Para `m_t`, vale o critério físico: na maior ordem identificável `N`, a tendência acumulada `|β| · (N − 1)` fica abaixo de metade da separação entre ordens adjacentes, `½ · ln((N + 1)/N)`. A Luna o aceitou como condição suficiente e conservadora. Para `m_r`, a derivação será probabilística e própria, a ser proposta no Bloco 4: por exemplo, o maior `τ` para o qual a probabilidade de um componente cair mais perto da ordem vizinha que da sua fica abaixo de um nível fixado. Os testes de fronteira usam `|β| = m_t` e também `τ = m_r`.
 
 ### Bloco 5 — Candidatas de ρ₆ (exploratório)
 
@@ -139,10 +148,14 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 ## 6. Tamanhos de Monte Carlo e critérios de aceite
 
 - Cada taxa de erro é estimada com intervalo de Clopper–Pearson de 95%, como no plano da Fase 1.
-- Taxas de erro tipo I (falsa homologia, tamanho do TOST, calibração de `p_emp`): pelo menos 2.000 réplicas por cenário, o que dá meia-largura de cerca de 1 ponto percentual perto de 5%.
+- **Piloto:** até 2.000 réplicas por cenário. Serve para medir custos e localizar problemas, e não para aceitar parâmetros.
+- **Validação final das taxas de erro tipo I** (falsa homologia, tamanho do TOST, calibração de `p_emp`): 6.000 réplicas por cenário.
+- **Critério de aceite:** o limite superior **unilateral** de 95% de Clopper–Pearson não excede o nível nominal mais 1 ponto percentual.
+- **Por que 6.000:** a Luna mostrou que, com 2.000 réplicas e intervalo bilateral, um teste exatamente calibrado seria aprovado só cerca de metade das vezes. O cálculo binomial exato (`stats.pass_probability`, verificado em teste automático) dá, para um teste calibrado em 5%: 61% de aprovação com 2.000 réplicas, 93% com 5.000 e 96% com 6.000. Entre 5.700 e 6.300 réplicas, a probabilidade fica sempre acima de 95%.
 - Poder e estabilidade: pelo menos 500 réplicas por cenário.
 - Número de nulos `B` dentro de cada `p_emp`: candidato 999, a confirmar no Bloco 2 pelo custo de processamento.
-- **Critério de aceite de cada taxa de erro tipo I:** o limite superior do intervalo de Clopper–Pearson não excede o nível nominal mais 1 ponto percentual. Se exceder, o parâmetro é recalibrado no conjunto de calibração e verificado de novo em sementes novas.
+- Se o critério falhar, o parâmetro é recalibrado nas sementes de calibração e verificado de novo em sementes de verificação novas.
+- **Separação obrigatória:** nenhum parâmetro é escolhido e avaliado nas mesmas sementes. A partição `cal` ou `ver` faz parte da semente de cada sinal (`seeds.py`), e os relatórios indicam de qual partição vem cada número.
 
 ## 7. Implementação e reprodutibilidade
 
@@ -183,11 +196,15 @@ Ao fim dos Blocos 1 a 4, esta tabela é preenchida, revisada pela Luna e registr
 
 ## 10. Decisões pedidas à revisão
 
-- **D1:** declarar `h` monótona crescente no perfil (Seção 4).
-- **D2:** critério físico para as margens `m_t` e `m_r` (Bloco 4).
-- **D3:** definição das duas famílias nulas, em especial a exclusão de razões próximas de inteiros pequenos em G3 (Seção 3.3).
-- **D4:** exclusão dos estimadores de `f̂₀` por soma de harmônicos (Seção 4).
-- **D5:** tamanhos de Monte Carlo e critério de aceite (Seção 6).
+Parecer da Luna sobre a v0.1:
+
+| Decisão | Estado |
+|---|---|
+| D1 — atribuições crescentes | Aprovada condicionalmente; comparação com a busca exaustiva implementada como teste (Seção 4) |
+| D2 — margens físicas | Aprovada para `m_t`; `m_r` com derivação probabilística própria no Bloco 4 |
+| D3 — famílias G3 e G4 | Aprovadas; distribuição e zona de exclusão de G3 formalizadas na Seção 3.3 |
+| D4 — fundamental independente | Aprovada |
+| D5 — Monte Carlo | Aprovada para piloto; validação final com 6.000 réplicas e critério unilateral (Seção 6) |
 
 ## 11. O que estas simulações não fazem
 
