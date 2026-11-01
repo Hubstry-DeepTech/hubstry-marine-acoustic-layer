@@ -19,7 +19,8 @@ EXPLORATORY/FEASIBILITY. Nenhum dado real é lido por este código.
 - Picos falsos são contabilizados separadamente de erros de localização.
 - O pareamento é global e um-a-um; a tolerância depende da resolução STFT e da excursão de frequência na janela, não do espaçamento harmônico.
 - Componentes sem separação suficiente são marcados como não resolvidos, sem serem forçados a falsos positivos.
-- A incerteza usa quantis empíricos centrais de 95% por SNR local e modulação, sem hipótese gaussiana.
+- A incerteza usa quantis empíricos centrais de 95% por SNR local e modulação, em Hz e em ln(f), sem hipótese gaussiana; nenhum fator 3,92 converte largura de intervalo em desvio-padrão.
+- A identificabilidade é um diagnóstico separado, por comparação da separação logarítmica entre ordens com duas vezes o raio empírico q95 em ln(f).
 - O limiar mínimo de SNR é escolhido exclusivamente na partição cal e verificado na partição ver.
 - YIN best é o candidato; o limiar é selecionado em cal. YIN first permanece somente como comparador.
 - A covariância cruzada é estimada em cal por produtos entre resíduos log-f de componentes pareados no mesmo quadro; a estrutura comum é tratada como candidata e verificada em ver.

@@ -269,25 +269,44 @@ def fit_empirical_uncertainty_table(rows, window_s):
                 ),
             )
             if errors.size >= MIN_CAL_RECORDS_PER_STRATUM:
-                bias = float(np.median(errors))
-                q_low = float(np.quantile(errors, QUANTILE_LOW, method="lower"))
-                q_high = float(np.quantile(errors, QUANTILE_HIGH, method="higher"))
-                q95_centered = float(np.quantile(
-                    np.abs(errors - bias), 0.95, method="higher"
+                bias_hz = float(np.median(errors))
+                q_low_hz = float(np.quantile(errors, QUANTILE_LOW, method="lower"))
+                q_high_hz = float(np.quantile(errors, QUANTILE_HIGH, method="higher"))
+                q95_centered_hz = float(np.quantile(
+                    np.abs(errors - bias_hz), 0.95, method="higher"
                 ))
+
+                log_errors = np.asarray([
+                    np.log(row["f_est"] / row["f_true"])
+                    for row in selected
+                    if row["f_est"] > 0 and row["f_true"] > 0
+                ], dtype=float)
+                bias_log_f = float(np.median(log_errors))
+                q_low_log_f = float(np.quantile(
+                    log_errors, QUANTILE_LOW, method="lower"
+                ))
+                q_high_log_f = float(np.quantile(
+                    log_errors, QUANTILE_HIGH, method="higher"
+                ))
+                q95_centered_log_f = float(np.quantile(
+                    np.abs(log_errors - bias_log_f), 0.95, method="higher"
+                ))
+
                 entry.update(
-                    bias_mediano_hz=bias,
-                    q025_erro_hz=q_low,
-                    q975_erro_hz=q_high,
-                    q95_abs_erro_centrado_hz=q95_centered,
-                    sigma_equivalente_hz=(q_high - q_low) / 3.92,
-                    mediana_f_verdadeira_hz=float(np.median([row["f_true"] for row in selected])),
-                    sigma_equivalente_log_f=(
-                        (q_high - q_low) / 3.92
-                    ) / max(float(np.median([row["f_true"] for row in selected])), 1e-12),
+                    bias_mediano_hz=bias_hz,
+                    q025_erro_hz=q_low_hz,
+                    q975_erro_hz=q_high_hz,
+                    q95_abs_erro_centrado_hz=q95_centered_hz,
+                    bias_mediano_log_f=bias_log_f,
+                    q025_erro_log_f=q_low_log_f,
+                    q975_erro_log_f=q_high_log_f,
+                    q95_abs_erro_centrado_log_f=q95_centered_log_f,
+                    mediana_f_verdadeira_hz=float(np.median([
+                        row["f_true"] for row in selected
+                    ])),
                     orçamento_precisão_hz=PRECISION_BUDGET_FACTOR / window_s,
                     passa_orcamento_precisao=(
-                        q95_centered <= PRECISION_BUDGET_FACTOR / window_s
+                        q95_centered_hz <= PRECISION_BUDGET_FACTOR / window_s
                     ),
                 )
             table.append(entry)
@@ -345,6 +364,7 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s):
     }
     per_signal = defaultdict(lambda: [0, 0])
     per_stratum = defaultdict(lambda: [0, 0])
+    per_stratum_hz = defaultdict(lambda: [0, 0])
     n_skipped = 0
 
     for row in rows:
@@ -357,13 +377,19 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s):
             n_skipped += 1
             continue
 
-        covered = (
+        log_error = float(np.log(row["f_est"] / row["f_true"]))
+        covered_log = (
+            entry["q025_erro_log_f"] <= log_error <= entry["q975_erro_log_f"]
+        )
+        covered_hz = (
             entry["q025_erro_hz"] <= row["error_hz"] <= entry["q975_erro_hz"]
         )
-        per_signal[row["signal_id"]][0] += int(covered)
+        per_signal[row["signal_id"]][0] += int(covered_log)
         per_signal[row["signal_id"]][1] += 1
-        per_stratum[(bin_index, modulation)][0] += int(covered)
+        per_stratum[(bin_index, modulation)][0] += int(covered_log)
         per_stratum[(bin_index, modulation)][1] += 1
+        per_stratum_hz[(bin_index, modulation)][0] += int(covered_hz)
+        per_stratum_hz[(bin_index, modulation)][1] += 1
 
     signal_coverages = {
         signal_id: covered / total
@@ -379,9 +405,14 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s):
 
     strata = {
         f"{bin_index}:{modulation}": dict(
-            cobertura=covered / total if total else None,
+            cobertura_log_f=covered / total if total else None,
+            cobertura_hz=(
+                per_stratum_hz[(bin_index, modulation)][0]
+                / per_stratum_hz[(bin_index, modulation)][1]
+                if per_stratum_hz[(bin_index, modulation)][1] else None
+            ),
             n_componentes=total,
-            cobertos=covered,
+            cobertos_log_f=covered,
         )
         for (bin_index, modulation), (covered, total) in per_stratum.items()
     }
@@ -478,11 +509,15 @@ def estimate_pairwise_covariance(rows, min_snr_db):
     )
 
 
-def identifiability_order(sigma_f_hz, f0, max_order=2000):
-    """Diagnóstico estrutural; não transforma detecção em teto de N(t)."""
+def identifiability_order(q95_abs_log_f, max_order=2000):
+    """Diagnóstico estrutural conservador: separação > 2 × raio empírico q95 em ln(f).
+
+    Não pressupõe normalidade e não transforma detectabilidade em teto de N(t).
+    """
+    if q95_abs_log_f is None or not np.isfinite(q95_abs_log_f) or q95_abs_log_f < 0:
+        return None
     for order in range(1, max_order + 1):
-        sigma_log_f = sigma_f_hz / (order * f0)
-        if np.log((order + 1) / order) <= 2.0 * sigma_log_f:
+        if np.log((order + 1) / order) <= 2.0 * q95_abs_log_f:
             return order - 1
     return f">={max_order}"
 
@@ -671,15 +706,15 @@ def summarize(results):
             ver_rows, table, min_snr, window_s
         )
 
-        eligible_scales = [
-            item["sigma_equivalente_hz"]
+        eligible_q95_log = [
+            item["q95_abs_erro_centrado_log_f"]
             for item in table
             if item["status"] == "ok"
             and min_snr is not None
             and item["snr_low_db"] >= min_snr
         ]
-        sigma_reference = (
-            float(np.median(eligible_scales)) if eligible_scales else None
+        q95_log_reference = (
+            float(max(eligible_q95_log)) if eligible_q95_log else None
         )
         covariance_cal = estimate_pairwise_covariance(cal_rows, min_snr)
         covariance_ver = estimate_pairwise_covariance(ver_rows, min_snr)
@@ -697,14 +732,17 @@ def summarize(results):
             verificacao_ver=verification,
             covariancia_cruzada_cal=covariance_cal,
             diagnostico_covariancia_ver=covariance_ver,
-            sigma_equivalente_referencia_hz=sigma_reference,
-            ressalva="sigma equivalente é escala marginal derivada da largura do intervalo; "
-                     "a tabela de quantis é o objeto primário",
+            raio_q95_log_f_referencia=q95_log_reference,
+            ressalva=(
+                "quantis empíricos em ln(f) são a incerteza primária; não há conversão "
+                "por fator normal para sigma. A tabela em Hz é mantida para o orçamento "
+                "de precisão do detector."
+            ),
         )
         summary["identificabilidade"][str(window_s)] = {
             f"f0={f0}|slope={slope}": (
-                identifiability_order(sigma_reference, f0)
-                if sigma_reference is not None else None
+                identifiability_order(q95_log_reference)
+                if q95_log_reference is not None else None
             )
             for f0 in GRID["f0"]
             for slope in GRID["slope"]
