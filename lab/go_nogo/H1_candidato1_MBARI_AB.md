@@ -1,6 +1,6 @@
 # Registro de GO/NO-GO — candidato 1 de H1: Pacífico Nordeste, chamados A e B (MBARI)
 
-**Pré-registro:** `lab/PREREGISTRATION.md`, versão 1.3.1-draft, Seções 2.1, 2.2, 3.2 e 10.1 · **Prazo do candidato:** 02/11/2026, 23:59, horário de Brasília · **Data do registro:** 01/11/2026 · **Decisão:** **NO-GO nesta versão** · **Estado:** rascunho para revisão da Luna; a decisão vale quando o Guilherme fizer o merge antes do prazo.
+**Pré-registro:** `lab/PREREGISTRATION.md`, versão 1.3.1-draft, Seções 2.1, 2.2, 3.2 e 10.1 · **Prazo do candidato:** 02/11/2026, 23:59, horário de Brasília · **Data do registro:** 01/11/2026 · **Decisão:** **NO-GO nesta versão** · **Estado:** revisado pela Luna, com parecer favorável; pendente de merge. O NO-GO aplica-se se a justificativa independente continuar ausente até o prazo final; a decisão vale com o merge do Guilherme antes do prazo.
 
 ## 1. A regra aplicada
 
