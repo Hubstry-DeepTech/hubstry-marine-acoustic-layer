@@ -1,6 +1,6 @@
 # MCA-001 — Série harmônica musical e canto B da baleia-azul
 
-**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.5.2 (aplica o perfil operacional HMAL das seis relações; incorpora a revisão adversarial da v0.4 e os pareceres da Luna de 01/11/2026, até o parecer sobre a v0.5.1) · **Data:** 01/11/2026 · **Estado:** protocolo de verificação em especificação; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-lo. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.5.3 (aplica o perfil operacional HMAL das seis relações v0.1.3; incorpora a revisão adversarial da v0.4 e os pareceres da Luna de 01/11/2026, até o parecer sobre a v0.5.2) · **Data:** 01/11/2026 · **Estado:** protocolo de verificação em especificação, liberado pela revisão para simulações sintéticas exploratórias e não liberado para dados reais; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-lo. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos relacionados:**
 - `lab/analogias/PERFIL_OPERACIONAL_HMAL_seis_relacoes.md`: as definições operacionais das seis relações usadas aqui. Esta ficha não as repete; aplica-as;
@@ -53,7 +53,7 @@ As definições gerais (componente, evento, estrutura ideal `𝓘_N`, atribuiç�
 
 **Ordem máxima efetiva `N(t)`.** A ordem máxima depende do instante, porque a fundamental varia durante o chamado. Ela é calculada com o estimador independente `f̂₀(t)`, e não com a escala `g(t)` ajustada aos componentes, para não depender da busca de atribuições. É o menor de dois limites:
 - o limite de banda, `⌊f_max / f̂₀(t)⌋`, em que `f_max` é a frequência acima da qual a resposta do filtro de decimação dos arquivos de 2 kHz deixa de ser plana. O valor de `f_max` será fixado a partir da documentação do MBARI e verificado com ruído branco sintético processado pela mesma cadeia;
-- o limite de identificabilidade: a maior ordem `n` para a qual a separação relativa entre ordens adjacentes, cerca de `1/n`, ainda é maior que duas vezes a incerteza relativa típica dos componentes. Acima dessa ordem, não é possível distinguir `n` de `n + 1`.
+- o limite de identificabilidade: a maior ordem `n` para a qual a separação entre ordens adjacentes no domínio logarítmico, `ln((n + 1)/n)`, ainda é maior que duas vezes a incerteza típica de `ln f_k`. A aproximação `1/n` superestima sempre a separação, com erro relativo de cerca de `1/(2n)`, e não é usada no critério. Acima dessa ordem, não é possível distinguir `n` de `n + 1`.
 
 A finitude de `𝓘_N` não é exigida pela existência de `h`, que poderia ser definida em todos os naturais. Ela é necessária para definir o isomorfismo parcial e para limitar a busca de atribuições.
 
