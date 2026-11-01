@@ -366,7 +366,7 @@ function renderDocs(d: SiteData): void {
 function renderIntegrity(d: SiteData): void {
   const sets: { label: string; p: Provenance; status: string; freeze?: boolean }[] = [
     ...d.bench.map((b) => ({ label: RUN_LABEL[b.id] ?? b.id, p: b.provenance, status: statusBadge(b), freeze: b.criteria_version === "0.4.0" })),
-    { label: "E1, índice do MBARI", p: d.e1.provenance, status: verdict(d.e1.passed) },
+    { label: "E1, índice do MBARI", p: d.e1.provenance, status: d.e1.passed === true ? `<span class="v pass">concordância numérica aprovada</span>` : verdict(d.e1.passed) },
   ];
   const fz = d.freeze_v04;
   const fzCell = (on?: boolean) => !on ? `<span class="small">não se aplica</span>`
@@ -375,7 +375,7 @@ function renderIntegrity(d: SiteData): void {
   const rows = sets.map((x) => `<tr><th scope="row">${esc(x.label)}</th>
     <td>${x.p.execution_type === "github_actions" ? `GitHub Actions, <a href="${x.p.execution_url}">${x.p.execution_run_id}</a>` : "manual, em máquina virtual"}</td>
     <td>${x.status}</td>
-    <td>${x.p.files.length} com SHA-256 conferido</td>
+    <td>${x.p.files.length} arquivos verificados por SHA-256</td>
     <td>${fzCell(x.freeze)}</td></tr>`).join("");
   $("integrity").innerHTML = `<div class="table-wrap"><table>
     <caption>Conferências feitas na construção desta página, a partir do commit ${short(d.publication_commit)}</caption>
