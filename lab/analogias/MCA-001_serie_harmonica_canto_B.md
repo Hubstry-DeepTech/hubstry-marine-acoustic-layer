@@ -147,7 +147,7 @@ Os critérios de cada relação estão no perfil operacional. Nesta ficha, valem
 ## 9. Próximos passos
 
 1. Revisão desta ficha e do perfil operacional pela Luna.
-2. Simulação das candidatas de ρ₅ e ρ₆, e do modelo nulo de ρ₂, com sinais sintéticos.
+2. Simulações sintéticas conforme `lab/analogias/SIM-MCA-001_plano_simulacoes_v0.1.md`: calibração dos parâmetros de ρ₁ a ρ₄, modelo nulo de ρ₂ e candidata de ρ₆.
 3. Inclusão da linha de harmonicidade do canto B na proposta de emenda v1.4, com esta ficha como fundamento.
 4. Conferência das fontes S02, S23, S24, S31 e S32 no texto primário. As referências Sxx estão no registro de fontes do PR #14, que deve ser incorporado antes desta ficha.
 
