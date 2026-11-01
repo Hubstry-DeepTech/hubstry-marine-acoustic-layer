@@ -773,16 +773,50 @@ def summarize(results):
     return summary
 
 
-FREEZE_SCHEMA = "SIM-MCA-001/B1/congelamento/v1"
+FREEZE_SCHEMA = "SIM-MCA-001/B1/congelamento/v2"
+CODE_FILES = ("block1.py", "detection.py", "fundamental.py", "generator.py", "seeds.py",
+              "assignment.py", "stats.py")
 
 
-def build_freeze(summary, window_s, det_threshold_db, decided_by, notes=""):
+def code_fingerprint():
+    """SHA-256 de cada arquivo de código do laboratório que influencia a rodada."""
+    import os
+    base = os.path.dirname(os.path.abspath(__file__))
+    out = {}
+    for name in CODE_FILES:
+        with open(os.path.join(base, name), "rb") as fh:
+            out[name] = hashlib.sha256(fh.read()).hexdigest()
+    return out
+
+
+def run_config():
+    """Configuração completa da simulação, para registro no congelamento."""
+    return dict(grade=GRID, janelas_s=WINDOWS, limiares_deteccao_db=DET_THRESHOLDS_DB,
+                yin_limiares=YIN_THRESHOLDS, banda_hz=BAND, duracao_s=DUR,
+                prefiltro_f0_hz=F0_PREFILTER, faixas_snr_local_db=SNR_BINS,
+                limiar_modulacao_oct_s=MODULATION_SPLIT_OCT_S,
+                quantis=(QUANTILE_LOW, QUANTILE_HIGH),
+                orcamento_precisao_fator=PRECISION_BUDGET_FACTOR,
+                min_registros_estrato=MIN_CAL_RECORDS_PER_STRATUM,
+                min_sinais_estrato=MIN_CAL_SIGNALS_PER_STRATUM,
+                tol_log2_f0=TOL_LOG2_F0, max_gate_fraction=0.45,
+                meia_largura_lobulo_principal_bins=D.MAINLOBE_HALF_WIDTH_BINS)
+
+
+def build_freeze(summary, window_s, det_threshold_db, decided_by, notes="", provenance=None):
     """Artefato de congelamento das regras do Bloco 1, produzido só a partir de cal.
 
     Registra o que a validação final (partição val) vai aplicar sem reajuste: janela,
     limiar de detecção, tabela de incerteza e SNR mínima calibradas em cal, limiar do YIN
     escolhido em cal, tolerância da fundamental e regra de pareamento. O hash SHA-256 do
-    conteúdo é gravado junto (parecer da Luna sobre 434ca29)."""
+    conteúdo é gravado junto (parecer da Luna sobre 434ca29).
+
+    Proveniência (parecer da Luna sobre 05f2b07): commit de origem, SHA-256 do arquivo de
+    resultados exploratórios, impressão digital do código e configuração completa. O hash
+    interno só detecta alteração sem recálculo; a autenticação vem de versionar o artefato
+    e o seu checksum num commit próprio, antes da rodada val."""
+    if float(det_threshold_db) not in DET_THRESHOLDS_DB or float(window_s) not in WINDOWS:
+        raise ValueError("janela e limiar de detecção precisam estar na grade simulada")
     unc = summary["incerteza"][str(window_s)]
     if unc["limiar_minimo_snr_local_db"] is None:
         raise ValueError("sem SNR mínima calibrada em cal para esta janela")
@@ -797,6 +831,9 @@ def build_freeze(summary, window_s, det_threshold_db, decided_by, notes=""):
         regra_pareamento="porta max(2/T, |df/dt|*T/2, df_STFT/2); um-a-um; um pico por não resolvido",
         decidido_por=decided_by,
         notas=notes,
+        proveniencia=dict(provenance or {}),
+        codigo_sha256=code_fingerprint(),
+        configuracao=run_config(),
     )
     digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     return dict(body, sha256=digest)
@@ -821,8 +858,13 @@ def evaluate_frozen(results, freeze):
         raise ValueError(f"a avaliação congelada aceita só a partição val; recebeu {sorted(parts)}")
     w = freeze["janela_s"]
     val_rows = _rows_from_results(results, w, "val")
+    # População avaliada = saída do detector com o limiar congelado E controle de qualidade de
+    # cal: SNR local ≥ max(SNR mínima de cal, limiar de detecção) (parecer da Luna, 05f2b07).
+    effective_snr = max(float(freeze["limiar_minimo_snr_local_db"]),
+                        float(freeze["limiar_deteccao_db"]))
     coverage = verify_empirical_uncertainty(
-        val_rows, freeze["tabela_incerteza_cal"], freeze["limiar_minimo_snr_local_db"], w)
+        val_rows, freeze["tabela_incerteza_cal"], effective_snr, w)
+    code_now = code_fingerprint()
     detection = _summarize_detection(results, w)["val"][str(freeze["limiar_deteccao_db"])]
     fundamental = _summarize_fundamental(results, freeze["yin_best_limiar"])["por_particao"]["val"]
     key = f"yin_best_{freeze['yin_best_limiar']}"
@@ -831,6 +873,13 @@ def evaluate_frozen(results, freeze):
     return dict(
         congelamento_sha256=freeze["sha256"],
         janela_s=w,
+        snr_local_efetivo_db=effective_snr,
+        populacao_avaliada=(f"componentes pareados e resolvidos com SNR local ≥ {effective_snr} dB, "
+                            "isto é, aceitos pelo detector com o limiar congelado e pelo controle de "
+                            "qualidade de cal"),
+        codigo_igual_ao_congelado=(code_now == freeze.get("codigo_sha256")),
+        arquivos_de_codigo_alterados=sorted(k for k in code_now
+                                            if code_now[k] != freeze.get("codigo_sha256", {}).get(k)),
         cobertura_incerteza_val=coverage,
         deteccao_val=detection,
         fundamental_val_yin_congelado=fundamental,

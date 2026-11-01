@@ -411,6 +411,17 @@ def test_val_partition_evaluates_frozen_rules_without_refitting(monkeypatch):
     cov = out["cobertura_incerteza_val"]
     assert cov["status"] == "verificacao_descritiva_independente" and cov["n_componentes"] > 0
     assert out["deteccao_val"]["por_snr_integrada"]["20.0"]["componentes_verdadeiros"] > 0
+    # população alinhada ao detector: SNR efetiva = max(SNR mínima de cal, limiar de detecção)
+    assert out["snr_local_efetivo_db"] == max(freeze["limiar_minimo_snr_local_db"], 10.0)
+    assert out["codigo_igual_ao_congelado"] is True
+    hi = B1.build_freeze(summary, window, 15.0, decided_by="teste")
+    out_hi = B1.evaluate_frozen(val, hi)
+    assert out_hi["snr_local_efetivo_db"] == max(freeze["limiar_minimo_snr_local_db"], 15.0)
+    with pytest.raises(ValueError):
+        B1.build_freeze(summary, window, 20.0, decided_by="teste")  # fora da grade
+    assert out_hi["cobertura_incerteza_val"]["n_componentes"] <= cov["n_componentes"]
+    # proveniência registrada
+    assert set(freeze["codigo_sha256"]) == set(B1.CODE_FILES) and "grade" in freeze["configuracao"]
     # sem recalibração: o mesmo congelamento com outra réplica val não altera a regra aplicada
     out2 = B1.evaluate_frozen([B1.run_one((cell, "val", 1))], freeze)
     assert out2["congelamento_sha256"] == out["congelamento_sha256"]
