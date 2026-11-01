@@ -222,9 +222,59 @@ def doc_status(path: str, pattern: str) -> str:
     return m.group(1).strip()
 
 
+EDITORIAL = ROOT / "docs" / "EDITORIAL_HMAL_LAB_v1.md"
+# Seções da página que exigem texto editorial aprovado (docs/EDITORIAL_HMAL_LAB_v1.md é a fonte única)
+EDITORIAL_KEYS = ["1", "1.1", "2", "3", "4", "4.1", "4.2", "4.3", "4.4", "4.5", "4.6", "4.7", "5", "5.1", "6", "7", "8", "8.1"]
+LAYERS = {"Tese.": "tese", "Como interpretar esta informação?": "interpretar", "Método e limitações.": "metodo"}
+
+
+def _inline(md: str) -> str:
+    """Escapa HTML e converte só `código` e **negrito**, os únicos recursos usados no documento editorial."""
+    t = md.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    t = re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
+    return re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", t)
+
+
+def parse_editorial(path: Path = EDITORIAL) -> dict:
+    text = path.read_text(encoding="utf-8")
+    status = re.search(r"^\*\*Versão:\*\*\s*(.+)$", text, re.M)
+    sections: dict = {}
+    key = None
+    for line in text.splitlines():
+        m = re.match(r"^#{2,3} (\d+(?:\.\d+)?)\. (.+)$", line)
+        if m:
+            key = m.group(1)
+            sections[key] = {"title": m.group(2).strip()}
+            continue
+        if line.startswith("## "):
+            key = None
+            continue
+        if key is None:
+            continue
+        for label, field in LAYERS.items():
+            prefix = f"**{label}**"
+            if line.startswith(prefix):
+                if field in sections[key]:
+                    raise BuildError(f"editorial: camada {label} repetida na seção {key}")
+                sections[key][field] = _inline(line[len(prefix):].strip())
+    missing = [k for k in EDITORIAL_KEYS if not sections.get(k, {}).get("tese")]
+    if missing:
+        raise BuildError(f"editorial: seções sem tese aprovada: {missing}")
+    return {"version_line": status.group(1).strip() if status else None, "sha256": sha256(path),
+            "sections": {k: sections[k] for k in EDITORIAL_KEYS}}
+
+
+def freeze_status() -> dict:
+    sys.path.insert(0, str(ROOT / "lab" / "bench"))
+    import freeze  # noqa: E402
+    problems = freeze.verify_freeze(ROOT)
+    return {"verified": not problems, "problems": problems, "protected_files": len(freeze.PROTECTED),
+            "freeze_file": freeze.FREEZE_REL}
+
+
 def build(allow_dirty: bool = False) -> dict:
     pub = git("rev-parse", "HEAD")
-    if not allow_dirty and git("status", "--porcelain", "--", "lab", "docs", "LICENSE"):
+    if not allow_dirty and git("status", "--porcelain", "--", "lab", "docs", "LICENSE", "src"):
         raise BuildError("há alterações não commitadas nas evidências; o publication_commit não as representaria")
     manifest = json.loads((RESULTS / "MANIFEST.json").read_text(encoding="utf-8"))
     verify_manifest(manifest)
@@ -243,6 +293,8 @@ def build(allow_dirty: bool = False) -> dict:
         "bench": bench,
         "e1": e1_set(manifest["results"]["e1"], pub),
         "reports": {k: {"sha256": v, "url": f"{REPO_URL}/blob/{pub}/lab/bench/results/{k}"} for k, v in manifest["reports"].items()},
+        "editorial": parse_editorial(),
+        "freeze_v04": freeze_status(),
     }
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "site.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
