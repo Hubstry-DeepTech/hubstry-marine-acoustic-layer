@@ -1,6 +1,6 @@
 # MCA-001 — Série harmônica musical e canto B da baleia-azul
 
-**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.5 (aplica o perfil operacional HMAL das seis relações e incorpora a revisão adversarial da v0.4 e os pareceres da Luna de 01/11/2026) · **Data:** 01/11/2026 · **Estado:** protocolo de verificação em especificação; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-lo. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.5.1 (aplica o perfil operacional HMAL das seis relações; incorpora a revisão adversarial da v0.4 e os pareceres da Luna de 01/11/2026, inclusive sobre a v0.5) · **Data:** 01/11/2026 · **Estado:** protocolo de verificação em especificação; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-lo. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos relacionados:**
 - `lab/analogias/PERFIL_OPERACIONAL_HMAL_seis_relacoes.md`: as definições operacionais das seis relações usadas aqui. Esta ficha não as repete; aplica-as;
@@ -29,7 +29,7 @@ A taxonomia de três modalidades vem da TICA (Seções 7.1 a 7.4), que também a
 - **Analogia funcional:** elementos de dois sistemas desempenham papéis equivalentes em seus respectivos contextos.
 - **Analogia homológica:** correspondência de estrutura entre sistemas distintos, independentemente de ancestralidade ou origem evolutiva comum. O termo não é usado no sentido da biologia evolutiva, em que homologia designa semelhança por descendência comum.
 
-Dois conceitos do autor são distinguidos. A relação ρ₂ da Álgebra exige homomorfismo entre estruturas, com simetria apenas no isomorfismo (Definição 3.2). A analogia homológica da TICA exige isomorfismo completo, com mapeamento biunívoco (Seção 7.4). Nesta ficha, a homologia é medida pela relação ρ₂, em níveis. O nível mais alto alcançável com dados é o isomorfismo parcial (Seção 3.3), que não equivale ao isomorfismo completo da TICA, e este não é pressuposto.
+Dois conceitos do autor são distinguidos. A relação ρ₂ da Álgebra exige homomorfismo entre estruturas, com simetria apenas no isomorfismo (Definição 3.2). A analogia homológica da TICA exige isomorfismo completo, com mapeamento biunívoco (Seção 7.4). Nesta ficha, a homologia é medida pela relação ρ₂, em níveis. O nível mais alto alcançável com dados é o isomorfismo parcial (Seção 3.4), que não equivale ao isomorfismo completo da TICA, e este não é pressuposto.
 
 Dois referenciais externos complementam a taxonomia. Mary Hesse (S23) distingue analogias positivas, negativas e neutras. Dedre Gentner (S24) sustenta que analogias consistentes preservam relações, e não apenas atributos.
 
@@ -39,23 +39,31 @@ Dois referenciais externos complementam a taxonomia. Mary Hesse (S23) distingue 
 
 **Sistema de destino: o canto B da baleia-azul do Pacífico Nordeste.** Trata-se de vocalização tonal, com duração de vários segundos e modulação de frequência. Na literatura, o componente mais energético é identificado como o terceiro harmônico, e sua frequência de pico a 10 s do início ficou entre 46,1 Hz (2006) e 42,6 Hz (2019) (S01). Essa identificação já pressupõe a estrutura harmônica e a atribuição de ordem que esta ficha pretende testar. Por isso, a fundamental perto de 14 a 15 Hz que dela resulta é tratada aqui como hipótese, e não como dado. Segundo o resumo de um artigo publicado, fundamental e sobretons podem ser modelados por uma série de ondículas curtas atribuídas a pulsos pneumáticos (S02, conferido apenas pelo resumo). Esse modelo é uma hipótese de produção.
 
-### 3.3 Estruturas e parâmetros desta ficha
+### 3.3 Antecedente histórico: a formalização numérica das relações musicais
+
+A investigação tem um antecedente na tradição matemática da teoria musical grega, em particular no preâmbulo da Sectio canonis, tratado tradicionalmente atribuído a Euclides (S31). Nesse texto, a constituição das notas musicais é relacionada ao movimento e à composição por partes e, a partir daí, à necessidade de expressar suas relações por razões numéricas. O tratado classifica essas razões em múltiplas, superparticulares e superdivididas. O argumento parte da natureza física do som e constrói dela a necessidade da descrição numérica, direção argumentativa que o HMAL adota.
+
+Duas ressalvas acompanham o antecedente. A primeira é conceitual: as "partes" do argumento euclidiano dizem respeito à constituição das notas e às relações entre notas, e não aos componentes espectrais de um mesmo sinal, como entende a acústica moderna. A correspondência entre as duas concepções é uma transferência de princípio relacional, e não uma identidade. A segunda é histórica: a premissa de que todas as coisas compostas de partes estão em relação numérica recíproca já foi contestada por Paul Tannery, e Alan Bowen propõe lê-la como referente a pluralidades de partes discretas (S32). A autoria euclidiana de todos os segmentos do tratado também é debatida.
+
+O antecedente é fundamento histórico-conceitual. Não é evidência empírica de que o canto B tenha organização harmônica.
+
+### 3.4 Estruturas e parâmetros desta ficha
 
 As definições gerais (componente, evento, estrutura ideal `𝓘_N`, atribuição `h`, escala `g`, desvio `εₖ`) estão na Seção 4 do perfil operacional. Esta ficha fixa o seguinte.
 
-**Ordem máxima efetiva `N(t)`.** A ordem máxima depende do instante, porque a fundamental varia durante o chamado. Ela é o menor de dois limites:
-- o limite de banda, `⌊f_max / g(t)⌋`, em que `f_max` é a frequência acima da qual a resposta do filtro de decimação dos arquivos de 2 kHz deixa de ser plana. O valor de `f_max` será fixado a partir da documentação do MBARI e verificado com ruído branco sintético processado pela mesma cadeia;
+**Ordem máxima efetiva `N(t)`.** A ordem máxima depende do instante, porque a fundamental varia durante o chamado. Ela é calculada com o estimador independente `f̂₀(t)`, e não com a escala `g(t)` ajustada aos componentes, para não depender da busca de atribuições. É o menor de dois limites:
+- o limite de banda, `⌊f_max / f̂₀(t)⌋`, em que `f_max` é a frequência acima da qual a resposta do filtro de decimação dos arquivos de 2 kHz deixa de ser plana. O valor de `f_max` será fixado a partir da documentação do MBARI e verificado com ruído branco sintético processado pela mesma cadeia;
 - o limite de identificabilidade: a maior ordem `n` para a qual a separação relativa entre ordens adjacentes, cerca de `1/n`, ainda é maior que duas vezes a incerteza relativa típica dos componentes. Acima dessa ordem, não é possível distinguir `n` de `n + 1`.
 
 A finitude de `𝓘_N` não é exigida pela existência de `h`, que poderia ser definida em todos os naturais. Ela é necessária para definir o isomorfismo parcial e para limitar a busca de atribuições.
 
-**Conjunto esperado de ordens `E(t)`.** É o conjunto das ordens de `1` a `N(t)` cuja posição ideal fica acima do piso de ruído local, estimado no espectro sem usar a detecção dos componentes. `E(t)` é definido antes e independentemente de `C(t)`. Assim se evita a circularidade de definir o esperado pelo que foi detectado.
+**Conjunto esperado de ordens `E(t)`.** É o conjunto das ordens `n` de `1` a `N(t)` em cuja posição `n · f̂₀(t)` o espectro fica acima do piso de ruído local, estimado sem usar a detecção dos componentes. Como `f̂₀` não depende da detecção nem da busca de atribuições, `E(t)` também não depende. Nos intervalos em que `f̂₀` não for confiável, `E(t)` não é definido e a classificação de isomorfismo parcial fica indisponível.
 
 **Isomorfismo parcial.** Homomorfismo aproximado (perfil, Seção 5.2) em que `h` é bijetiva entre `C(t)` e `E(t)`. O termo "parcial" registra que `E(t)` não contém todas as ordens de `𝓘_N`.
 
-**Ajuste e incerteza.** Para cada atribuição candidata, um único ajuste ponderado de `ln f_k = ln h_k + ln g` substitui a comparação par a par das razões. Os `K(K − 1)/2` pares de componentes contêm apenas `K − 1` razões independentes, e contar pares inflaria a evidência. A modulação de frequência, comum a todos os componentes, correlaciona os erros; a matriz de covariância entra no ajuste. O teste usa qui-quadrado com `K − 1` graus de liberdade.
+**Ajuste e incerteza.** Para cada atribuição candidata, um único ajuste ponderado de `ln f_k = ln h_k + ln g` substitui a comparação par a par das razões. Os `K(K − 1)/2` pares de componentes contêm apenas `K − 1` razões independentes, e contar pares inflaria a evidência. A modulação de frequência, comum a todos os componentes, correlaciona os erros; a matriz de covariância entra no ajuste. O qui-quadrado do melhor ajuste, com `K − 1` graus de liberdade nominais, é reportado como estatística descritiva. Como a atribuição é selecionada entre muitas, a significância vem da distribuição empírica dessa estatística nos sinais nulos submetidos ao procedimento completo (perfil, Seção 5.2).
 
-**Estimador independente da fundamental `f̂₀`.** Será escolhido na Fase 2, por exemplo entre estimadores baseados em autocorrelação, e calibrado com sinais sintéticos. Ele é usado para validar `g` e para a candidata de ρ₆.
+**Estimador independente da fundamental `f̂₀`.** Será escolhido na Fase 2, por exemplo entre estimadores baseados em autocorrelação, e calibrado com sinais sintéticos, inclusive com fundamental ausente. Ele define `N(t)` e `E(t)`, valida `g`, serve à candidata de ρ₆ e é a única via para a identificação da fundamental física, que a atribuição mínima não fornece (perfil, Seção 4).
 
 ## 4. Aplicação das seis relações
 
@@ -70,14 +78,16 @@ A finitude de `𝓘_N` não é exigida pela existência de `h`, que poderia ser 
 
 ### 4.1 Contextos de ρ₃ para o canto B
 
-Os contextos abaixo são propostos para revisão. Depois de aprovados, ficam congelados antes de qualquer medição.
+Os contextos abaixo são propostos para revisão. Depois de aprovados, ficam congelados antes de qualquer medição, com os valores numéricos de seus parâmetros.
 
-1. **Ordem do componente de maior energia**, na atribuição mínima aceita por ρ₂.
-2. **Padrão das ordens dos três componentes mais energéticos**, como conjunto.
-3. **Classe do contorno de frequência**: descendente, plano ou ascendente, conforme a inclinação de `ln g(t)` ao longo do evento seja menor que `−s`, entre `−s` e `s`, ou maior que `s`, com `s` fixado antes da medição.
-4. **Resultado do teste de homologia** no instante central do evento: aceito ou rejeitado.
+**Elegibilidade.** Todo evento identificado pela anotação independente forma uma assinatura, tenha ou não passado no teste de homologia. Os contextos 1 e 2 usam a atribuição de melhor ajuste `h*` (perfil, Seção 4), e não a atribuição aceita por ρ₂. Assim, ρ₃ compara eventos homólogos e não homólogos, e a aprovação de ρ₂ não é condição para que a assinatura exista. Cada contexto tem, além das saídas descritas, a saída "não estimável", que é um valor legítimo da assinatura.
 
-Dois eventos são equivalentes quando coincidem nos quatro contextos. A relação é de equivalência por construção (perfil, Seção 5.3).
+1. **Ordem do componente de maior energia**, segundo `h*`, no instante central do evento. Se as amplitudes dos dois componentes mais fortes forem indistinguíveis dentro da incerteza, a saída é "empate".
+2. **Conjunto das ordens dos três componentes mais energéticos**, segundo `h*`, no instante central. O conjunto é deliberadamente não ordenado: a ordenação interna não é exigida, e o contexto 1 já distingue o componente dominante. Se a amplitude do terceiro componente for indistinguível da do quarto dentro da incerteza, a saída é "indeterminado".
+3. **Classe do contorno de frequência**: descendente, plano ou ascendente. A inclinação é a de `log₂ f̂₀(t)` ao longo do evento, em oitavas por segundo, estimada por regressão robusta de Theil–Sen sobre os quadros de análise do evento, sem suavização adicional, com um número mínimo de quadros fixado antes da medição. A classe é descendente se a inclinação for menor que `−s`, plana se ficar entre `−s` e `s`, e ascendente se for maior que `s`. O valor de `s` é fixado com sinais sintéticos antes de qualquer dado real. Abaixo do número mínimo de quadros, a saída é "não estimável".
+4. **Resultado do teste de homologia** no instante central: aceito, rejeitado ou não estimável. Este contexto é informação derivada de ρ₂, e não evidência independente; a dependência fica declarada.
+
+Dois eventos são equivalentes quando coincidem nos quatro contextos. A relação é de equivalência por construção (perfil, Seção 5.3). Ela é relativa a este conjunto finito de contextos, e não substituibilidade em todo contexto concebível.
 
 ### 4.2 Observações sobre as instâncias
 
@@ -137,6 +147,6 @@ Os critérios de cada relação estão no perfil operacional. Nesta ficha, valem
 1. Revisão desta ficha e do perfil operacional pela Luna.
 2. Simulação das candidatas de ρ₅ e ρ₆, e do modelo nulo de ρ₂, com sinais sintéticos.
 3. Inclusão da linha de harmonicidade do canto B na proposta de emenda v1.4, com esta ficha como fundamento.
-4. Conferência das fontes S02, S23 e S24 no texto primário. As referências Sxx estão no registro de fontes do PR #14, que deve ser incorporado antes desta ficha.
+4. Conferência das fontes S02, S23, S24, S31 e S32 no texto primário. As referências Sxx estão no registro de fontes do PR #14, que deve ser incorporado antes desta ficha.
 
 Generated by Claude

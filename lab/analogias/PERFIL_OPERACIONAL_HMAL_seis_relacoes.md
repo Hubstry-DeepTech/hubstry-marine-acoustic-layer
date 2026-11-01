@@ -1,6 +1,6 @@
 # Perfil operacional HMAL das seis relações de significância
 
-**Versão:** 0.1 (para revisão da Luna e aprovação do Guilherme) · **Data:** 01/11/2026 · **Estado:** especificação; nenhuma medição foi feita. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.1.1 (incorpora o parecer da Luna sobre a v0.1; para revisão e aprovação do Guilherme) · **Data:** 01/11/2026 · **Estado:** especificação; nenhuma medição foi feita. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
 
 ## 1. Natureza deste documento
 
@@ -53,9 +53,10 @@ As definições abaixo valem para todas as fichas acústicas.
 - **Componente espectral `c`:** pico do espectro com frequência `f`, incerteza `σ_f` e amplitude `A`, obtido por um procedimento de detecção que não usa nenhuma hipótese sobre a frequência fundamental.
 - **Evento `e`:** trecho identificado como uma vocalização por procedimento de anotação independente (linha de anotação de eventos do HMAL). Um evento é representado pelos conjuntos de componentes `C(t)` nos instantes de análise.
 - **Estrutura harmônica ideal `𝓘_N`:** estrutura de duas espécies, `⟨{1, …, N}, ℚ⁺, r⟩`, em que `r(m, n) = m/n`. Ela representa apenas o valor das razões entre ordens. O símbolo evita a colisão com o `H_N` do dicionário de comunicação do HMAL e com o `ℋ` do HALE.
-- **Atribuição de ordens `h`:** função de `C(t)` em `{1, …, N}`. Por definição, ela é injetiva (componentes distintos recebem ordens distintas) e mínima (o máximo divisor comum das ordens atribuídas é 1). A minimalidade elimina a ambiguidade de sub-harmônico: se `h` preserva as razões, `2·h` também preserva, com fundamental pela metade.
+- **Atribuição de ordens `h`:** função de `C(t)` em `{1, …, N}`. Por definição, ela é injetiva (componentes distintos recebem ordens distintas) e mínima (o máximo divisor comum das ordens atribuídas é 1). Se `h` preserva as razões, `2·h` também preserva, com escala pela metade. A minimalidade escolhe a atribuição primitiva entre as atribuições proporcionais. Ela não identifica a fundamental física: um sinal com componentes apenas em `2f₀` e `4f₀` recebe a atribuição mínima `(1, 2)`, com escala `2f₀`, embora a fundamental física seja `f₀`. A identificação da fundamental física depende do estimador independente `f̂₀`.
+- **Atribuição de melhor ajuste `h*`:** a atribuição injetiva e mínima com menor estatística de ajuste, calculada para todo instante em que haja ao menos dois componentes, independentemente de passar no teste de homologia. Quando nenhuma atribuição é calculável, o instante recebe o estado "não estimável".
 - **Escala `g`:** dado `h`, `ln g` é estimado por mínimos quadrados ponderados no modelo `ln f_k = ln h_k + ln g + e_k`, com pesos `1/(σ_k/f_k)²`.
-- **Estimador independente da fundamental `f̂₀`:** procedimento que estima a fundamental sem usar `h`. É exigido pelas relações que comparariam `h` com a fundamental, para evitar circularidade.
+- **Estimador independente da fundamental `f̂₀`:** procedimento que estima a fundamental sem usar `h` nem os componentes detectados como tais, por exemplo a partir da autocorrelação do sinal. É usado para definir tudo o que precisa ser independente da busca de atribuições: a ordem máxima efetiva, o conjunto esperado de ordens e a validação da escala `g`. Nos intervalos em que `f̂₀` não for confiável, segundo critério fixado antes da medição, as classificações que dependem dele ficam indisponíveis.
 - **Desvio relativo `εₖ`:** `εₖ = f_k / (h_k · g) − 1`. Para desvios pequenos, `|ln(1 + εₖ)| ≈ |εₖ|`, com erro da ordem de `εₖ²/2`.
 
 ## 5. Fichas operacionais
@@ -70,11 +71,11 @@ Cada ficha tem os sete campos propostos pela Luna (definição HMAL, objeto, ope
 | Definição HMAL | Um componente é similar à posição ideal da sua ordem quando o desvio logarítmico entre os dois está dentro da tolerância do próprio componente |
 | Objeto | Componente `c_k` e a posição ideal `h_k · g` (interdomínio); ou dois componentes de mesma ordem em eventos distintos (intradomínio) |
 | Operador | `φ = ln f`; `d` = diferença absoluta |
-| Métrica | Desvio normalizado `u_k = ln(f_k / (h_k · g)) / (σ_k / f_k)`; fração de componentes com `|u_k| ≤ z` |
+| Métrica | Desvio normalizado com escala estimada sem o próprio componente: `u_k = ln(f_k / (h_k · g₍₋ₖ₎)) / √((σ_k / f_k)² + var(ln g₍₋ₖ₎))`, em que `g₍₋ₖ₎` é a escala ajustada sem o componente `k`. Fração de componentes com `|u_k| ≤ z` |
 | Tolerância | `|u_k| ≤ z`, com `z` fixado antes da medição por calibração com sinais sintéticos |
 | Propriedades | Reflexiva, simétrica, não transitiva, como na Definição 3.1 |
 | Controle e refutação | Sinais sintéticos com inarmonicidade conhecida, para verificar que o critério a detecta. Refutação: a fração de componentes similares não difere da obtida em substitutos inarmônicos com o mesmo número de componentes e a mesma banda |
-| Dependência declarada | ρ₁ e ρ₂ usam a mesma atribuição `h` e a mesma escala `g`. ρ₁ avalia atributos, componente por componente; ρ₂ avalia relações, no conjunto. Os resultados não são independentes |
+| Dependência declarada | ρ₁ e ρ₂ usam a mesma atribuição. A estimação da escala sem o próprio componente reduz, mas não elimina, a dependência entre os dois resultados. ρ₁ avalia atributos, componente por componente; ρ₂ avalia relações, no conjunto |
 | Estado | Especificada |
 | Grau de evidência | A proximidade dos componentes de um sinal periódico às posições ideais é **estabelecida** pela física. Que o canto B se comporte assim é **conjecturado** |
 
@@ -86,8 +87,8 @@ Cada ficha tem os sete campos propostos pela Luna (definição HMAL, objeto, ope
 | Definição HMAL | A estrutura observada é homóloga à ideal quando existe uma atribuição `h` injetiva e mínima com a qual o modelo `ln f_k = ln h_k + ln g` se ajusta aos componentes dentro da incerteza |
 | Objeto | `C(t)` e `𝓘_N` (interdomínio) |
 | Operador | Busca exaustiva das atribuições injetivas e mínimas, com ajuste ponderado para cada uma |
-| Métrica | Estatística qui-quadrado do melhor ajuste, com `K − 1` graus de liberdade (`K` componentes, um parâmetro livre); cobertura do conjunto esperado de ordens |
-| Tolerância | Valor-p do qui-quadrado acima de um nível fixado antes da medição. Quando a modulação de frequência introduz erros correlacionados entre componentes, a matriz de covariância entra no ajuste |
+| Métrica | Estatística qui-quadrado do melhor ajuste, com `K − 1` graus de liberdade nominais (`K` componentes, um parâmetro livre), reportada como estatística descritiva; cobertura do conjunto esperado de ordens |
+| Tolerância e significância | O qui-quadrado do melhor ajuste é reportado como estatística descritiva. Como a atribuição é escolhida entre muitas candidatas, o valor-p nominal com `K − 1` graus de liberdade não vale depois da busca. A significância é calculada pela distribuição empírica do qui-quadrado do melhor ajuste nos sinais nulos, gerados e processados pelo procedimento completo: mesma detecção, mesma busca, mesma minimalidade. Quando a modulação de frequência introduz erros correlacionados entre componentes, a matriz de covariância entra no ajuste |
 | Níveis | **Mergulho exato:** todas as razões preservadas sem erro; referência teórica apenas. **Homomorfismo aproximado:** o ajuste passa no teste. **Cobertura parcial:** o ajuste passa depois de excluir componentes por regra fixada antes da medição; a fração mantida é reportada como escore, e não como prova. **Isomorfismo parcial:** homomorfismo aproximado bijetivo entre `C(t)` e um conjunto esperado de ordens definido sem usar a detecção (ver a ficha MCA) |
 | Propriedades | Reflexiva e transitiva (composição de homomorfismos); não simétrica, porque a estrutura observada é finita e a ideal contém ordens não observadas. Coerente com o texto da Definição 3.2 |
 | Controle e refutação | Modelo nulo obrigatório: conjuntos de componentes inarmônicos e conjuntos aleatórios com o mesmo `K` e a mesma banda, submetidos à mesma busca. A taxa com que esses conjuntos passam no teste é a taxa de falsa homologia. Se ela não ficar abaixo de um limite fixado antes da medição, a tolerância não é informativa e o critério não pode ser aplicado. Refutação: a taxa de homologia nos dados não supera a taxa de falsa homologia |
@@ -106,7 +107,7 @@ Nota sobre o manuscrito: o texto da Definição 3.2 diz "homomorfismo", mas a f�
 | Operador | Cada contexto é uma função `C_i` que leva um evento a uma saída discreta, com discretização fixada antes da medição. A assinatura é `S(e) = (C₁(e), …, C_m(e))`. Dois eventos são equivalentes quando `S(e) = S(e')` |
 | Métrica | Partição dos eventos em classes de equivalência; número e tamanho das classes; estabilidade da classe de cada evento sob reamostragem |
 | Tolerância | Embutida na discretização de cada contexto |
-| Propriedades | Reflexiva, simétrica e transitiva por construção: a igualdade de saídas de uma função é sempre uma relação de equivalência. A partição em classes é, portanto, bem definida |
+| Propriedades | Reflexiva, simétrica e transitiva por construção: a igualdade de saídas de uma função é sempre uma relação de equivalência. A partição em classes é, portanto, bem definida. A equivalência é relativa ao conjunto finito `𝒞` de contextos do HMAL, e não substituibilidade universal em todo contexto concebível, como na Definição 3.3 da Álgebra. Essa limitação fica declarada |
 | Contextos candidatos | A fixar na ficha MCA, antes de qualquer medição. Exemplos: ordem do componente de maior energia; padrão das ordens dos três componentes mais fortes; classe do contorno de frequência (descendente, plano, ascendente, por limiar de inclinação); resultado do teste de homologia |
 | Distinção em relação a ρ₄ | Dois eventos com a mesma assinatura que não são cópias escaladas um do outro são equivalentes e não simétricos. Duas cópias escaladas em que o ruído apagou um componente podem ter assinaturas diferentes: são simétricas e não equivalentes |
 | Controle e refutação | Eventos perto dos limiares de discretização podem mudar de classe. A estabilidade é avaliada por reamostragem. Refutação: as classes não são estáveis, ou a partição não difere da obtida com assinaturas embaralhadas entre eventos |
@@ -149,7 +150,7 @@ Nota sobre o manuscrito: o texto da Definição 3.2 diz "homomorfismo", mas a f�
 | Candidata a `Δ` | Desvio da energia de cada componente em relação à média ponderada do evento. No canto B, a fundamental fraca teria `Δ` negativo e o terceiro harmônico forte, positivo |
 | Candidata a `Ω` | Informação sobre a fundamental medida pela redução de hipóteses. Fixa-se uma grade de hipóteses de fundamental `𝓕₀` numa banda declarada. Para um conjunto `S` de componentes, `𝓕(S)` é o subconjunto das hipóteses compatíveis com todos os componentes de `S`, isto é, para as quais cada componente fica perto de algum múltiplo inteiro, dentro da tolerância. Define-se `Ω(S) = log₂(|𝓕₀| / |𝓕(S)|)`. A operação `⊕` é a união dos conjuntos de componentes |
 | Condição de emergência | `Ω(x ⊕ y) > Ω(x) + Ω(y)` equivale a `|𝓕(x ∪ y)| · |𝓕₀| < |𝓕(x)| · |𝓕(y)|`: as restrições combinadas eliminam mais hipóteses do que eliminariam se fossem independentes |
-| Ressalvas | A informação de Fisher de componentes independentes é aditiva e, por isso, não serve como `Ω`. Para uma série harmônica verdadeira, as hipóteses compatíveis com dois componentes incluem a fundamental e seus submúltiplos, e a interseção pode ser maior do que a esperada ao acaso. Se a simulação mostrar que a série harmônica é subaditiva nesse `Ω`, isso será um resultado informativo, e não uma falha. A validação de `Ω` exige o estimador independente `f̂₀` |
+| Ressalvas | A quantidade de hipóteses eliminadas depende da resolução da grade `𝓕₀`. A grade, a banda e a distribuição prévia (hipóteses equiprováveis) são declaradas, e a sensibilidade de `Ω` à resolução é testada. A candidata a `Δ`, definida como desvio em relação à média, tem soma ponderada zero por construção: componentes acima e abaixo da média sempre existem. Observar sinais opostos não demonstra complementaridade; a complementaridade exigirá um critério que não seja satisfeito por qualquer distribuição de energia. A informação de Fisher de componentes independentes é aditiva e, por isso, não serve como `Ω`. Para uma série harmônica verdadeira, as hipóteses compatíveis com dois componentes incluem a fundamental e seus submúltiplos, e a interseção pode ser maior do que a esperada ao acaso. Se a simulação mostrar que a série harmônica é subaditiva nesse `Ω`, isso será um resultado informativo, e não uma falha. A validação de `Ω` exige o estimador independente `f̂₀` |
 | Estado | Aberta, com candidata especificada para simulação |
 | Grau de evidência | **Especulado** |
 
