@@ -10,13 +10,12 @@ O HMAL investiga se a razão entre a mesma grandeza acústica medida em duas uni
 
 O protótipo projeta uma medida/frequência observada sobre o elemento mais próximo de `H_N`, calcula erro de projeção e a métrica interna `P(a/b)=1/(a+b)`. Isso demonstra uma implementação computacional, não que cetáceos selecionem essas razões, que o mapeamento melhore a detecção ou que o HMAL seja um protocolo de comunicação submarina validado.
 
-## Viabilidade dos dados — ordem e prazos pré-fixados
+## Viabilidade dos dados (pré-registro v1.3.2-draft)
 
-1. **Pacífico Nordeste, MBARI A/B — até 02/11/2026:** A é pulsado e B tonal; presumivelmente NO-GO, salvo justificativa física independente que torne as medidas comparáveis.
-2. **Chagos, unidades 2/3 — até 04/11/2026:** ambas são descritas como tons puros, mas o depósito Zenodo disponível não contém áudio original nem medidas dessas unidades. Exige gravações autorizadas e termos verificados.
-3. **Atlântico Norte, partes A/B — até 05/11/2026:** áudio, metadados, rótulos e acesso precisam ser verificados.
+1. **Pacífico Nordeste, MBARI A/B — NO-GO registrado em 01/11/2026** (`lab/go_nogo/H1_candidato1_MBARI_AB.md`): A é pulsado e B tonal; não há justificativa física nem hipótese mecanística independente que torne as medidas comparáveis.
+2. **Chagos e Atlântico Norte — retirados na emenda 1.3.2**, antes de qualquer acesso a dados. Foram registrados sem verificação prévia da origem dos dados, das condições de acesso e do prazo de liberação. As gravações de Chagos vêm da estação HA08 da CTBTO, de acesso controlado. O Atlântico Norte não tem gravações com rótulos independentes das partes A e B.
 
-Sem confirmação até o prazo, o candidato é NO-GO nesta versão. Se nenhum passar, H1 será registrada como `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, sem substituição pós-hoc.
+**Resultado desta fase:** `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, sem substituição pós-hoc. A emenda criou uma regra: nenhum candidato futuro é registrado sem verificação documentada de acesso. O acesso aos dados da CTBTO e de outras fontes passa a ser o plano de dados da fase 2.
 
 ## Limite inferencial
 

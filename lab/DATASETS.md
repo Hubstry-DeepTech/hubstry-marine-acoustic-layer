@@ -35,11 +35,13 @@ Fontes: [NOAA NCEI Gsutil Guide](https://www.ngdc.noaa.gov/mgg/pad/docs/Gsutil_G
 
 ## 3. Relação com o pré-registro e elegibilidade de H1
 
-A ordem de candidatos para H1 permanece exatamente a definida na `PREREGISTRATION v1.3.1-draft`:
+Na `PREREGISTRATION v1.3.2-draft` (emenda de 01/11/2026):
 
-1. Pacífico Nordeste A/B (MBARI), com decisão até 02/11/2026.
-2. Chagos unidades 2/3, com decisão até 04/11/2026.
-3. Atlântico Norte A/B, com decisão até 05/11/2026.
+1. Pacífico Nordeste A/B (MBARI): NO-GO registrado em 01/11/2026.
+2. Chagos unidades 2/3: retirado na emenda 1.3.2, sem acesso verificado (dados da estação HA08 da CTBTO, de acesso controlado).
+3. Atlântico Norte A/B: retirado na emenda 1.3.2, sem acesso verificado e sem rótulos independentes das partes A e B.
+
+H1 fica `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. As pistas de fonte desta matriz passam a servir ao plano de dados da fase 2, sob a regra de verificação documentada de acesso.
 
 A matriz não promove automaticamente nenhum dataset a par elegível. O MBARI disponibiliza um notebook de índice de chamado B e outro de classificação A; a disponibilidade desses notebooks não demonstra, sozinha, rótulos independentes de eventos A/B nem a comparabilidade física de suas variáveis. O dataset Chagos depositado em Zenodo não contém áudio original e não contém as medidas das unidades 2/3. O TemporalContext é outra espécie e permanece teste de generalização posterior.
 
