@@ -18,7 +18,6 @@ import argparse
 import hashlib
 import itertools
 import json
-import math
 import platform
 import sys
 import time
@@ -256,7 +255,7 @@ def fit_empirical_uncertainty_table(rows, window_s):
             entry = dict(
                 snr_bin=bin_index,
                 snr_low_db=lower,
-                snr_high_db=None if math.isinf(upper) else upper,
+                snr_high_db=upper,
                 modulation=modulation_class,
                 n=int(errors.size),
                 n_sinais=n_signals,
@@ -317,7 +316,7 @@ def select_min_snr(table):
             if not tail_passes:
                 break
         if tail_passes:
-            return float(SNR_BINS_DB[candidate_bin])
+            return float(SNR_BINS[candidate_bin][0])
     return None
 
 
