@@ -1,6 +1,6 @@
 # Bloco 1 — relatório do piloto v2 e auditoria
 
-**Plano:** SIM-MCA-001 v0.3 · **Data:** 01/11/2026 · **Rótulo:** `EXPLORATORY/FEASIBILITY` · **Tipo:** piloto. Nenhum parâmetro foi congelado e nenhum dado real foi aberto.
+**Plano:** SIM-MCA-001 v0.3.1 · **Data:** 01/11/2026 · **Rótulo:** `EXPLORATORY/FEASIBILITY` · **Tipo:** piloto. Nenhum parâmetro foi congelado e nenhum dado real foi aberto.
 
 **Arquivo de resultados:** `block1_piloto_v2.json` (SHA-256 `2382d4733e01f96acfe0bae34e21054745020a1228230c31d3097a5da2c09e47`). Foi gerado pelo runner revisado pela Luna (commit `a9cf3d1`), com `--reps 6 --workers 2`, em 4.033 s. São 1.920 sinais, metade na partição `cal` e metade na `ver`.
 
@@ -13,7 +13,21 @@ A busca foi substituída por uma busca exata, por ramificação e poda (`assignm
 - custa de 7 a 12 ms por busca, em mediana, na escala do canto B;
 - dois testes automáticos registram a completude da busca exata e a incompletude da heurística.
 
-A suíte do repositório passa (154 testes).
+A suíte do repositório passa (156 testes).
+
+**Proteções e verificação reproduzível (parecer da Luna sobre o piloto v2).**
+- A fatoração `UᵀDU` agora falha explicitamente se algum dos `K − 1` primeiros pivôs for não positivo, se o último não for nulo dentro da tolerância, ou se a reconstrução `UᵀDU` se afastar de `M` em mais de 10⁻⁶ relativo. Antes, um pivô intermediário pequeno era zerado em silêncio.
+- A cota inicial passou a usar a mesma aritmética da busca. A bateria mal condicionada revelou que, com `Σ` de número de condição até ~10¹⁰, a diferença de arredondamento entre `vᵀMv` direto e a soma fatorada chegava a 6·10⁻⁵ relativo. Isso fazia a busca podar a própria semente ótima em 2 de 500 casos. O conjunto `H*` é decidido no fim pelo valor direto.
+- O script `verify_d1.py` reproduz as baterias. Resultado (`results/verify_d1.json`):
+
+| Bateria | Casos | Mínimo igual ao exaustivo | `H*` igual ao exaustivo | Tempo mediano |
+|---|---|---|---|---|
+| Geral (K 2 a 6, N = 12) | 3.000 | 3.000 | 3.000 | 1,2 ms |
+| Mal condicionada (condição até ~10¹⁰) | 500 | 500 | 500 | 3,0 ms |
+| Escala operacional (N 60 a 70, K 4 a 6) | 21 | 21 | 21 | 13 ms |
+
+- **Limite não coberto:** `K ≥ 7` com `N ≥ 60`. A comparação exaustiva passa de 3,8·10⁸ combinações e fica inviável.
+- A docstring de `assignment.py` foi atualizada. Dois testes novos verificam a fatoração e uma versão reduzida das baterias.
 
 ## 2. Resultados do piloto v2
 
@@ -35,14 +49,16 @@ O erro de frequência tem escala aproximadamente constante em **hertz**, e não 
 
 Um quantil de `ln f` agregado sobre todas as ordens fica, então, estreito demais para as ordens baixas e largo demais para as altas. A cobertura agregada sai certa porque as ordens altas são maioria.
 
-Verifiquei isso com `diag_cobertura.py`: 160 sinais novos da partição `ver`, um por célula, com a tabela de calibração do piloto.
+Verifiquei isso com `diag_cobertura.py`, aplicando a tabela de calibração do piloto a 160 sinais da partição `ver`, um por célula.
+
+**Correção (parecer da Luna):** esses 160 sinais não são novos. As sementes são determinísticas, e a réplica 0 de cada célula já fazia parte da verificação do piloto. O diagnóstico é uma reanálise de parte da partição `ver`, e a escolha da janela de 1 s foi feita olhando esses resultados. Por isso, os números abaixo são exploratórios e não confirmam a cobertura. A confirmação exige uma nova partição de verificação, com sementes inéditas, gerada depois de registrar a janela, o limiar, as regras dos quantis e o critério de cobertura.
 
 | Janela | Ordens 1 a 3 | 4 a 10 | 11 a 30 | 31 ou mais | Média por sinal |
 |---|---|---|---|---|---|
 | 0,5 s, quantis em `ln f` | 74,2% | 95,0% | 99,3% | 99,5% | 84,0% |
 | 0,5 s, quantis em Hz | 97,9% | 96,6% | 95,1% | 92,0% | 90,2% |
 | 1 s, quantis em `ln f` | 78,7% | 95,8% | 99,7% | 100% | 81,7% |
-| 1 s, quantis em Hz | 98,5% | 96,5% | 92,7% | 93,9% | **95,2%** |
+| 1 s, quantis em Hz | 98,5% | 96,5% | 92,7% | 93,9% | 95,2% (exploratório) |
 
 - Os sinais com poucos componentes têm, proporcionalmente, mais ordens baixas, e por isso puxam a média por sinal para baixo.
 - Com quantis em Hz e janela de 1 s, a cobertura fica perto de 95% em todas as faixas de ordem e em todos os fatores da grade: entre 93,7% e 96,0% por perfil, fundamental, inclinação, SNR integrada e cor do ruído.
@@ -50,18 +66,20 @@ Verifiquei isso com `diag_cobertura.py`: 160 sinais novos da partição `ver`, u
 
 **Proposta para a revisão:**
 - tabular os quantis do erro em Hz, por SNR local e modulação;
-- obter o intervalo em `ln f` de cada componente por transformação exata, `[ln(1 + q₀₂₅/f_k), ln(1 + q₉₇₅/f_k)]`. Isso não supõe gaussianidade: é a mesma quantidade empírica, levada ao domínio do ajuste;
+- obter o intervalo em `ln f` de cada componente por transformação exata dos quantis em Hz, sem supor gaussianidade. **Correção (parecer da Luna):** em dados reais, a frequência verdadeira é desconhecida, e a transformação precisa partir da frequência estimada. Com `e = f_est − f_true` e quantis `q₀₂₅` e `q₉₇₅`, vale `f_true ∈ [f_est − q₉₇₅, f_est − q₀₂₅]`. O resíduo `ln(f_est/f_true)` fica, então, em `[ln(f_est/(f_est − q₀₂₅)), ln(f_est/(f_est − q₉₇₅))]`, desde que `f_est − q₉₇₅ > 0`. A forma com `f_k` verdadeira, usada no diagnóstico, vale só na simulação;
 - levar a janela de 1 s, com limiar de 15 dB, como candidata da rodada final.
 
 ### 2.3 Identificabilidade: o limite finito vem do mesmo artefato
 
 O runner v2 calcula o limite de identificabilidade com um raio constante em `ln f`. Os valores foram de 71 (janela de 0,5 s), 151 (1 s) e 206 (2 s) ordens.
 
-Com o raio em Hz, que é o que de fato descreve o erro, a condição `ln((n + 1)/n) > 2·r_Hz/(n·f₀)` equivale a `n·ln(1 + 1/n) > 2·r_Hz/f₀`. O lado esquerdo fica entre `ln 2` e 1 para qualquer `n`. Então a condição deixa de depender da ordem:
-- vale para todas as ordens se `f₀ > 2·r_Hz/ln 2 ≈ 2,9·r_Hz`;
-- falha para todas se `f₀ < 2·r_Hz`.
+**Correção (parecer da Luna):** a derivação que eu tinha feito usava a aproximação logarítmica e não era exata. Com intervalo de erro aditivo em Hz, os intervalos de dois harmônicos adjacentes não se sobrepõem quando `(n + 1)·f₀ − r_Hz > n·f₀ + r_Hz`, isto é, quando `f₀ > 2·r_Hz`. Essa condição exata não depende de `n`. O limite `2,9·r_Hz` que eu havia indicado é só uma condição suficiente e conservadora.
 
-O limite continua estrutural, como decidiu a Luna. Mas, com erro constante em hertz, ele se torna um limite sobre `f₀`, e não sobre `n`. Só o termo de modulação, que cresce com a ordem, pode reintroduzir dependência de `n`. Isso deve ser verificado no estrato modulado.
+Duas ressalvas da Luna também procedem:
+- com quantis assimétricos, a condição usa os extremos efetivos dos intervalos, e não um raio simétrico;
+- a dependência da ordem pode voltar não só pela modulação, mas também pela diferença de SNR local entre harmônicos vizinhos, que caem em estratos diferentes e têm intervalos diferentes.
+
+A condição de `N(t)` será reescrita com os extremos dos intervalos em Hz de componentes adjacentes, cada um no seu estrato. A nova fórmula aguarda aprovação.
 
 ### 2.4 Estimador da fundamental
 
@@ -69,7 +87,7 @@ O limiar do YIN `best` escolhido em `cal` foi 0,3, pelo critério de acertos nos
 - a 10 e 20 dB, o erro entre as estimativas disponíveis ficou em até 1,2%, com disponibilidade de 99% a 100%;
 - a 5 dB, no perfil de terceiro harmônico dominante, o erro subiu para 7,4%, contra 5,1% com o limiar 0,2.
 
-O critério de seleção não controla o erro abaixo de 10 dB. Proponho acrescentar um teto para a taxa de erro entre as estimativas disponíveis, fixado antes da rodada final.
+O critério de seleção não controla o erro abaixo de 10 dB. Proponho acrescentar um teto para a taxa de erro entre as estimativas disponíveis, fixado antes da rodada final. Pela decisão da Luna, o limiar 0,2 não será promovido com base nessa comparação, que vem da partição `ver`. O 0,3 fica provisório. Antes da rodada final, serão fixados por SNR e perfil: o teto de erro, a disponibilidade mínima e a regra de indisponibilidade abaixo da SNR mínima, contando os quadros agrupados por sinal. A escolha final será feita em `cal` e verificada em sementes inéditas.
 
 No caso ambíguo (só ordens pares), o YIN `best` 0,3 devolveu o período do sinal ou ficou indisponível em 88% a 100% dos quadros. A saída compatível com a subarmônica ficou em até 7%, sem ser contada como erro.
 
@@ -83,9 +101,9 @@ No caso ambíguo (só ordens pares), o YIN `best` 0,3 devolveu o período do sin
 
 | Item | Estado |
 |---|---|
-| Busca exata de atribuições | Implementada e verificada; aguarda aprovação da Luna |
-| Matriz `Σ` | Proposta no plano, Seção 4; aguarda aprovação |
-| Incerteza por quantis em Hz | Proposta, com diagnóstico (Seção 2.2); aguarda aprovação |
+| Busca exata de atribuições | Fatoração protegida e verificação reproduzível (`verify_d1.py`); aguarda aprovação definitiva |
+| Matriz `Σ` | Código implementa diagonal mais modo comum; plano v0.3.1 apresenta as opções (a) e (b); aguarda decisão |
+| Incerteza por quantis em Hz | Aceita pela Luna como candidata; transformação para `ln f` corrigida para partir de `f_est`; confirmação exige sementes inéditas |
 | Rodada final do Bloco 1 | Em espera, até essas decisões |
 | Bloco 2 | Bloqueado |
 | Dados reais | Bloqueados |

@@ -31,7 +31,7 @@ def test_noiseless_harmonic_recovers_exact_assignment():
     sigma = A.sigma_matrix(freqs, 0.05)
     tmin, hstar, _ = A.search(freqs, sigma, N=40, delta_T=1.0)
     assert hstar[0][0] == (1, 2, 3, 4, 5, 6)
-    assert tmin < 1e-9
+    assert tmin < 1e-6  # zero numérico: M tem entradas da ordem de (f/σ)²
     assert np.isclose(np.exp(hstar[0][1]), f0)
 
 
@@ -259,3 +259,28 @@ def test_yin_threshold_selection_uses_calibration_partition():
 def test_acceptance_rule_sizing():
     assert ST.pass_probability(2000) < 0.7
     assert ST.pass_probability(6000) >= 0.95
+
+
+def test_udu_reconstructs_M_and_rejects_degenerate_intermediate_pivot():
+    """Parecer da Luna: a fatoração UᵀDU precisa reproduzir M e falhar, em vez de zerar em
+    silêncio, se um pivô intermediário for não positivo."""
+    rng = np.random.default_rng(7)
+    for _ in range(30):
+        K = int(rng.integers(2, 8))
+        freqs = np.sort(np.exp(rng.uniform(np.log(10), np.log(500), K)))
+        M = A._residual_form(A.sigma_matrix(freqs, rng.uniform(0.01, 1.0, K), common_lnf=0.003))
+        d, U = A._udu(M)
+        assert np.all(d[:-1] > 0) and d[-1] == 0.0
+        assert np.allclose(U.T @ np.diag(d) @ U, M, rtol=0, atol=1e-8 * np.abs(np.diag(M)).max())
+    bad = np.array([[1.0, 1.0, -2.0], [1.0, 1.0, -2.0], [-2.0, -2.0, 4.0]])  # 2º pivô nulo
+    with pytest.raises(np.linalg.LinAlgError):
+        A._udu(bad)
+
+
+def test_verify_d1_batteries_small():
+    """Versão reduzida das baterias de verify_d1.py (a completa fica em results/verify_d1.json)."""
+    from lab.sim_mca001 import verify_d1 as V
+    for cases in (V.general_cases(n=100, seed=11), V.ill_conditioned_cases(n=30, seed=12)):
+        r = V.battery("teste", cases)
+        assert r["falhas_fatoracao"] == 0
+        assert r["minimo_igual"] == r["n"] and r["hstar_igual"] == r["n"]

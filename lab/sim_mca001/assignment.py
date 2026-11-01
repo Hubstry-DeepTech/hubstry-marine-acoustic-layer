@@ -1,8 +1,14 @@
 """Atribuição de ordens, ajuste por mínimos quadrados generalizados e conjunto H*.
 
-Perfil v0.1.4, Seção 4. Enumeração exata das atribuições consistentes com arredondamento
-(decisão D1: h crescente), mais as perturbações de ±1 em cada ordem, e comparação com a
-busca exaustiva sobre todas as funções injetivas para N e K pequenos.
+Perfil v0.1.4, Seção 4; decisão D1: atribuições crescentes e mínimas.
+
+- `exact_search` (padrão de `search`): busca completa por ramificação e poda sobre a forma
+  χ²(h) = vᵀMv, com fatoração UᵀDU protegida (`_udu`). Devolve todo o conjunto H*, e não só
+  o mínimo. Verificação reproduzível em `verify_d1.py`.
+- `rounding_candidates` e `neighbors`: heurística antiga por arredondamento com perturbações
+  de ±1. NÃO é completa (contraexemplo da Luna); serve só como cota inicial da busca exata e
+  como comparador em testes.
+- `search(..., exhaustive=True)`: busca exaustiva, só para N e K pequenos.
 """
 from itertools import combinations, permutations
 from math import gcd
@@ -68,21 +74,54 @@ def _residual_form(Sigma):
     return P - np.outer(p1, p1) / p1.sum()
 
 
+PIVOT_RTOL = 1e-10          # pivô relativo abaixo do qual a fatoração é considerada degenerada
+RECONSTRUCTION_RTOL = 1e-6  # erro máximo relativo aceito em ‖UᵀDU − M‖; com Σ de condição ~1e9 o arredondamento chega a ~1e-8
+SEARCH_SLACK_RTOL = 1e-4    # folga relativa do raio de poda (ver exact_search)
+
+
 def _udu(M):
     """M = UᵀDU, com U triangular superior unitária. Então
     vᵀMv = Σ_k d_k·(v_k + Σ_{j>k} U_kj·v_j)²: cada termo depende só de v_k, …, v_{K−1}.
-    Como 1 está no núcleo de M, o último pivô é zero (a menos de arredondamento)."""
+
+    Garantias exigidas (parecer da Luna sobre o piloto v2):
+    - M tem núcleo gerado por 1, que não tem entradas nulas; logo toda submatriz principal
+      líder de ordem k < K é definida positiva e os K − 1 primeiros pivôs são positivos.
+      Um pivô intermediário não positivo é erro, e não é zerado em silêncio.
+    - Só o último pivô é nulo em aritmética exata; ele é posto em zero se estiver dentro da
+      tolerância, e a fatoração falha se não estiver.
+    - A reconstrução UᵀDU reproduz M dentro de RECONSTRUCTION_RTOL; caso contrário, falha."""
     K = M.shape[0]
+    scale = float(np.max(np.abs(np.diag(M))))
+    if not np.isfinite(scale) or scale <= 0:
+        raise np.linalg.LinAlgError("matriz M sem escala positiva")
     U = np.eye(K)
     d = np.zeros(K)
     for k in range(K):
         d[k] = M[k, k] - np.sum(d[:k] * U[:k, k] ** 2)
-        if d[k] <= 1e-12 * max(1.0, abs(M[k, k])):
+        if k < K - 1:
+            if not d[k] > PIVOT_RTOL * scale:
+                raise np.linalg.LinAlgError(
+                    f"pivô intermediário {k} não positivo ({d[k]:.3e}); Σ mal condicionada")
+            for j in range(k + 1, K):
+                U[k, j] = (M[k, j] - np.sum(d[:k] * U[:k, k] * U[:k, j])) / d[k]
+        else:
+            if abs(d[k]) > 1e3 * PIVOT_RTOL * scale * K:
+                raise np.linalg.LinAlgError(
+                    f"último pivô não nulo ({d[k]:.3e}); 1 não está no núcleo de M")
             d[k] = 0.0
-            continue
-        for j in range(k + 1, K):
-            U[k, j] = (M[k, j] - np.sum(d[:k] * U[:k, k] * U[:k, j])) / d[k]
+    err = float(np.max(np.abs(U.T @ np.diag(d) @ U - M)))
+    if err > RECONSTRUCTION_RTOL * scale:
+        raise np.linalg.LinAlgError(f"reconstrução UᵀDU com erro relativo {err / scale:.3e}")
     return d, U
+
+
+def _factored_value(v, d, U):
+    """vᵀMv pela soma dos termos fatorados, acumulada de k = K−1 até 0, como na busca."""
+    tot = 0.0
+    for k in range(v.size - 1, -1, -1):
+        c = float(U[k, k + 1:] @ v[k + 1:]) if k + 1 < v.size else 0.0
+        tot += d[k] * (v[k] + c) ** 2
+    return float(tot)
 
 
 def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
@@ -105,7 +144,9 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
     seeds = [tuple(range(1, K + 1))] + list(neighbors(rounding_candidates(freqs, N), N))
     for hh in seeds:
         vv = y - np.log(np.asarray(hh, float))
-        initial_bound = min(initial_bound, float(vv @ M @ vv))
+        # a cota inicial usa a mesma aritmética da busca (soma dos termos fatorados, na mesma
+        # ordem), para que a própria semente nunca seja podada por diferença de arredondamento
+        initial_bound = min(initial_bound, _factored_value(vv, d, U))
     found = []
     best = [initial_bound]
     nodes = [0]
@@ -113,8 +154,10 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
     v = np.zeros(K)
 
     def radius():
-        # folga relativa para arredondamento numérico entre vᵀMv e a soma dos termos
-        return best[0] + delta_T + 1e-9 * max(1.0, abs(best[0]))
+        # folga relativa generosa para o arredondamento entre vᵀMv e a soma dos termos, que
+        # chegou a ~6e-5 relativo com Σ de número de condição ~1e10; a poda só pode ficar mais
+        # permissiva, nunca mais restritiva, e H* é decidido depois pelo valor direto vᵀMv
+        return best[0] + delta_T + SEARCH_SLACK_RTOL * max(1.0, abs(best[0]))
 
     def rec(k, partial):
         nodes[0] += 1
@@ -129,8 +172,13 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
                 return
             r = np.sqrt(budget / d[k])
             center = y[k] + c
-            lo = max(lo, int(np.ceil(np.exp(center - r) - 1e-12)))
-            hi = min(hi, int(np.floor(np.exp(center + r) + 1e-12)))
+            # limites calculados no domínio logarítmico e recortados antes da exponencial,
+            # para não estourar quando o orçamento é grande (casos mal condicionados)
+            cap = np.log(N + 1.0)
+            lo_log = min(max(center - r, -1.0), cap)
+            hi_log = min(max(center + r, -1.0), cap)
+            lo = max(lo, int(np.ceil(np.exp(lo_log) - 1e-12)))
+            hi = min(hi, int(np.floor(np.exp(hi_log) + 1e-12)))
         for hk in range(hi, lo - 1, -1):
             h[k] = hk
             v[k] = y[k] - np.log(hk)
@@ -148,10 +196,16 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
 
     rec(K - 1, 0.0)
     if not found:
-        return np.nan, [], nodes[0]
-    tmin = min(t for _, t in found)
+        # impossível em aritmética exata: a melhor semente está sempre dentro do raio
+        raise np.linalg.LinAlgError("busca exata sem candidatos; verificar condicionamento de Σ")
+    # valores finais recalculados diretamente, sem a fatoração, para decidir H*
+    direct = []
+    for hh, _t in found:
+        vv = y - np.log(np.asarray(hh, float))
+        direct.append((hh, float(vv @ M @ vv)))
+    tmin = min(t for _, t in direct)
     tol = 1e-9 * max(1.0, abs(tmin))
-    hstar = sorted([(hh, t) for hh, t in found if t <= tmin + delta_T + tol], key=lambda e: e[1])
+    hstar = sorted([(hh, t) for hh, t in direct if t <= tmin + delta_T + tol], key=lambda e: e[1])
     return tmin, hstar, nodes[0]
 
 

@@ -1,6 +1,6 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.3 (incorpora o parecer da Luna sobre a v0.1 e a revisão do Bloco 1: busca D1 refeita como busca exata; proposta de `Σ`) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3.1 (incorpora o parecer da Luna sobre a v0.1, a revisão do Bloco 1 e o parecer sobre o piloto v2: busca exata com fatoração protegida e verificação reproduzível; opções para `Σ`) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;
@@ -68,8 +68,11 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 
 1. **Detecção de componentes.** Espectrograma por STFT (Short-Time Fourier Transform, transformada de Fourier de tempo curto), com janela e passo fixados no Bloco 1. Picos locais acima de um limiar sobre o piso de ruído local. Frequência refinada por interpolação parabólica do pico. A detecção não usa nenhuma hipótese sobre a fundamental.
 2. **Incerteza e covariância `Σ`.** A incerteza é descrita por quantis empíricos do erro em `ln f`, por estrato de SNR local e de modulação, com SNR local mínima como controle de qualidade (decisão da Luna sobre o piloto). Picos falsos são contados à parte e não entram na distribuição do erro.
-   - **Proposta para a matriz operacional `Σ` (pendente de aprovação, condição para o Bloco 2):** `Σ = S·R·S`. A escala marginal `s_k` de cada componente é a metade da largura do intervalo empírico central de 68% do erro em `ln f`, no estrato do componente. Essa metade é uma medida de escala, e não um desvio-padrão gaussiano. A correlação `R` vem da estimativa de covariância cruzada da partição `cal`, verificada em `ver`.
-   - **Por que isso não reintroduz a hipótese gaussiana:** em ρ₂, `χ²` é só uma forma quadrática que ordena as atribuições. A sua significância vem da distribuição nula empírica, e não da distribuição qui-quadrado. Uma escala mal calibrada muda a estatística igualmente nos dados e nos nulos. Em ρ₁, a tolerância usa diretamente os quantis empíricos.
+   - **Matriz operacional `Σ` (pendente; condição para o Bloco 2).** A Luna constatou que o código implementa `Σ = diag(s_k²) + c²·11ᵀ` (modo comum), e não a matriz geral `S·R·S` que a v0.3 descrevia. Há duas opções para decisão:
+     - **(a) Diagonal mais modo comum.** É o que está implementado. É semidefinida positiva por construção, tem um único parâmetro de correlação e é bem condicionada. Como o termo comum não altera o `χ²`, em ρ₂ ela equivale, na prática, à matriz diagonal.
+     - **(b) Correlação geral `R`.** Estimada em `cal` a partir dos pares de ordens. Exige regularização (por exemplo, contração em direção a (a)), projeção para a matriz semidefinida positiva mais próxima, controle do número de condição e regra para pares com amostra insuficiente.
+     - **Recomendação:** (a), salvo se a verificação em `ver` mostrar correlação não comum relevante entre ordens. Em qualquer caso, a escolha será verificada em sementes inéditas, com positividade e condicionamento declarados.
+     - **Por que isso não reintroduz a hipótese gaussiana:** em ρ₂, `χ²` é só uma forma quadrática que ordena as atribuições, e a significância vem da distribuição nula empírica. Em ρ₁, a tolerância usa diretamente os quantis empíricos.
    - **A componente comum da correlação não afeta ρ₂:** um termo `c²·11ᵀ` é absorvido pela escala (ver abaixo). A parte de `R` que pesa em ρ₂ é a correlação que não é comum a todos os componentes.
 3. **Estimador independente `f̂₀`.** Candidatos: autocorrelação normalizada (família YIN) e cepstro. Estimadores por soma de harmônicos ficam fora, porque pressupõem a estrutura harmônica que ρ₂ testa e tornariam `E(t)` dependente dessa hipótese.
 4. **Ordem máxima `N(t)` e conjunto esperado `E(t)`.** Como na ficha, Seção 3.4.

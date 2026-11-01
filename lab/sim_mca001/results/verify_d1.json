@@ -1,0 +1,31 @@
+{
+ "geral": {
+  "n": 3000,
+  "minimo_igual": 3000,
+  "hstar_igual": 3000,
+  "tempo_mediano_s": 0.0012041330337524414,
+  "tempo_max_s": 0.006679058074951172,
+  "nos_max": 633,
+  "falhas_fatoracao": 0
+ },
+ "mal_condicionada": {
+  "n": 500,
+  "minimo_igual": 500,
+  "hstar_igual": 500,
+  "tempo_mediano_s": 0.003000020980834961,
+  "tempo_max_s": 0.11726212501525879,
+  "nos_max": 15418,
+  "falhas_fatoracao": 0
+ },
+ "escala_operacional": {
+  "n": 21,
+  "minimo_igual": 21,
+  "hstar_igual": 21,
+  "tempo_mediano_s": 0.013455390930175781,
+  "tempo_max_s": 0.031427860260009766,
+  "nos_max": 164,
+  "falhas_fatoracao": 0
+ },
+ "limite_nao_coberto": "K >= 7 com N >= 60 (comparação exaustiva inviável)",
+ "tempo_total_s": 181.4
+}
