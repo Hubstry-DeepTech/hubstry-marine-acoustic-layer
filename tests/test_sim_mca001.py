@@ -188,21 +188,22 @@ def test_empirical_uncertainty_uses_snr_and_modulation_strata():
         for modulation in (0.0, 0.05):
             scale = 3.0 if bin_index == 0 else 0.1
             for index in range(250):
+                error = float(rng.normal(0.0, scale))
                 rows.append(dict(
                     signal_id=f"sig-{bin_index}-{modulation}-{index}",
                     f_true=25.0,
-                    f_est=25.0 + float(rng.normal(0.0, scale)),
+                    f_est=25.0 + error,
                     snr_db=snr,
                     modulation_oct_s=modulation,
-                    error_hz=float(rng.normal(0.0, scale)),
+                    error_hz=error,
                 ))
     table = B1.fit_empirical_uncertainty_table(rows, window_s=0.5)
     assert all(entry["status"] == "ok" for entry in table)
     assert all("q025_erro_log_f" in entry for entry in table)
     assert all("q95_abs_erro_centrado_log_f" in entry for entry in table)
     assert B1.select_min_snr(table) == 10.0
-    assert B1.identifiability_order(0.001) == ">=2000"
-    assert B1.identifiability_order(0.2) == 1
+    assert B1.identifiability_order(0.00001) == ">=2000"
+    assert B1.identifiability_order(0.2) == 2
 
 
 def test_ambiguous_even_only_subharmonic_is_not_labelled_as_error():
