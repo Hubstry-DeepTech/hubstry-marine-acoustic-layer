@@ -190,6 +190,7 @@ def test_empirical_uncertainty_uses_snr_and_modulation_strata():
             for index in range(250):
                 rows.append(dict(
                     signal_id=f"sig-{bin_index}-{modulation}-{index}",
+                    f_true=25.0,
                     snr_db=snr,
                     modulation_oct_s=modulation,
                     error_hz=float(rng.normal(0.0, scale)),
@@ -215,12 +216,18 @@ def test_yin_threshold_selection_uses_calibration_partition():
 
     results = []
     for partition in ("cal", "ver"):
+        result = dict(
+            partition=partition,
+            cell=dict(profile="h3_dominante", snr=10.0),
+            f0={},
+        )
         for threshold in B1.YIN_THRESHOLDS:
             label = "acerto" if (
                 (partition == "cal" and threshold == 0.2)
                 or (partition == "ver" and threshold == 0.3)
             ) else "erro_outro"
-            results.append(fake_result(partition, threshold, label))
+            result["f0"][f"yin_best_{threshold}"] = [label] * 10
+        results.append(result)
     chosen, _ = B1.select_yin_best_threshold(results)
     assert chosen == 0.2
 

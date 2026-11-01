@@ -28,12 +28,12 @@ EXPLORATORY/FEASIBILITY. Nenhum dado real é lido por este código.
 
 Testes automáticos:
 
-\`\`\`bash
+```bash
 pytest tests/test_sim_mca001.py
-\`\`\`
+```
 
 Piloto:
 
-\`\`\`bash
+```bash
 python -m lab.sim_mca001.block1 --reps 6 --workers 2 --out lab/sim_mca001/results/block1_piloto_v2.json
-\`\`\`
+```
