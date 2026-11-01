@@ -1,8 +1,8 @@
 # MCA-001 — Série harmônica musical e canto B da baleia-azul
 
-**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.1 (especificação para revisão da Luna e aprovação do Guilherme) · **Data:** 01/11/2026 · **Estado:** especificação conceitual; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-la. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.2 (incorpora as decisões do autor da teoria de 01/11/2026; para revisão da Luna) · **Data:** 01/11/2026 · **Estado:** especificação conceitual; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-la. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
 
-**Fontes das definições:** as seis relações de significância vêm do manuscrito da Álgebra Hexarrelacional de Significância (π√f(A)), de Guilherme Gonçalves Machado, conforme o README e o módulo `core/relations.py` do repositório `marcabru-tech/algebra-hexarrelacional` (commit `085f753`). As demais fontes citadas pelo código Sxx estão em `lab/sources/fontes.csv`.
+**Fontes das definições:** as seis relações de significância vêm do manuscrito "π√f(A): Uma Álgebra Hexa Relacional de Significância para Algoritmos" (fevereiro de 2026), de Guilherme Gonçalves Machado, Seções 3.2 a 3.7, conferidas no texto integral, e do módulo `core/relations.py` do repositório `marcabru-tech/algebra-hexarrelacional` (commit `085f753`). As demais fontes citadas pelo código Sxx estão em `lab/sources/fontes.csv`.
 
 ## 1. Finalidade
 
@@ -85,12 +85,17 @@ Algumas instâncias pedem esclarecimento:
 - as instâncias candidatas de equilíbrio e compensação (ρ₅ e ρ₆);
 - a relação entre o desvio da harmonicidade ideal e o modelo de produção por pulsos pneumáticos (S02).
 
-## 6. Pontos a resolver no manuscrito antes da medição
+## 6. Decisões sobre o manuscrito e pontos ainda abertos
 
-1. **A notação de ρ₂.** A definição simbólica usa `≅`, que indica isomorfismo. Um isomorfismo tem inversa e tornaria a relação simétrica, o que contradiz a propriedade declarada de não simetria. A implementação mede inserção de uma estrutura na outra, compatível com um homomorfismo injetivo. Propõe-se ajustar a notação para `h: Struct(x) ↪ Struct(y)`.
-2. **A hierarquia cumulativa.** O manuscrito afirma que cada relação implica todas as anteriores. Com as definições formais, essa implicação não vale em geral. Uma transformação de grupo (ρ₄) não garante substitutibilidade em todos os contextos (ρ₃). O cancelamento de potenciais (ρ₅) não garante pertinência à mesma órbita (ρ₄). Nesta ficha, as seis relações são tratadas como dimensões independentes. A hierarquia pode ser mantida como ordem conceitual de exigência, desde que não seja usada como implicação lógica.
-3. **A definição formal de ρ₆.** A expressão "valor maior que a soma das partes" exige especificar o valor medido e a operação de soma. A instância proposta na Seção 4 é uma candidata, a ser confirmada pelo autor da teoria.
-4. **A ponderação pela razão áurea.** Os pesos `φ^(k−1)` da norma `f(A)` são uma escolha teórica, e não um resultado de medição. Em uso científico, esta ficha apresenta o perfil das seis dimensões sem agregação.
+**Decididos pelo autor da teoria em 01/11/2026:**
+
+1. **Homologia como homomorfismo.** A Definição 3.2 do manuscrito já define `h` como homomorfismo e declara a simetria apenas no caso de isomorfismo. Outros textos do autor usam formulações mais fortes: a tabela do README do repositório e a docstring do código usam `≅`, e a TICA (Seção 7.4) fala em "mapeamento biunívoco que preserva todas as relações". Fica adotada a definição do manuscrito: a homologia é um homomorfismo, medido como grau de preservação das relações, e o isomorfismo é o caso máximo. A notação recomendada é `h: Struct(x) → Struct(y)`, ou `↪` quando o homomorfismo for injetivo, e os textos que usam `≅` serão harmonizados.
+2. **Hierarquia como ordem conceitual.** O manuscrito afirma que cada relação implica todas as anteriores. Com as definições formais, essa implicação não vale em geral, e o próprio manuscrito admite exceções. A Seção 3.6 diz que o equilíbrio "não exige que os elementos sejam transformáveis um no outro", o que nega a passagem de ρ₅ para ρ₄. Fica adotado que a hierarquia é uma ordem conceitual de exigência, e não uma implicação lógica. As seis relações são tratadas como dimensões independentes.
+
+**Ainda abertos:**
+
+3. **A definição formal de ρ₆.** A Definição 3.6 do manuscrito tem duas partes: complementaridade, `Δ(x) = −Δ(y)`, e emergência, `Ω(x ⊕ y) > Ω(x) + Ω(y)`. As funções `Δ`, `Ω` e a operação `⊕` não estão especificadas. A instância proposta na Seção 4 especifica as duas partes para o canto B. A complementaridade é a distribuição de energia: a fundamental fraca e o terceiro harmônico forte. A emergência é a identificabilidade de `f₀`, que só existe no conjunto dos componentes. A instância precisa da confirmação do autor.
+4. **A ponderação pela razão áurea.** O manuscrito (Seção 5.1) justifica os pesos `φ^(k−1)` por razões estéticas e de design, e não por medição. Em uso científico, esta ficha apresenta o perfil das seis dimensões sem agregação.
 
 ## 7. Critérios de falsificação
 
@@ -113,7 +118,7 @@ Nenhum desses critérios será aplicado antes de os eventos serem identificados 
 ## 9. Próximos passos
 
 1. Revisão desta ficha pela Luna.
-2. Resposta do autor da teoria aos quatro pontos da Seção 6.
+2. Confirmação, pelo autor da teoria, da instância de ρ₆ (Seção 6, ponto 3).
 3. Inclusão da linha de harmonicidade do canto B na proposta de emenda v1.4, com esta ficha como fundamento teórico.
 4. Registro das fontes S23 e S24 em estado `texto_primario` antes da submissão de qualquer texto derivado.
 
