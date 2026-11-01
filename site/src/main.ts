@@ -40,6 +40,22 @@ interface SiteData {
   e1: { passed: boolean; tolerance_relative: number; date_utc: string; source: string; license: string;
         env: Record<string, string>; days: E1Day[]; series_note: string; provenance: Provenance };
   reports: Record<string, { sha256: string; url: string }>;
+  editorial: { version_line: string | null; sha256: string;
+               sections: Record<string, { title: string; tese: string; interpretar?: string; metodo?: string }> };
+  freeze_v04: { verified: boolean; problems: string[]; protected_files: number; freeze_file: string };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Texto editorial (docs/EDITORIAL_HMAL_LAB_v1.md, convertido no build; HTML já escapado lá)
+// ---------------------------------------------------------------------------------------------
+let ED: SiteData["editorial"]["sections"] = {};
+
+function ed(key: string): string {
+  const e = ED[key];
+  if (!e) return "";
+  const acc = (label: string, body?: string) => body
+    ? `<details class="acc"><summary>${label}</summary><p>${body}</p></details>` : "";
+  return `<p class="thesis">${e.tese}</p>${acc("Como interpretar esta informação?", e.interpretar)}${acc("Método e limitações", e.metodo)}`;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -164,10 +180,12 @@ function renderRuns(d: SiteData): void {
 
   $("bench-runs").innerHTML = `
     <h3>Execuções definitivas</h3>
+    ${ed("4.1")}
     <div class="table-wrap"><table class="runs">
       <thead><tr><th scope="col">Execução</th><th scope="col">Critérios</th><th scope="col">Status do agregador</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     <h3>Veredito por ensaio e modo</h3>
+    ${ed("4.2")}
     <div class="table-wrap"><table class="matrix">
       <thead><tr><th scope="col" rowspan="2">Ensaio</th>${head}</tr><tr>${sub}</tr></thead>
       <tbody>${body}</tbody></table></div>
@@ -182,18 +200,21 @@ function renderDetail(d: SiteData): void {
   $("bench-detail").innerHTML = `
     <h3>Recuperação dos canais com ruído (B3)</h3>
     <fieldset class="picker"><legend>Execução exibida nos gráficos</legend>${opts}</fieldset>
-    <p class="intro">Fração dos mil ensaios por condição em que o receptor recuperou exatamente os canais transmitidos, em função da razão sinal-ruído integrada. A aprovação exige ao menos 99% a partir de 20 dB.</p>
+    ${ed("4.3")}
     <div id="chart-recovery" class="chart"></div>
     ${dataTable("Taxa de recuperação por SNR integrada (dB)", ["SNR (dB)", ...(["hf", "lf"] as Mode[]).flatMap((m) => Object.keys(b.b3_recovery_rate[m]).map((c) => `${m} ${COND_LABEL[c] ?? c}`))],
       b.snr_int_db.map((s, i) => [s, ...(["hf", "lf"] as Mode[]).flatMap((m) => Object.values(b.b3_recovery_rate[m]).map((r) => pct(r[i])))]))}
     <h3>Erro de frequência com um canal, relativo ao limite teórico</h3>
-    <p class="intro">Erro quadrático médio (RMS) dividido pelo limite de Cramér–Rao assintótico (ACRB), em escala logarítmica. O critério B3(c) exige até 1,5 a partir de ${b.b3c_min_snr_db} dB nos critérios ${b.criteria_version}. Os saltos para milhares refletem trocas de canal, não imprecisão local.</p>
+    ${ed("4.4")}
+    <p class="small">Execução exibida: critérios ${b.criteria_version}, com o critério B3(c) aplicado a partir de ${b.b3c_min_snr_db} dB; escala logarítmica.</p>
     <div id="chart-rms" class="chart"></div>
     ${dataTable("RMS/ACRB com um canal", ["SNR (dB)", "hf", "lf"], b.snr_int_db.map((s, i) => [s, nf(b.b3_k1_rms_over_acrb.hf[i], 2), nf(b.b3_k1_rms_over_acrb.lf[i], 2)]))}
     ${v1 && b.receiver !== "v1" ? `<h3>Perto do limiar: v1 e ${esc(RUN_LABEL[b.id] ?? b.id)}</h3>
-    <p class="intro">Recuperação com um canal entre 8 e 22 dB. ${errorsAt(v1, 16)} ${errorsAt(b, 16)}</p>
+    ${ed("4.5")}
+    <p class="small">${errorsAt(v1, 16)} ${errorsAt(b, 16)}</p>
     <div id="chart-compare" class="chart"></div>` : ""}
     <h3>Desvio de escala (B4) e falsos alarmes (B7)</h3>
+    ${ed("4.6")}
     <div class="table-wrap"><table>
       <thead><tr><th scope="col">Execução</th><th scope="col">B4, menor recuperação (hf / lf)</th><th scope="col">B7, limite superior de falsos alarmes a 95% (hf / lf)</th><th scope="col">B7, tons entre canais rejeitados (hf / lf)</th></tr></thead>
       <tbody>${d.bench.map((x) => `<tr><th scope="row">${esc(RUN_LABEL[x.id] ?? x.id)}</th>
@@ -201,7 +222,8 @@ function renderDetail(d: SiteData): void {
         <td>${pct(x.b7.hf.cp_upper_95, 2)} / ${pct(x.b7.lf.cp_upper_95, 2)}</td>
         <td>${x.b7.hf.midpoints_rejected} de ${x.b7.hf.midpoints_total} / ${x.b7.lf.midpoints_rejected} de ${x.b7.lf.midpoints_total}</td></tr>`).join("")}</tbody>
     </table></div>
-    <p class="small">B4 exige ao menos 99% de recuperação; B7 exige limite superior até 1% e rejeição dos 158 tons colocados entre canais vizinhos.</p>
+    <h3>Proveniência</h3>
+    ${ed("4.7")}
     ${provenanceBlock(b.provenance, `Proveniência: ${RUN_LABEL[b.id] ?? b.id}`)}
     <p class="small">Agregador, texto integral: ${esc(b.aggregate.rule)}</p>`;
   document.querySelectorAll<HTMLInputElement>('input[name="run"]').forEach((r) =>
@@ -283,13 +305,15 @@ function renderE1(d: SiteData): void {
       <caption>Média diária do índice: valor publicado pelo MBARI e valor recalculado pelo HMAL (tolerância relativa de ${pct(e.tolerance_relative, 0)})</caption>
       <thead><tr><th scope="col">Dia (UTC)</th><th scope="col">MBARI</th><th scope="col">HMAL</th><th scope="col">Diferença relativa</th><th scope="col">Minutos válidos</th><th scope="col">Resultado</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
+    <h3>Espectrograma e índice minuto a minuto</h3>
+    ${ed("5.1")}
     <fieldset class="picker"><legend>Dia exibido</legend>${opts}</fieldset>
     <figure class="spectro">
       <img src="${day.spectrogram}" loading="lazy" width="1200" height="660"
         alt="Espectrograma de 24 horas do hidrofone MARS em ${day.day}, de 0 a 150 Hz, com as faixas de 37, 43, 44 e 50 Hz marcadas, e abaixo a série do índice minuto a minuto." />
-      <figcaption>Espectrograma calibrado de ${day.day} (UTC), 0 a 150 Hz. As linhas horizontais marcam a faixa do canto B (43 e 44 Hz) e as faixas de referência (37 e 50 Hz). <a href="${day.spectrogram_original}">Imagem original</a>.</figcaption>
+      <figcaption>Espectrograma calibrado de ${day.day} (UTC), 0 a 150 Hz. As linhas horizontais marcam a faixa usada pelo índice (43 e 44 Hz), situada na banda do terceiro harmônico do canto B, e as faixas de referência (37 e 50 Hz). <a href="${day.spectrogram_original}">Imagem original</a>.</figcaption>
     </figure>
-    <h3>Índice minuto a minuto</h3>
+    <h4>Índice minuto a minuto</h4>
     <div id="chart-e1" class="chart"></div>
     ${dataTable(`Índice por hora, média dos minutos válidos, ${day.day}`, ["Hora (UTC)", "Índice médio"],
       Array.from({ length: 24 }, (_, h) => {
@@ -339,6 +363,27 @@ function renderDocs(d: SiteData): void {
 }
 
 // ---------------------------------------------------------------------------------------------
+function renderIntegrity(d: SiteData): void {
+  const sets: { label: string; p: Provenance; status: string; freeze?: boolean }[] = [
+    ...d.bench.map((b) => ({ label: RUN_LABEL[b.id] ?? b.id, p: b.provenance, status: statusBadge(b), freeze: b.criteria_version === "0.4.0" })),
+    { label: "E1, índice do MBARI", p: d.e1.provenance, status: verdict(d.e1.passed) },
+  ];
+  const fz = d.freeze_v04;
+  const fzCell = (on?: boolean) => !on ? `<span class="small">não se aplica</span>`
+    : fz.verified ? `<span class="v pass">congelamento íntegro</span><br><span class="small">${fz.protected_files} arquivos protegidos conferidos</span>`
+    : `<span class="v fail">divergência</span><br><span class="small">${esc(fz.problems.join("; "))}</span>`;
+  const rows = sets.map((x) => `<tr><th scope="row">${esc(x.label)}</th>
+    <td>${x.p.execution_type === "github_actions" ? `GitHub Actions, <a href="${x.p.execution_url}">${x.p.execution_run_id}</a>` : "manual, em máquina virtual"}</td>
+    <td>${x.status}</td>
+    <td>${x.p.files.length} com SHA-256 conferido</td>
+    <td>${fzCell(x.freeze)}</td></tr>`).join("");
+  $("integrity").innerHTML = `<div class="table-wrap"><table>
+    <caption>Conferências feitas na construção desta página, a partir do commit ${short(d.publication_commit)}</caption>
+    <thead><tr><th scope="col">Conjunto</th><th scope="col">Execução</th><th scope="col">Conclusão registrada</th><th scope="col">Arquivos</th><th scope="col">Congelamento v0.4</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <p class="small">Texto editorial desta página: versão ${esc((d.editorial.version_line ?? "").replace(/\*\*/g, "").split("·")[0].trim())}, documento <a href="${d.repo_url}/blob/${d.publication_commit}/docs/EDITORIAL_HMAL_LAB_v1.md">EDITORIAL_HMAL_LAB_v1.md</a>.</p>`;
+}
+
 async function main(): Promise<void> {
   drawRuler();
   let data: SiteData;
@@ -350,6 +395,9 @@ async function main(): Promise<void> {
     $("bench-runs").innerHTML = `<p class="note">Os dados não carregaram (${esc(String(err))}). Recarregue a página ou consulte o <a href="https://github.com/Hubstry-DeepTech/hubstry-marine-acoustic-layer">repositório</a>.</p>`;
     return;
   }
+  ED = data.editorial.sections;
+  document.querySelectorAll<HTMLElement>("[data-ed]").forEach((el) => { el.innerHTML = ed(el.dataset.ed!); });
+  renderIntegrity(data);
   renderRuns(data);
   renderDetail(data);
   renderE1(data);

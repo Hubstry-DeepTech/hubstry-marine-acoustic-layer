@@ -1,6 +1,6 @@
 # HMAL Lab — Rascunho editorial v1
 
-**Versão:** 1.1-rascunho · **Data:** 01/11/2026 · **Estado:** revisão da Luna incorporada (aprovação editorial condicionada); verificações documentais registradas ao final; nenhum texto foi aplicado à página
+**Versão:** 1.2 · **Data:** 01/11/2026 · **Estado:** aprovado pela Luna para implementação (parecer final sobre a v1.1, com três ajustes incorporados nesta versão); este arquivo é a fonte única dos textos publicados na HMAL Lab
 
 ## Como ler este rascunho
 
@@ -32,9 +32,9 @@ As siglas aparecem por extenso na primeira ocorrência de cada seção, porque o
 
 **Tese.** A régua representa o conjunto de razões racionais que o HMAL utiliza como espaço de canais, tornando visível a estrutura matemática da proposta, sem que essa representação deva ser confundida com a comprovação de 159 canais físicos independentes de transmissão no oceano.
 
-**Como interpretar esta informação?** O dicionário H₁₆ reúne todas as frações irredutíveis a/b em que a e b variam de 1 a 16, o que resulta em 159 razões distintas; cada razão, aplicada à frequência de base segundo a regra definida no dicionário, determina a frequência nominal de um canal matemático. Na régua, as razões estão dispostas em escala logarítmica, e a altura de cada traço diminui à medida que a razão se torna mais complexa, de modo que razões simples, como 1/1, 3/2 e 2/1, aparecem mais destacadas. A proximidade entre algumas razões na representação indica regiões em que os canais matemáticos apresentam frequências mais próximas entre si, condição que exige maior resolução do receptor para distingui-los na presença de ruído.
+**Como interpretar esta informação?** O dicionário H₁₆ reúne todas as frações irredutíveis a/b em que a e b variam de 1 a 16, o que resulta em 159 razões distintas; cada razão, aplicada à frequência de base segundo a regra definida no dicionário, determina a frequência nominal de um canal matemático. Na régua, as razões estão dispostas em escala logarítmica, e a altura de cada traço diminui à medida que a razão se torna mais complexa, de modo que razões simples, como 1/1, 3/2 e 2/1, aparecem mais destacadas. A proximidade entre algumas razões na representação indica regiões em que os canais matemáticos apresentam frequências mais próximas entre si, condição que exige maior resolução do receptor para distingui-los na presença de ruído. As razões do dicionário H₁₆ representam relações matemáticas de frequência utilizadas na arquitetura do protocolo e não correspondem automaticamente aos componentes harmônicos encontrados em uma vocalização natural. Em uma série harmônica ideal, esses componentes aparecem em múltiplos inteiros da frequência fundamental; a correspondência entre essa estrutura física e o espaço de canais definido pelo HMAL constitui uma questão de investigação própria.
 
-**Método e limitações.** A menor distância entre duas razões vizinhas do dicionário é 1/240, medida na própria coordenada das razões, e não em hertz; a separação efetiva em hertz resulta do produto dessa distância pela frequência de base, de modo que varia conforme o modo de operação. Esse valor condiciona a resolução necessária para separar canais adjacentes e que orienta os ensaios de pior caso da bancada digital. A régua descreve a organização conceitual do espaço de canais; a viabilidade desses canais em um meio acústico real, sujeito a reflexões, atenuação e variações de propagação, permanece objeto de investigação.
+**Método e limitações.** A menor distância entre duas razões vizinhas do dicionário é 1/240, medida na própria coordenada das razões, e não em hertz; a separação efetiva em hertz resulta do produto dessa distância pela frequência de base, de modo que varia conforme o modo de operação. Esse valor condiciona a resolução necessária para separar canais adjacentes e orienta os ensaios de pior caso da bancada digital. A régua descreve a organização conceitual do espaço de canais; a viabilidade desses canais em um meio acústico real, sujeito a reflexões, atenuação e variações de propagação, permanece objeto de investigação.
 
 ---
 
@@ -80,7 +80,7 @@ As siglas aparecem por extenso na primeira ocorrência de cada seção, porque o
 
 **Tese.** A diferença entre a frequência transmitida e a frequência estimada pelo receptor permite avaliar a precisão com que o sistema caracteriza o sinal, desde que se distingam os erros locais de estimação dos erros causados pela escolha de um canal incorreto.
 
-**Como interpretar esta informação?** O gráfico apresenta a razão entre duas grandezas expressas em hertz e calculadas para a mesma relação sinal-ruído integrada: o erro quadrático médio (RMS, do inglês root mean square) das estimativas de frequência, obtido a partir das diferenças entre a frequência estimada e a transmitida em mil repetições, e o limite de Cramér–Rao assintótico (ACRB, do inglês asymptotic Cramér–Rao bound), que expressa o menor desvio-padrão alcançável por um estimador não enviesado da frequência de um único tom senoidal em ruído branco gaussiano, com o mesmo número de amostras e a mesma taxa de amostragem. Uma razão próxima de 1 indica que o receptor opera perto do limite teórico. Os saltos para valores da ordem de milhares não refletem imprecisão gradual: decorrem de poucos ensaios em que o receptor escolheu um canal errado, o que desloca a estimativa por uma distância muito maior do que a imprecisão local.
+**Como interpretar esta informação?** O gráfico apresenta a razão entre duas grandezas expressas em hertz e calculadas para a mesma relação sinal-ruído integrada: o erro quadrático médio (RMS, do inglês root mean square) das estimativas de frequência, obtido a partir das diferenças entre a frequência estimada e a transmitida em mil repetições, e o limite de Cramér–Rao assintótico (ACRB, do inglês asymptotic Cramér–Rao bound), que estabelece um limite inferior teórico para o desvio-padrão de um estimador não enviesado da frequência de um único tom senoidal em ruído branco gaussiano, sob as mesmas condições de número de amostras, taxa de amostragem e relação sinal-ruído. Sob essas hipóteses, uma razão próxima de 1 indica que o erro observado se aproxima do limite teórico adotado. Os saltos para valores da ordem de milhares não refletem imprecisão gradual: decorrem de poucos ensaios em que o receptor escolheu um canal errado, o que desloca a estimativa por uma distância muito maior do que a imprecisão local.
 
 **Método e limitações.** O critério exige razão de até 1,5 a partir de 16 dB na versão 0.3.1 dos critérios e a partir de 20 dB na versão 0.4. A mudança foi motivada pela constatação, registrada antes da nova rodada, de que o critério anterior misturava precisão de estimação e acerto de classificação; por esse motivo, a versão 0.4 foi avaliada em uma matriz nova, com sementes sorteadas após o congelamento.
 
@@ -95,6 +95,8 @@ As siglas aparecem por extenso na primeira ocorrência de cada seção, porque o
 **Tese.** Os ensaios B4 e B7 verificam se o receptor mantém a identificação correta quando a frequência de base sofre pequenos desvios e se ele evita declarar a presença de canais que não foram transmitidos.
 
 **Como interpretar esta informação?** No B4, a frequência de base é deslocada em até 0,1%, e o receptor deve corrigir esse desvio com auxílio de um canal piloto, mantendo recuperação de pelo menos 99%. No B7, o receptor analisa ruído puro e deve manter a taxa de falsos alarmes em no máximo 1%, avaliada pelo limite superior de um intervalo de confiança de 95% calculado sobre dez mil realizações de ruído; além disso, deve rejeitar 158 tons sintéticos de teste, posicionados exatamente entre canais vizinhos do dicionário. Esses limites foram estabelecidos para o experimento e não constituem uma garantia universal de desempenho do receptor em outras condições.
+
+**Método e limitações.** O limite superior da taxa de falsos alarmes é calculado pelo método exato de Clopper–Pearson, na forma unilateral, com nível de confiança de 95%, sobre dez mil realizações de ruído reservadas para a avaliação, distintas das dez mil do conjunto de calibração; o limiar de detecção é obtido analiticamente, a partir da taxa de falsos alarmes de projeto de 0,5% e do número de candidatas. No B4, os desvios de escala avaliados são de −0,1%, −0,05%, 0, +0,05% e +0,1%, com relação sinal-ruído integrada de 20 dB.
 
 ### 4.7. Proveniência
 
@@ -162,7 +164,14 @@ As siglas aparecem por extenso na primeira ocorrência de cada seção, porque o
 6. **Métrica RMS/ACRB.** Em `run_bench.py`, o RMS é a raiz da média dos quadrados das diferenças entre a frequência estimada e a transmitida, em hertz, nas mil repetições; a ACRB é calculada, em hertz, pela expressão do limite de Cramér–Rao assintótico para um tom em ruído branco gaussiano, com a mesma SNR integrada, o mesmo número de amostras e a mesma taxa de amostragem. A seção 4.4 descreve exatamente essa definição.
 7. **Ambiente.** Cada execução registra Python, NumPy, SciPy, biblioteca C e plataforma; o congelamento confere os quatro primeiros. A seção 7 limita a afirmação a esses campos.
 
-## Decisões pedidas
+## Ajustes da versão 1.2 (parecer final da Luna)
 
-1. Aprovação final do texto da versão 1.1.
-2. Autorização para implementar as três camadas na página, neste mesmo PR, incluindo a seção 7 com os dados de execução e integridade.
+1. Seção 2: distinção entre as razões do dicionário H₁₆ e os componentes harmônicos de uma vocalização natural.
+2. Seção 2: correção sintática ("condiciona [...] e orienta").
+3. Seção 4.4: a ACRB descrita como limite inferior teórico sob as hipóteses do estimador.
+4. Seção 4.6: acordeão de método com o limite unilateral exato de Clopper–Pearson e os desvios do B4.
+
+## Decisões
+
+1. Texto da versão 1.1 aprovado pela Luna, com os ajustes acima incorporados na versão 1.2.
+2. Implementação das três camadas e da seção 7 autorizada no PR #12; a Fase 1 de caracterização acústica terá plano técnico e critérios de aceite próprios.

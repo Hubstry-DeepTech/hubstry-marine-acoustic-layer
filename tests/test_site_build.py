@@ -105,3 +105,34 @@ def test_bad_report_entries_rejected(name, digest):
     m["reports"][name] = digest
     with pytest.raises(bd.BuildError):
         bd.verify_reports(m)
+
+
+def test_editorial_has_all_sections_with_thesis():
+    ed = bd.parse_editorial()
+    assert set(ed["sections"]) == set(bd.EDITORIAL_KEYS)
+    assert all(s["tese"] for s in ed["sections"].values())
+    assert ed["version_line"] and "1.2" in ed["version_line"]
+
+
+def test_editorial_missing_thesis_fails(tmp_path):
+    text = bd.EDITORIAL.read_text(encoding="utf-8")
+    start = text.index("## 3.")
+    line_start = text.index("**Tese.**", start)
+    line_end = text.index("\n", line_start)
+    bad = tmp_path / "ed.md"
+    bad.write_text(text[:line_start] + text[line_end:], encoding="utf-8")
+    with pytest.raises(bd.BuildError):
+        bd.parse_editorial(bad)
+
+
+def test_editorial_escapes_html(tmp_path):
+    text = bd.EDITORIAL.read_text(encoding="utf-8")
+    i = text.index("**Tese.**", text.index("## 3.")) + len("**Tese.**")
+    bad = tmp_path / "ed.md"
+    bad.write_text(text[:i] + " <script>x</script>" + text[i:], encoding="utf-8")
+    assert "<script>" not in bd.parse_editorial(bad)["sections"]["3"]["tese"]
+
+
+def test_freeze_v04_verified():
+    fz = bd.freeze_status()
+    assert fz["verified"] and fz["protected_files"] == 11 and not fz["problems"]
