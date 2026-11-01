@@ -91,6 +91,9 @@ def _truth_slope_hz_s(track, truth, index):
     return float(slope[index])
 
 
+MAINLOBE_HALF_WIDTH_BINS = 2.0  # meia largura do lóbulo principal da janela de Hann, em 1/T
+
+
 def match_truth(
     t_frames,
     frames,
@@ -102,22 +105,35 @@ def match_truth(
     fs=FS,
     max_gate_fraction=0.45,
 ):
-    """Pareia detecções e componentes verdadeiros com associação um-a-um.
+    """Pareia detecções e componentes verdadeiros com associação global um-a-um.
 
-    Se tol_hz for fornecido, usa-o como limite fixo (compatibilidade dos testes).
-    No runner, win_s é obrigatório e a porta de associação é:
+    Porta de associação (independente do orçamento de precisão 1/T; parecer da Luna e
+    auditoria do Gemini sobre o piloto v2):
 
-        max(1 / T, |df/dt| * T / 2, df_STFT / 2)
+        porta_k = max(2/T, |df_k/dt| · T / 2, df_STFT / 2)
 
-    A porta é limitada a 45% da separação do componente verdadeiro mais próximo.
-    Quando a excursão necessária excede esse limite, o componente é marcado como
-    não resolvido, em vez de forçar um pareamento ou contar o pico como falso.
+    - 2/T é a meia largura do lóbulo principal da janela de Hann: um pico fora dela não é
+      produzido pelo lóbulo principal daquele componente. O orçamento de precisão (1/T) é
+      medido depois, sobre os pareados, e não coincide com a porta;
+    - |df/dt|·T/2 é a excursão de frequência do componente na janela;
+    - df_STFT/2 é metade do passo da grade de frequências.
 
-    Retorna:
-      registros, picos_falsos, componentes_verdadeiros, componentes_perdidos,
-      componentes_não_resolvidos, picos_associados_a_componentes_não_resolvidos.
+    Se a porta atinge 45% da separação ao componente verdadeiro mais próximo, o componente
+    é "não resolvido". Todos os componentes, resolvidos ou não, entram numa única associação
+    um-a-um. Assim:
+    - cada pico é contado uma única vez: registro (componente resolvido), pico de componente
+      não resolvido (no máximo um por componente) ou pico falso;
+    - cada componente resolvido é pareado ou perdido.
 
-    Cada registro tem (quadro, índice_componente, f_verdadeira, f_estimada, SNR_local).
+    Identidades garantidas por quadro e no total:
+        registros + perdidos + não_resolvidos = componentes_verdadeiros
+        registros + picos_de_não_resolvidos + falsos = picos_detectados
+
+    Se tol_hz for fornecido, ele substitui a porta (uso em testes).
+
+    Retorna: registros, picos_falsos, componentes_verdadeiros, componentes_perdidos,
+    componentes_não_resolvidos, picos_associados_a_componentes_não_resolvidos.
+    Cada registro: (quadro, índice_componente, f_verdadeira, f_estimada, SNR_local).
     """
     if tol_hz is None and (win_s is None or win_s <= 0):
         raise ValueError("win_s positivo é obrigatório quando tol_hz não é fornecido")
@@ -125,94 +141,55 @@ def match_truth(
         raise ValueError("max_gate_fraction deve estar entre 0 e 0.5")
 
     records = []
-    false_peaks = 0
-    n_true = 0
-    n_missed = 0
-    n_unresolved_truth = 0
-    n_unresolved_peaks = 0
+    false_peaks = n_true = n_missed = n_unresolved_truth = n_unresolved_peaks = 0
 
     for frame_index, (frame_time, peaks) in enumerate(zip(t_frames, frames)):
         sample_index = int(np.clip(round(frame_time * fs), 0, truth.t.size - 1))
         true_freqs = np.asarray([track[sample_index] for track in truth.freqs], dtype=float)
         detected_freqs = np.asarray([peak[0] for peak in peaks], dtype=float)
         detected_snr = np.asarray([peak[2] for peak in peaks], dtype=float)
-        n_true += true_freqs.size
-
-        if true_freqs.size == 0:
+        K = true_freqs.size
+        n_true += K
+        if K == 0:
             false_peaks += detected_freqs.size
             continue
 
-        raw_gates = np.empty(true_freqs.size, dtype=float)
-        ambiguous = np.zeros(true_freqs.size, dtype=bool)
-
+        gates = np.empty(K)
+        ambiguous = np.zeros(K, dtype=bool)
         for k, track in enumerate(truth.freqs):
             if tol_hz is not None:
-                raw_gate = float(tol_hz)
+                gate = float(tol_hz)
             else:
                 fdot = abs(_truth_slope_hz_s(np.asarray(track), truth, sample_index))
-                raw_gate = max(1.0 / win_s, 0.5 * fdot * win_s, 0.5 * (df_hz or 0.0))
-
-            if true_freqs.size > 1:
-                separations = np.abs(true_freqs[k] - np.delete(true_freqs, k))
-                nearest = float(np.min(separations))
+                gate = max(MAINLOBE_HALF_WIDTH_BINS / win_s, 0.5 * fdot * win_s,
+                           0.5 * (df_hz or 0.0))
+            if K > 1:
+                nearest = float(np.min(np.abs(true_freqs[k] - np.delete(true_freqs, k))))
                 cap = max_gate_fraction * nearest
-                raw_gates[k] = raw_gate
-                if raw_gate >= cap:
+                if gate >= cap:
                     ambiguous[k] = True
-            else:
-                raw_gates[k] = raw_gate
-
+                    if tol_hz is None:
+                        gate = cap  # o pico absorvido não pode invadir o vizinho
+            gates[k] = gate
         n_unresolved_truth += int(ambiguous.sum())
-        eligible = np.flatnonzero(~ambiguous)
 
-        # Deteções próximas de componentes não resolvidos não são falsos positivos.
-        unresolved_detection = np.zeros(detected_freqs.size, dtype=bool)
-        for k in np.flatnonzero(ambiguous):
-            unresolved_detection |= (
-                np.abs(detected_freqs - true_freqs[k]) <= raw_gates[k]
-            )
-        n_unresolved_peaks += int(unresolved_detection.sum())
-
-        matched_truth = set()
-        matched_detection = set()
-
-        if eligible.size and detected_freqs.size:
-            gates = raw_gates[eligible].copy()
-            if tol_hz is None and true_freqs.size > 1:
-                for pos, k in enumerate(eligible):
-                    nearest = np.min(np.abs(true_freqs[k] - np.delete(true_freqs, k)))
-                    gates[pos] = min(gates[pos], max_gate_fraction * nearest)
-
-            distance = np.abs(true_freqs[eligible, None] - detected_freqs[None, :])
-            invalid_cost = 1e9
-            cost = np.where(distance <= gates[:, None], distance, invalid_cost + distance)
-            row_index, col_index = linear_sum_assignment(cost)
-
-            for row, col in zip(row_index, col_index):
-                if distance[row, col] > gates[row]:
+        matched_truth, matched_det = set(), set()
+        if detected_freqs.size:
+            distance = np.abs(true_freqs[:, None] - detected_freqs[None, :])
+            cost = np.where(distance <= gates[:, None], distance, 1e9 + distance)
+            rows, cols = linear_sum_assignment(cost)
+            for r, c in zip(rows, cols):
+                if distance[r, c] > gates[r]:
                     continue
-                k = int(eligible[row])
-                matched_truth.add(k)
-                matched_detection.add(int(col))
-                records.append((
-                    frame_index,
-                    k,
-                    float(true_freqs[k]),
-                    float(detected_freqs[col]),
-                    float(detected_snr[col]),
-                ))
+                matched_truth.add(int(r))
+                matched_det.add(int(c))
+                if ambiguous[r]:
+                    n_unresolved_peaks += 1
+                else:
+                    records.append((frame_index, int(r), float(true_freqs[r]),
+                                    float(detected_freqs[c]), float(detected_snr[c])))
+        n_missed += int(sum(1 for k in range(K) if not ambiguous[k] and k not in matched_truth))
+        false_peaks += int(detected_freqs.size - len(matched_det))
 
-        n_missed += int(eligible.size - len(matched_truth))
-        false_peaks += sum(
-            1 for i in range(detected_freqs.size)
-            if i not in matched_detection and not unresolved_detection[i]
-        )
-
-    return (
-        records,
-        int(false_peaks),
-        int(n_true),
-        int(n_missed),
-        int(n_unresolved_truth),
-        int(n_unresolved_peaks),
-    )
+    return (records, int(false_peaks), int(n_true), int(n_missed),
+            int(n_unresolved_truth), int(n_unresolved_peaks))

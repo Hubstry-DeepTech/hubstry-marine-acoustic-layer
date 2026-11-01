@@ -1,6 +1,6 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.3.1 (incorpora o parecer da Luna sobre a v0.1, a revisão do Bloco 1 e o parecer sobre o piloto v2: busca exata com fatoração protegida e verificação reproduzível; opções para `Σ`) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3.2 (incorpora os pareceres da Luna até o piloto v2 e a auditoria independente do Gemini sobre o commit `a71fd60`: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, partição `val` para a validação final) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;

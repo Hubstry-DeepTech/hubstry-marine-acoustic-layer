@@ -191,11 +191,16 @@ def test_match_truth_flags_unresolved_nearby_chirped_components():
     records, false, n_true, missed, unresolved, unresolved_peaks = D.match_truth(
         times, frames, truth, win_s=2.0, df_hz=0.125
     )
+    # Auditoria do Gemini: um componente não resolvido absorve no máximo um pico, e a porta
+    # absorvente fica limitada a 45% da separação. Em t = 1 s os componentes estão em 22 e
+    # 24 Hz: 21,5 Hz é absorvido pelo de 22 Hz; 20,5 Hz fica fora da porta e é falso.
     assert records == []
-    assert false == 0
     assert n_true == 2
     assert unresolved == 2
-    assert unresolved_peaks == 2
+    assert unresolved_peaks == 1
+    assert false == 1
+    assert len(records) + missed + unresolved == n_true
+    assert len(records) + unresolved_peaks + false == len(frames[0])
 
 
 def test_empirical_uncertainty_uses_snr_and_modulation_strata():
@@ -284,3 +289,104 @@ def test_verify_d1_batteries_small():
         r = V.battery("teste", cases)
         assert r["falhas_fatoracao"] == 0
         assert r["minimo_igual"] == r["n"] and r["hstar_igual"] == r["n"]
+
+
+# Testes propostos pela auditoria do Gemini 4 Argon (Antigravity), adaptados.
+
+def test_g3_null_keeps_exclusion_zone_and_common_modulation():
+    rng = np.random.default_rng(101)
+    for _ in range(20):
+        _, truth = G.null_comodulated(rng, K=6, band=(20.0, 600.0), duration=4.0, slope=-0.04,
+                                      n_excl=6, eta=0.015)
+        f_init = np.sort([fk[0] for fk in truth.freqs])
+        assert not G._near_small_ratio(f_init, 6, 0.015)
+        ratios = np.array([fk[-1] / fk[0] for fk in truth.freqs])
+        assert np.allclose(ratios, ratios[0], rtol=1e-12)
+
+
+def test_add_noise_respects_integrated_inband_snr():
+    rng = np.random.default_rng(102)
+    sig, _ = G.harmonic(rng, duration=6.0, f0_start=16.0, f_gen_max=400.0)
+    band = (5.0, 900.0)
+    for snr_db in (-5.0, 0.0, 10.0, 20.0):
+        for alpha in (0.0, 1.0):
+            noisy, _ = G.add_noise(rng, sig, snr_db, band, alpha=alpha)
+            measured = 10 * np.log10(G.band_energy(sig, band) / G.band_energy(noisy - sig, band))
+            assert measured == pytest.approx(snr_db, abs=1e-9)
+
+
+def test_yin_best_recovers_f0_with_dominant_third_and_missing_fundamental():
+    rng = np.random.default_rng(103)
+    for profile in ("h3_dominante", "ausente_identificavel"):
+        sig, _ = G.harmonic(rng, duration=2.0, f0_start=15.0, profile=profile, f_gen_max=250.0)
+        frame = F0.prefilter(sig)[int(0.5 * G.FS): int(1.5 * G.FS)]
+        f0_est, conf = F0.yin(frame, threshold=0.2, mode="best")
+        assert np.isfinite(f0_est) and conf > 0.8
+        assert abs(np.log2(f0_est / 15.0)) < 0.05
+
+
+def test_udu_rejects_matrix_without_ones_in_kernel():
+    with pytest.raises(np.linalg.LinAlgError):
+        A._udu(np.eye(4))
+
+
+def test_exact_search_near_harmonic_with_ill_conditioned_sigma():
+    """Caso apontado pelo Gemini: T_min ≈ 0 com Σ muito mal condicionada."""
+    from lab.sim_mca001 import verify_d1 as V
+    rng = np.random.default_rng(104)
+    for _ in range(30):
+        K = 5
+        f0 = rng.uniform(12.0, 25.0)
+        orders = np.sort(rng.choice(np.arange(1, 15), size=K, replace=False))
+        freqs = f0 * orders * (1.0 + rng.normal(0.0, 1e-4, size=K))
+        sd = np.array([1e-4, 1e-4, 1e-1, 5e-1, 1.0]) / freqs
+        C = rng.uniform(-1.0, 1.0, size=(K, K))
+        R = C @ C.T + 0.02 * np.eye(K)
+        d = np.sqrt(np.diag(R))
+        sigma = np.outer(sd, sd) * (R / np.outer(d, d))
+        tx, hx, _ = A.exact_search(freqs, sigma, N=20, delta_T=0.5)
+        te, he = V.exhaustive_vectorized(freqs, sigma, N=20, delta_T=0.5)
+        assert tx == pytest.approx(te, rel=1e-7, abs=1e-6)
+        assert {h for h, _ in hx} == he
+
+
+def test_match_truth_accounting_identities_on_random_frames():
+    """Identidades da contabilidade: cada componente e cada pico têm exatamente um destino."""
+    from lab.sim_mca001.generator import Truth
+    rng = np.random.default_rng(106)
+    t = np.arange(8000) / G.FS
+    for _ in range(50):
+        K = int(rng.integers(1, 6))
+        base = np.sort(rng.uniform(10, 200, K))
+        slopes = rng.uniform(-5, 5, K)
+        truth = Truth(t=t, freqs=[b + s * t for b, s in zip(base, slopes)], amps=[1.0] * K,
+                      orders=list(range(1, K + 1)), f0=np.full(t.size, base[0]))
+        times = np.array([1.0, 2.0, 3.0])
+        frames = [[(float(f), 1.0, 20.0) for f in rng.uniform(5, 220, rng.integers(0, 8))]
+                  for _ in times]
+        rec, false, n_true, missed, unres, unres_peaks = D.match_truth(
+            times, frames, truth, win_s=1.0, df_hz=0.25)
+        assert len(rec) + missed + unres == n_true
+        assert len(rec) + unres_peaks + false == sum(len(f) for f in frames)
+        assert unres_peaks <= unres
+
+
+def test_calibration_outputs_do_not_depend_on_ver_partition():
+    """Nada escolhido a partir de cal muda quando a partição ver muda."""
+    from lab.sim_mca001 import block1 as B1
+    cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=10.0, alpha=0.0)
+    cal = B1.run_one((cell, "cal", 0))
+    s_a = B1.summarize([cal, B1.run_one((cell, "ver", 0))])
+    s_b = B1.summarize([cal, B1.run_one((cell, "ver", 1))])
+    assert (s_a["fundamental"]["yin_best_threshold_escolhido_em_cal"]
+            == s_b["fundamental"]["yin_best_threshold_escolhido_em_cal"])
+    for w in B1.WINDOWS:
+        assert (s_a["incerteza"][str(w)]["tabela_calibracao_cal"]
+                == s_b["incerteza"][str(w)]["tabela_calibracao_cal"])
+        assert (s_a["deteccao"][str(w)]["cal"] == s_b["deteccao"][str(w)]["cal"])
+
+
+def test_val_partition_is_not_run_by_default():
+    from lab.sim_mca001 import block1 as B1  # noqa: F401
+    assert S.EXPLORATORY_PARTITIONS == ("cal", "ver")
+    assert "val" in S.PARTITIONS

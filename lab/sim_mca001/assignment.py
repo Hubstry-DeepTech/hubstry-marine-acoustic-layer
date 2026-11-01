@@ -65,6 +65,20 @@ def neighbors(cands, N):
     return out
 
 
+def chi2_whitened(Sigma, V):
+    """χ² de cada linha de V (resíduos y − ln h), com a escala ótima eliminada, calculado de
+    forma numericamente estável: branqueamento por Cholesky e projeção explícita do resíduo,
+    sem formar Σ⁻¹ (auditoria do Gemini, achado 5). Aceita V com forma (K,) ou (n, K)."""
+    from scipy.linalg import cholesky, solve_triangular
+    V = np.atleast_2d(np.asarray(V, float))
+    L = cholesky(Sigma, lower=True)
+    a = solve_triangular(L, np.ones(Sigma.shape[0]), lower=True)
+    B = solve_triangular(L, V.T, lower=True)
+    R = B - np.outer(a, (a @ B) / (a @ a))
+    out = np.einsum("ij,ij->j", R, R)
+    return out
+
+
 def _residual_form(Sigma):
     """M = Σ⁻¹ − Σ⁻¹11ᵀΣ⁻¹ / 1ᵀΣ⁻¹1, de modo que χ²(h) = vᵀMv com v = y − ln h
     (a escala ótima já eliminada). M é semidefinida, com núcleo gerado por 1."""
@@ -139,6 +153,10 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
         return np.nan, [], 0
     M = _residual_form(Sigma)
     d, U = _udu(M)
+    # folga absoluta pelo erro de fatoração: |T_fatorado − vᵀMv| ≲ K²·‖UᵀDU − M‖_max·‖v‖²_∞,
+    # com |v_k| ≤ max|y| + ln N (auditoria do Gemini, achado 5)
+    fact_err = float(np.max(np.abs(U.T @ np.diag(d) @ U - M)))
+    abs_slack = K * K * fact_err * (float(np.max(np.abs(y))) + np.log(N)) ** 2
     # cota inicial finita: qualquer atribuição viável serve; usa-se a melhor entre (1, …, K)
     # e o resultado da heurística por arredondamento
     seeds = [tuple(range(1, K + 1))] + list(neighbors(rounding_candidates(freqs, N), N))
@@ -157,7 +175,7 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
         # folga relativa generosa para o arredondamento entre vᵀMv e a soma dos termos, que
         # chegou a ~6e-5 relativo com Σ de número de condição ~1e10; a poda só pode ficar mais
         # permissiva, nunca mais restritiva, e H* é decidido depois pelo valor direto vᵀMv
-        return best[0] + delta_T + SEARCH_SLACK_RTOL * max(1.0, abs(best[0]))
+        return best[0] + delta_T + SEARCH_SLACK_RTOL * max(1.0, abs(best[0])) + abs_slack
 
     def rec(k, partial):
         nodes[0] += 1
@@ -199,10 +217,9 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
         # impossível em aritmética exata: a melhor semente está sempre dentro do raio
         raise np.linalg.LinAlgError("busca exata sem candidatos; verificar condicionamento de Σ")
     # valores finais recalculados diretamente, sem a fatoração, para decidir H*
-    direct = []
-    for hh, _t in found:
-        vv = y - np.log(np.asarray(hh, float))
-        direct.append((hh, float(vv @ M @ vv)))
+    hs = [hh for hh, _t in found]
+    values = chi2_whitened(Sigma, y[None, :] - np.log(np.asarray(hs, float)))
+    direct = list(zip(hs, map(float, values)))
     tmin = min(t for _, t in direct)
     tol = 1e-9 * max(1.0, abs(tmin))
     hstar = sorted([(hh, t) for hh, t in direct if t <= tmin + delta_T + tol], key=lambda e: e[1])

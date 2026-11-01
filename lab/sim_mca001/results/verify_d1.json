@@ -3,8 +3,8 @@
   "n": 3000,
   "minimo_igual": 3000,
   "hstar_igual": 3000,
-  "tempo_mediano_s": 0.0012041330337524414,
-  "tempo_max_s": 0.006679058074951172,
+  "tempo_mediano_s": 0.001374363899230957,
+  "tempo_max_s": 0.13234663009643555,
   "nos_max": 633,
   "falhas_fatoracao": 0
  },
@@ -12,8 +12,8 @@
   "n": 500,
   "minimo_igual": 500,
   "hstar_igual": 500,
-  "tempo_mediano_s": 0.003000020980834961,
-  "tempo_max_s": 0.11726212501525879,
+  "tempo_mediano_s": 0.0033419132232666016,
+  "tempo_max_s": 0.11704349517822266,
   "nos_max": 15418,
   "falhas_fatoracao": 0
  },
@@ -21,11 +21,11 @@
   "n": 21,
   "minimo_igual": 21,
   "hstar_igual": 21,
-  "tempo_mediano_s": 0.013455390930175781,
-  "tempo_max_s": 0.031427860260009766,
+  "tempo_mediano_s": 0.015835285186767578,
+  "tempo_max_s": 0.03137063980102539,
   "nos_max": 164,
   "falhas_fatoracao": 0
  },
  "limite_nao_coberto": "K >= 7 com N >= 60 (comparação exaustiva inviável)",
- "tempo_total_s": 181.4
+ "tempo_total_s": 187.3
 }

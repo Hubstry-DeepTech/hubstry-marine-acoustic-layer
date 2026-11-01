@@ -76,7 +76,7 @@ def harmonic(rng, duration=10.0, f0_start=15.0, slope=0.0, profile="decrescente"
         if a <= 0:
             continue
         fn = n * f0 * np.sqrt(1.0 + inharm_b * n * n) * (1.0 + d)
-        if fn.max() >= 0.5 * fs:
+        if fn.max() >= min(f_gen_max, 0.5 * fs):  # G2 respeita f_gen_max (achado 6)
             continue
         x += a * np.sin(_phase(fn, fs) + rng.uniform(0, 2 * np.pi))
         freqs.append(fn)

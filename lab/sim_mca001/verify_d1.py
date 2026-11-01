@@ -25,11 +25,10 @@ from . import assignment as A
 
 
 def exhaustive_vectorized(freqs, Sigma, N, delta_T, chunk=400_000):
-    """χ² de todas as atribuições crescentes e mínimas, em blocos (referência independente
-    da fatoração UᵀDU: usa M diretamente)."""
+    """χ² de todas as atribuições crescentes e mínimas, em blocos. Referência independente da
+    fatoração UᵀDU e da poda: avalia cada atribuição por branqueamento de Cholesky."""
     y = np.log(np.asarray(freqs, float))
     K = y.size
-    M = A._residual_form(Sigma)
     combos = combinations(range(1, N + 1), K)
     best, kept = np.inf, []
     while True:
@@ -38,7 +37,7 @@ def exhaustive_vectorized(freqs, Sigma, N, delta_T, chunk=400_000):
             break
         block = block[np.gcd.reduce(block, axis=1) == 1]
         V = y[None, :] - np.log(block)
-        chi2 = np.einsum("ij,jk,ik->i", V, M, V)
+        chi2 = A.chi2_whitened(Sigma, V)
         best = min(best, float(chi2.min()))
         kept.append((block, chi2))
     tol = 1e-9 * max(1.0, abs(best))

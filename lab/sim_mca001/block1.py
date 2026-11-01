@@ -111,6 +111,10 @@ def run_one(args):
         profile=cell["profile"],
     )
     noisy, _ = G.add_noise(rng, signal, cell["snr"], BAND, alpha=cell["alpha"])
+    # Controle de associação acidental: ruído puro, com a mesma escala do ruído do sinal e
+    # semente própria, pareado contra a mesma verdade (auditoria do Gemini, achado 1).
+    rng_noise = S.rng("B1-ruido", name, partition, replicate)
+    noise_only = G.add_noise(rng_noise, signal, cell["snr"], BAND, alpha=cell["alpha"])[0] - signal
 
     signal_id = f"{name}|{partition}|{replicate}"
     out = dict(
@@ -129,6 +133,7 @@ def run_one(args):
             threshold_db=min(DET_THRESHOLDS_DB),
         )
         t_frames, frames, df = D.detect(noisy, params)
+        _, noise_frames, _ = D.detect(noise_only, params)
         out["det"][window_s] = {}
 
         for threshold_db in DET_THRESHOLDS_DB:
@@ -151,6 +156,13 @@ def run_one(args):
                 win_s=window_s,
                 df_hz=df,
             )
+
+            noise_selected = [
+                [peak for peak in frame if peak[2] >= min_snr_linear]
+                for frame in noise_frames
+            ]
+            noise_match = D.match_truth(t_frames, noise_selected, truth,
+                                        win_s=window_s, df_hz=df)
 
             precision_count = 0
             order_counts = defaultdict(lambda: [0, 0])
@@ -203,6 +215,9 @@ def run_one(args):
                 n_false=n_false,
                 n_unresolved_peaks=n_unresolved_peaks,
                 n_precise=precision_count,
+                n_match_ruido_puro=len(noise_match[0]),
+                n_elegiveis_ruido_puro=max(0, noise_match[2] - noise_match[4]),
+                n_picos_ruido_puro=sum(len(f) for f in noise_selected),
                 n_frames=n_frames,
                 order_counts=dict(order_counts),
                 # Somente o conjunto com o menor limiar alimenta a calibração empírica.
@@ -544,47 +559,48 @@ def _rows_from_results(results, window_s, partition):
 
 
 def _summarize_detection(results, window_s):
-    window_summary = {}
-    for threshold_db in DET_THRESHOLDS_DB:
-        by_integrated_snr = {}
-        for integrated_snr in GRID["snr"]:
-            selected = [
-                result["det"][window_s][threshold_db]
-                for result in results
-                if result["cell"]["snr"] == integrated_snr
-            ]
-            n_true = sum(item["n_true"] for item in selected)
-            n_eligible = sum(item["n_eligible_true"] for item in selected)
-            n_match = sum(item["n_match"] for item in selected)
-            n_frames = sum(item["n_frames"] for item in selected)
-            n_false = sum(item["n_false"] for item in selected)
-            n_unresolved = sum(item["n_unresolved"] for item in selected)
-            n_unresolved_peaks = sum(item["n_unresolved_peaks"] for item in selected)
-            by_integrated_snr[str(integrated_snr)] = dict(
-                taxa_deteccao_em_componentes_resolvidos=(
-                    n_match / n_eligible if n_eligible else None
-                ),
-                falsos_picos_por_quadro=n_false / n_frames if n_frames else None,
-                componentes_nao_resolvidos=n_unresolved,
-                picos_associados_a_componentes_nao_resolvidos=n_unresolved_peaks,
-                componentes_verdadeiros=n_true,
+    """Resumo da detecção separado por partição (auditoria do Gemini, achado 3).
+
+    Taxas reportadas sobre o total de componentes e sobre os resolvidos, lado a lado
+    (achado 2), e taxa de associação acidental medida com ruído puro (achado 1)."""
+    out = {}
+    for partition in sorted({r["partition"] for r in results}):
+        part = [r for r in results if r["partition"] == partition]
+        window_summary = {}
+        for threshold_db in DET_THRESHOLDS_DB:
+            by_integrated_snr = {}
+            for integrated_snr in GRID["snr"]:
+                sel = [r["det"][window_s][threshold_db] for r in part
+                       if r["cell"]["snr"] == integrated_snr]
+                tot = lambda key: sum(item[key] for item in sel)
+                n_true, n_elig, n_match = tot("n_true"), tot("n_eligible_true"), tot("n_match")
+                n_frames = tot("n_frames")
+                by_integrated_snr[str(integrated_snr)] = dict(
+                    taxa_deteccao_sobre_total=n_match / n_true if n_true else None,
+                    taxa_deteccao_sobre_resolvidos=n_match / n_elig if n_elig else None,
+                    fracao_nao_resolvidos=tot("n_unresolved") / n_true if n_true else None,
+                    taxa_precisa_sobre_total=tot("n_precise") / n_true if n_true else None,
+                    falsos_picos_por_quadro=tot("n_false") / n_frames if n_frames else None,
+                    picos_absorvidos_por_nao_resolvidos=tot("n_unresolved_peaks"),
+                    taxa_associacao_acidental_ruido_puro=(
+                        tot("n_match_ruido_puro") / tot("n_elegiveis_ruido_puro")
+                        if tot("n_elegiveis_ruido_puro") else None),
+                    picos_por_quadro_ruido_puro=(
+                        tot("n_picos_ruido_puro") / n_frames if n_frames else None),
+                    componentes_verdadeiros=n_true,
+                )
+            order_totals = defaultdict(lambda: [0, 0])
+            for r in part:
+                for bucket, (precise, total) in r["det"][window_s][threshold_db]["order_counts"].items():
+                    order_totals[bucket][0] += precise
+                    order_totals[bucket][1] += total
+            window_summary[str(threshold_db)] = dict(
+                por_snr_integrada=by_integrated_snr,
+                precisao_abs_erro_le_1_sobre_T_por_ordem={
+                    b: p / t if t else None for b, (p, t) in order_totals.items()},
             )
-
-        order_totals = defaultdict(lambda: [0, 0])
-        for result in results:
-            metrics = result["det"][window_s][threshold_db]
-            for bucket, (precise, total) in metrics["order_counts"].items():
-                order_totals[bucket][0] += precise
-                order_totals[bucket][1] += total
-
-        window_summary[str(threshold_db)] = dict(
-            por_snr_integrada=by_integrated_snr,
-            precisao_abs_erro_le_1_sobre_T_por_ordem={
-                bucket: precise / total if total else None
-                for bucket, (precise, total) in order_totals.items()
-            },
-        )
-    return window_summary
+        out[partition] = window_summary
+    return out
 
 
 def select_yin_best_threshold(results):
@@ -634,8 +650,9 @@ def select_yin_best_threshold(results):
 
 
 def _summarize_fundamental(results, chosen_threshold):
-    summary = {"por_particao": {"cal": {}, "ver": {}}}
-    for partition in S.PARTITIONS:
+    present = sorted({r["partition"] for r in results})
+    summary = {"por_particao": {p: {} for p in present}}
+    for partition in present:
         for profile in GRID["profile"]:
             by_snr = {}
             for snr in GRID["snr"]:
@@ -777,6 +794,9 @@ def main(argv=None):
                         help="réplicas por célula e por partição cal/ver")
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--particoes", nargs="+", default=list(S.EXPLORATORY_PARTITIONS),
+                        choices=list(S.PARTITIONS),
+                        help="'val' só na validação final, depois de congeladas as regras")
     args = parser.parse_args(argv)
 
     if args.reps < 1 or args.workers < 1:
@@ -788,7 +808,7 @@ def main(argv=None):
     jobs = [
         (cell, partition, replicate)
         for cell in cells
-        for partition in S.PARTITIONS
+        for partition in args.particoes
         for replicate in range(args.reps)
     ]
 
@@ -797,7 +817,8 @@ def main(argv=None):
 
     report = dict(
         bloco="B1",
-        plano="SIM-MCA-001 v0.2 — runner revisado",
+        plano="SIM-MCA-001 v0.3.2 — runner revisado após a auditoria do Gemini",
+        particoes=args.particoes,
         rotulo="EXPLORATORY/FEASIBILITY",
         tipo="piloto" if args.reps <= 6 else "rodada exploratória",
         grade=GRID,
@@ -812,8 +833,9 @@ def main(argv=None):
         n_sinais=len(jobs),
         criterio_pareamento=(
             "regra de avaliação sintética baseada na verdade; não integra a cadeia de detecção aplicada a sinais reais. "
-            "associação global um-a-um; porta max(1/T, |df/dt|*T/2, df_STFT/2), "
-            "limitada a 45% da separação verdadeira mais próxima; não resolvidos separados"
+            "associação global um-a-um sobre todos os componentes; porta max(2/T, |df/dt|*T/2, df_STFT/2), "
+            "independente do orçamento de precisão 1/T; componente não resolvido absorve no máximo um pico, "
+            "com porta limitada a 45% da separação; associação acidental medida com ruído puro"
         ),
         metodo_incerteza=(
             "quantis empíricos centrais de 95% por SNR local e classe de modulação; "

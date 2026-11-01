@@ -53,7 +53,12 @@ def yin(frame, fmin=8.0, fmax=40.0, threshold=0.15, mode="first", fs=FS):
         tau += 1
     a, b, c = dp[tau - 1], dp[tau], dp[tau + 1]
     den = a - 2 * b + c
-    shift = 0.5 * (a - c) / den if den > 0 else 0.0
+    # interpolação parabólica só num mínimo local estrito no interior da faixa; o
+    # deslocamento fica limitado a meia amostra (auditoria do Gemini, achado 6)
+    if tmin < tau < tmax and b <= a and b <= c and den > 0:
+        shift = float(np.clip(0.5 * (a - c) / den, -0.5, 0.5))
+    else:
+        shift = 0.0
     return fs / (tau + shift), float(1 - b)
 
 
