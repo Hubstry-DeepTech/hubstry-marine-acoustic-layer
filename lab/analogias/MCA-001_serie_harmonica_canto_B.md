@@ -1,6 +1,6 @@
 # MCA-001 — Série harmônica musical e canto B da baleia-azul
 
-**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.2 (incorpora as decisões do autor da teoria de 01/11/2026; para revisão da Luna) · **Data:** 01/11/2026 · **Estado:** especificação conceitual; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-la. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.3 (incorpora as decisões do autor da teoria e o parecer da Luna sobre a v0.2, ambos de 01/11/2026) · **Data:** 01/11/2026 · **Estado:** especificação conceitual; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-la. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
 
 **Fontes das definições:** as seis relações de significância vêm do manuscrito "π√f(A): Uma Álgebra Hexa Relacional de Significância para Algoritmos" (fevereiro de 2026), de Guilherme Gonçalves Machado, Seções 3.2 a 3.7, conferidas no texto integral, e do módulo `core/relations.py` do repositório `marcabru-tech/algebra-hexarrelacional` (commit `085f753`). As demais fontes citadas pelo código Sxx estão em `lab/sources/fontes.csv`.
 
@@ -36,36 +36,45 @@ Dois referenciais complementam essa taxonomia sem se confundir com ela. Mary Hes
 
 **Sistema de origem: a série harmônica da acústica musical.** Um som periódico de frequência fundamental `f₀` contém componentes em `fₙ = n·f₀`, com `n = 1, 2, 3, …`. As razões entre componentes são razões de números inteiros; a oitava corresponde a 2:1, a quinta justa a 3:2, e a décima segunda, entre a fundamental e o terceiro harmônico, a 3:1. Essas relações são consequência da periodicidade do sinal, e não de uma escolha perceptiva ou cultural. A organização dessas relações em escalas, consonâncias e afinações já pertence à percepção e à cultura humanas.
 
-**Sistema de destino: o canto B da baleia-azul do Pacífico Nordeste.** Trata-se de vocalização tonal com fundamental em torno de 15 Hz e modulação de frequência ao longo de 10 a 20 s. O terceiro harmônico concentra a maior energia e é o componente usualmente medido (S01). Um modelo publicado propõe que fundamental e sobretons resultem de uma série de pulsos pneumáticos (S02). Esse modelo é uma hipótese de produção, e não uma observação direta do mecanismo.
+**Sistema de destino: o canto B da baleia-azul do Pacífico Nordeste.** Trata-se de vocalização tonal, com duração de vários segundos e modulação de frequência ao longo do chamado. O terceiro harmônico concentra a maior energia e é o componente usualmente medido. Sua frequência de pico, medida a 10 s do início, ficou entre 46,1 Hz (2006) e 42,6 Hz (2019), o que situa a fundamental perto de 15 Hz (S01). Segundo o resumo de um artigo publicado, fundamental e sobretons podem ser modelados por uma série de ondículas curtas, atribuídas a pulsos pneumáticos (S02, conferido apenas pelo resumo). Esse modelo é uma hipótese de produção, e não uma observação direta do mecanismo.
 
-### 3.3 Representação como estruturas relacionais
+### 3.3 Representação como estruturas relacionais finitas
 
-Os dois sistemas são representados como estruturas relacionais no sentido da teoria dos conjuntos.
+Os dois sistemas são representados como estruturas relacionais finitas, no sentido da teoria dos conjuntos.
 
-- **Estrutura ideal:** `𝓗 = ⟨ℕ⁺, r⟩`, em que cada elemento `n` é a ordem de um harmônico e `r(m, n) = m/n` é a razão entre componentes.
-- **Estrutura observada no instante t:** `𝓑(t) = ⟨C(t), r̂_t⟩`, em que `C(t) = {c₁, …, c_K}` é o conjunto de componentes espectrais detectados, com frequências `f_k(t)`, e `r̂_t(c_j, c_k) = f_j(t)/f_k(t)`.
+- **Estrutura ideal de comparação:** `𝓗_N = ⟨{1, …, N}, r⟩`, em que cada elemento `n` é a ordem de um harmônico e `r(m, n) = m/n`. A ordem máxima `N` é fixada pela banda analisada: com arquivos de 2 kHz e análise até 990 Hz, `N = ⌊990 / f₀⌋`. A restrição a um conjunto finito é necessária, porque nenhuma correspondência bijetiva pode existir entre um conjunto finito de componentes observados e o conjunto infinito dos números naturais.
+- **Estrutura observada no instante t:** `𝓑(t) = ⟨C(t), r̂_t⟩`, em que `C(t) = {c₁, …, c_K}` é o conjunto de componentes espectrais detectados, com frequências `f_k(t)` e incertezas `σ_k(t)`, e `r̂_t(c_j, c_k) = f_j(t)/f_k(t)`.
 
-Uma atribuição de ordens é uma função `h: C(t) → ℕ⁺` que associa a cada componente observado uma ordem harmônica. A tolerância de comparação, `δ`, deriva da resolução e da incerteza de estimação de frequência, e será fixada antes de qualquer medição, a partir de sinais sintéticos.
+Uma **atribuição de ordens** é uma função `h: C(t) → {1, …, N}`. A atribuição é exigida injetiva por definição: componentes distintos recebem ordens distintas. A injetividade não decorre da cardinalidade dos conjuntos. Ela é uma condição do procedimento, e uma atribuição que associe dois componentes à mesma ordem é rejeitada.
+
+A **tolerância** de comparação para uma razão entre os componentes `c_j` e `c_k` deriva da propagação das incertezas de frequência: `δ_jk = z · r̂_jk · √((σ_j/f_j)² + (σ_k/f_k)²)`, com o fator `z` e o método de estimação de `σ` fixados antes de qualquer medição, por calibração com sinais sintéticos.
+
+Três níveis de correspondência estrutural são distinguidos:
+- **homomorfismo exato:** todas as razões entre pares são preservadas, sem tolerância. Serve apenas como referência teórica, porque medições com ruído não o alcançam;
+- **homomorfismo aproximado:** todas as razões entre pares são preservadas dentro de `δ_jk`;
+- **cobertura parcial:** apenas uma fração dos pares satisfaz o critério. A fração é um escore de correspondência, e não prova da existência de um homomorfismo.
+
+O isomorfismo, caso máximo da homologia, corresponde a um homomorfismo aproximado em que todas as ordens de `{1, …, N}` com energia acima do limiar de detecção têm componente observado.
 
 ## 4. As seis relações aplicadas aos dois sistemas
 
-As relações são tratadas como seis dimensões independentes de um perfil de correspondência. Elas não são agregadas em um escore único, e a norma ponderada pela razão áurea não é usada nesta ficha (Seção 6).
+As seis relações são reportadas separadamente, como dimensões conceituais do perfil de correspondência. Não se pressupõe implicação lógica geral entre elas, nem independência matemática ou estatística. ρ₁ e ρ₂, por exemplo, usam a mesma atribuição `h` e a mesma estimativa de `f₀`, e seus resultados não são independentes. As dimensões não são agregadas em um escore único, e a norma ponderada pela razão áurea não é usada nesta ficha (Seção 6).
 
-| Relação | Definição no manuscrito | Instância nesta ficha | Grandeza medível | Classe de Hesse |
+| Relação | Definição no manuscrito | Instância nesta ficha | Grandeza medível | Estado |
 |---|---|---|---|---|
-| ρ₁ Similitude | `d(φ(x), φ(y)) < ε`; reflexiva, simétrica, não transitiva | Proximidade de cada componente observado à posição ideal `h(c_k)·f₀(t)`, componente por componente, sem considerar as relações entre componentes | Desvio relativo `εₙ(t) = (fₙ(t) − n·f₀(t)) / (n·f₀(t))`, comparado à tolerância | Positiva: a física de sinais periódicos prevê a proximidade |
-| ρ₂ Homologia | Existência de `h` entre as estruturas; reflexiva, transitiva, não simétrica | Existência de uma atribuição `h` que preserve todas as razões entre pares: `|r̂_t(c_j, c_k) − h(c_j)/h(c_k)| ≤ δ` | Fração de pares preservados e maior desvio entre pares, por instante e por evento | Positiva para a estrutura; neutra para sua estabilidade |
-| ρ₃ Equivalência | `∀C: C[x] ≃ C[y]`; relação de equivalência | Igualdade da descrição estrutural em todos os contextos de análise: a mesma atribuição `h` vale em todos os segmentos do canto, em todos os eventos e em todos os dias | Proporção de contextos em que a atribuição se mantém; partição dos eventos em classes de mesma estrutura | Neutra |
-| ρ₄ Simetria | `∃T ∈ 𝒢: T(x) = y`; órbita de um grupo de transformações | Invariância das razões sob o grupo de mudanças de escala de frequência, `T_a(f) = a·f`, que na música corresponde à transposição | Variação de `εₙ` em função de `f₀(t)` durante a modulação do canto e entre eventos | Neutra |
-| ρ₅ Equilíbrio | `Φ(x) + Φ(y) = 0`; simétrica, não reflexiva, não transitiva | Candidata: cancelamento de desvios de sinal oposto entre componentes, com `Φ = εₙ` | Soma dos desvios de pares de componentes | Neutra; exige cautela, porque artefatos de estimação espectral também podem produzir desvios de sinais opostos |
-| ρ₆ Compensação | A deficiência de um é o excesso do outro, e a combinação produz valor maior que a soma das partes | Candidata: a fundamental do canto B é fraca e o terceiro harmônico é forte; a frequência fundamental só é identificável pelo conjunto dos componentes, e não por um componente isolado de ordem desconhecida | Comparação entre a identificação e a precisão de `f₀` obtidas por cada componente isolado e pelo conjunto | Neutra |
+| ρ₁ Similitude | `d(φ(x), φ(y)) < ε`; reflexiva, simétrica, não transitiva | `x` é um componente observado `c_k`; `y` é o elemento ideal `h(c_k)·f₀(t)`; `φ` é o logaritmo da frequência; `d` é a diferença absoluta. A relação vale quando o desvio está dentro da tolerância | `|ln f_k − ln(h(c_k)·f₀)|`, aproximadamente o desvio relativo `εₙ(t)` | Especificada |
+| ρ₂ Homologia | Homomorfismo `h` entre as estruturas; reflexiva, transitiva, não simétrica | Existência de uma atribuição injetiva `h` que preserve as razões entre pares, nos três níveis da Seção 3.3 | Nível alcançado; fração de pares preservados; maior desvio normalizado `|r̂_jk − h_j/h_k| / δ_jk` | Especificada |
+| ρ₃ Equivalência | `∀C: C[x] ≃ C[y]`; relação de equivalência | Dois instantes ou eventos são equivalentes quando, nas ordens presentes em ambos, as atribuições coincidem e as razões são preservadas. Exige ao menos três ordens comuns. Componentes ausentes não violam a relação, mas reduzem a cobertura, que é reportada | Proporção de pares de contextos equivalentes; número de ordens comuns; partição dos eventos em classes | Especificada, com regra de ausências |
+| ρ₄ Simetria | `∃T ∈ 𝒢: T(x) = y`; órbita de um grupo de transformações | Hipótese empírica: os componentes observados em dois instantes ou eventos relacionam-se por um mesmo fator de escala `a`, com `f_k' ≈ a·f_k` para todas as ordens comuns. A invariância das razões sob `T_a` é propriedade matemática da transformação; o que se testa é se os dados se comportam assim | Estimativa de `ln a` por mínimos quadrados nas ordens comuns; dispersão dos resíduos comparada com a incerteza | Especificada |
+| ρ₅ Equilíbrio | `Φ(x) + Φ(y) = 0`; simétrica, não reflexiva, não transitiva | Questão aberta. Uma candidata seria o pareamento de ordens adjacentes, com `Φ` igual ao desvio relativo normalizado, mas o pareamento, a normalização e a tolerância não estão definidos, e artefatos de estimação espectral também produzem desvios de sinais opostos | Não definida | Aberta |
+| ρ₆ Compensação | Complementaridade `Δ(x) = −Δ(y)` e emergência `Ω(x ⊕ y) > Ω(x) + Ω(y)` | Questão aberta. A distribuição de energia do canto B, com fundamental fraca e terceiro harmônico forte, e a identificabilidade de `f₀` pelo conjunto dos componentes são pontos de partida. Nenhum deles demonstra, por si, complementaridade ou superaditividade | Exigiria uma função quantitativa `Ω`, por exemplo uma medida de informação sobre `f₀`, comparada entre componentes isolados e conjunto | Aberta |
 
 Algumas instâncias pedem esclarecimento:
 
-- **ρ₂ e a não simetria.** A atribuição `h` leva um conjunto finito de componentes observados a uma estrutura ideal infinita. Por isso, ela é um homomorfismo injetivo, e não um isomorfismo, e a relação é naturalmente não simétrica: a estrutura observada se insere na ideal, mas o inverso não ocorre. Essa leitura coincide com a implementação de `calculate_homology`, que mede a inserção de uma estrutura na outra (Seção 6, ponto 1).
+- **ρ₂ e a implementação existente.** O README do repositório usa uma seta com til na notação de ρ₂. A docstring de `calculate_homology` usa `≅` e descreve a operação como isomorfismo estrutural. A função calcula a cobertura direcional de multiconjuntos de tipos de nós de árvores sintáticas de código. Ela não constrói nem verifica um homomorfismo entre estruturas relacionais. Fica registrada como aproximação heurística legada, a ser substituída na refatoração do HexaSign.
 - **ρ₃ e a equivalência de oitava.** Na teoria musical, a equivalência de oitava é o exemplo clássico de relação de equivalência: alturas separadas por oitavas pertencem à mesma classe. Sua relevância para o canto da baleia é uma analogia neutra, e esta ficha não a pressupõe.
-- **ρ₄ e o declínio secular de frequência.** O canto B da população do Pacífico Nordeste vem baixando de frequência há décadas (S01). Perguntar se as razões internas se preservam nesse declínio é uma instância natural da simetria por escala. Essa pergunta envolve apenas componentes do canto B. Ela não compara chamados A e B e não forma a razão vedada pelo pré-registro.
-- **ρ₆ e a fundamental ausente.** Em acústica musical, uma série de harmônicos especifica a fundamental mesmo quando o componente fundamental está ausente ou fraco. É o que a literatura de percepção chama de fundamental ausente, ou altura virtual. A ficha usa apenas a parte física desse fenômeno, a identificabilidade de `f₀` a partir do conjunto, sem qualquer inferência sobre a percepção do animal.
+- **ρ₄ e o declínio secular de frequência.** O terceiro harmônico do canto B da população do Pacífico Nordeste baixou de frequência entre 2006 e 2019 (S01). Perguntar se os demais componentes acompanham esse declínio pelo mesmo fator de escala é uma instância natural da simetria. A pergunta envolve apenas componentes do canto B. Ela não compara chamados A e B e não forma a razão vedada pelo pré-registro.
+- **ρ₆ e a fundamental ausente.** Em acústica, uma série de harmônicos especifica a fundamental mesmo quando o componente fundamental está fraco ou ausente. A ficha usa apenas a parte física desse fenômeno, sem inferência sobre a percepção do animal, e o registra como ponto de partida para formalizar ρ₆, e não como instância já especificada.
 
 ## 5. Analogias positivas, negativas e neutras
 
@@ -90,11 +99,11 @@ Algumas instâncias pedem esclarecimento:
 **Decididos pelo autor da teoria em 01/11/2026:**
 
 1. **Homologia como homomorfismo.** A Definição 3.2 do manuscrito já define `h` como homomorfismo e declara a simetria apenas no caso de isomorfismo. Outros textos do autor usam formulações mais fortes: a tabela do README do repositório e a docstring do código usam `≅`, e a TICA (Seção 7.4) fala em "mapeamento biunívoco que preserva todas as relações". Fica adotada a definição do manuscrito: a homologia é um homomorfismo, medido como grau de preservação das relações, e o isomorfismo é o caso máximo. A notação recomendada é `h: Struct(x) → Struct(y)`, ou `↪` quando o homomorfismo for injetivo, e os textos que usam `≅` serão harmonizados.
-2. **Hierarquia como ordem conceitual.** O manuscrito afirma que cada relação implica todas as anteriores. Com as definições formais, essa implicação não vale em geral, e o próprio manuscrito admite exceções. A Seção 3.6 diz que o equilíbrio "não exige que os elementos sejam transformáveis um no outro", o que nega a passagem de ρ₅ para ρ₄. Fica adotado que a hierarquia é uma ordem conceitual de exigência, e não uma implicação lógica. As seis relações são tratadas como dimensões independentes.
+2. **Hierarquia como ordem conceitual.** O manuscrito afirma que cada relação implica todas as anteriores. Com as definições formais, essa implicação não vale em geral, e o próprio manuscrito admite exceções. A Seção 3.6 diz que o equilíbrio "não exige que os elementos sejam transformáveis um no outro", o que nega a passagem de ρ₅ para ρ₄. Fica adotado que a hierarquia é uma ordem conceitual de exigência, e não uma implicação lógica. As seis relações são reportadas separadamente, sem implicação lógica geral entre elas e sem pressupor independência matemática ou estatística.
 
 **Ainda abertos:**
 
-3. **A definição formal de ρ₆.** A Definição 3.6 do manuscrito tem duas partes: complementaridade, `Δ(x) = −Δ(y)`, e emergência, `Ω(x ⊕ y) > Ω(x) + Ω(y)`. As funções `Δ`, `Ω` e a operação `⊕` não estão especificadas. A instância proposta na Seção 4 especifica as duas partes para o canto B. A complementaridade é a distribuição de energia: a fundamental fraca e o terceiro harmônico forte. A emergência é a identificabilidade de `f₀`, que só existe no conjunto dos componentes. A instância precisa da confirmação do autor.
+3. **A definição formal de ρ₅ e ρ₆.** A Definição 3.6 do manuscrito tem duas partes: complementaridade, `Δ(x) = −Δ(y)`, e emergência, `Ω(x ⊕ y) > Ω(x) + Ω(y)`. As funções `Δ`, `Ω` e a operação `⊕` não estão especificadas. A Definição 3.5 exige escolher a função `Φ` e o pareamento dos elementos. Nesta ficha, ρ₅ e ρ₆ permanecem questões abertas (Seção 4).
 4. **A ponderação pela razão áurea.** O manuscrito (Seção 5.1) justifica os pesos `φ^(k−1)` por razões estéticas e de design, e não por medição. Em uso científico, esta ficha apresenta o perfil das seis dimensões sem agregação.
 
 ## 7. Critérios de falsificação
@@ -118,8 +127,8 @@ Nenhum desses critérios será aplicado antes de os eventos serem identificados 
 ## 9. Próximos passos
 
 1. Revisão desta ficha pela Luna.
-2. Confirmação, pelo autor da teoria, da instância de ρ₆ (Seção 6, ponto 3).
+2. Formalização de ρ₅ e ρ₆ pelo autor da teoria (Seção 6, ponto 3).
 3. Inclusão da linha de harmonicidade do canto B na proposta de emenda v1.4, com esta ficha como fundamento teórico.
-4. Registro das fontes S23 e S24 em estado `texto_primario` antes da submissão de qualquer texto derivado.
+4. Conferência das fontes S02, S23 e S24 no texto primário antes da submissão de qualquer texto derivado. As referências Sxx estão no registro de fontes do PR #14, que deve ser incorporado antes desta ficha.
 
 Generated by Claude
