@@ -3,10 +3,10 @@
 **Documento:** `lab/DATASETS.md` (rascunho para revisão)  
 **Versão:** `0.1.0-draft`  
 **Data da verificação documental:** 30/10/2026  
-**Protocolo associado:** `HMAL-PREREG-2026-001`, `PREREGISTRATION v1.3.1-draft`  
+**Protocolo associado:** `HMAL-PREREG-2026-001`, `PREREGISTRATION v1.3.2-draft` (matriz verificada em 30/10/2026, sob a v1.3.1-draft)  
 **Operador:** `guilhermemachado.ceo@hubstry.dev`
 
-> **Regra de uso:** esta matriz registra recursos e evidências de disponibilidade; não significa que os arquivos foram baixados, inspecionados, processados ou autorizados para uso comercial. Não substituir candidatos nem alterar a ordem pré-registrada. Campos não sustentados pelas páginas consultadas estão marcados `Não verificado`.
+> **Regra de uso:** esta matriz registra recursos e evidências de disponibilidade; não significa que os arquivos foram baixados, inspecionados, processados ou autorizados para uso comercial. Não substituir candidatos nem alterar a ordem pré-registrada. Desde a emenda 1.3.2, as fontes aqui listadas sem acesso efetivamente verificado constituem **lista de prospecção**, e não candidatos. Campos não sustentados pelas páginas consultadas estão marcados `Não verificado`.
 
 ## 1. Estados de verificação
 
@@ -27,7 +27,7 @@
 | **Watermark / FFI**; [página oficial](https://www.ffi.no/en/research/watermark); artigo [DOI 10.1109/JOE.2017.2699078](https://doi.org/10.1109/JOE.2017.2699078) | WatermarkV1; artigo publicado em 2017 | Página oficial informa download gratuito, mas licença/termos de reutilização e redistribuição não estão detalhados na página consultada. Verificar antes de redistribuir ou integrar. | Norwegian Defence Research Establishment (FFI). | Benchmark de comunicação acústica subaquática; não contém dados bioacústicos de cetáceos. | Benchmarks de camada física; simulador de canal Mime validado e conduzido por medidas no mar de respostas impulsivas variantes no tempo. | Três bandas de frequência descritas no artigo; valores e configurações devem ser conferidos no pacote/manual antes de executar. | Canais em quatro ambientes; tempos de reprodução/arquivos variam e devem ser inspecionados no pacote. | Tamanho do ZIP: Não verificado. | Pacote benchmark e canais; não é dataset de vocalizações de cetáceos. | **Trilha C, estado da arte e fase posterior:** referência para comparar métodos/modulações e simulação de canal. Não é parte da validação de H1. | Download gratuito WatermarkV1 disponível na página FFI; termos e dependências MATLAB a verificar. | **Posterior — benchmark de camada física.** | **Confirmado:** FFI descreve o benchmark e disponibiliza o ZIP; licença/termos específicos não verificados. |
 
 
-### Pista de localização de áudio para o candidato 3 (não é novo par biológico)
+### Pista de localização de áudio do Atlântico Norte (prospecção; o candidato 3 foi retirado na emenda 1.3.2)
 
 O guia do NOAA NCEI para o Passive Acoustic Data Archive documenta o bucket `gs://noaa-passive-bioacoustic/` e lista o diretório `nefsc/`. O catálogo do conjunto **NEFSC Western North Atlantic Shelf Break PAM Audio Data** aponta para uma distribuição no Google Cloud Storage. Isso é apenas uma pista de busca para localizar eventuais gravações do Atlântico Norte; **não confirma** que existam gravações identificadas de baleia-azul com partes A e B, rótulos independentes ou acesso efetivo aos arquivos necessários. Há uma ressalva: a página do catálogo classifica o conjunto com `accessLevel: non-public`, embora liste um recurso GCS; resolver essa aparente divergência por fonte NOAA e verificar o produto específico é obrigatório antes de marcar GO. Não tratar o caminho `nefsc/` como dataset elegível por si só.
 
@@ -76,4 +76,4 @@ Fontes oficiais: [Guia IBAMA 2018](https://www.gov.br/ibama/pt-br/centrais-de-co
 - FFI, [Watermark](https://www.ffi.no/en/research/watermark), DOI [10.1109/JOE.2017.2699078](https://doi.org/10.1109/JOE.2017.2699078).
 - IBAMA, [Guia de Monitoramento da Biota Marinha 2018](https://www.gov.br/ibama/pt-br/centrais-de-conteudo/arquivos/arquivos-pdf/2018-11-01-ibama-guia-de-monitoramento-da-biota-marinha-outubro-pdf).
 
-**Estado:** rascunho alinhado ao pré-registro v1.3.1-draft. Nenhum dataset foi baixado, processado ou validado experimentalmente durante a elaboração desta matriz.
+**Estado:** rascunho alinhado ao pré-registro v1.3.2-draft; a matriz foi elaborada sob a v1.3.1-draft. Nenhum dataset foi baixado, processado ou validado experimentalmente durante a elaboração desta matriz.

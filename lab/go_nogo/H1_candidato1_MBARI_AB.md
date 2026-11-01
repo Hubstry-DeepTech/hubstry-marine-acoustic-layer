@@ -2,6 +2,8 @@
 
 **Pré-registro:** `lab/PREREGISTRATION.md`, versão 1.3.1-draft, Seções 2.1, 2.2, 3.2 e 10.1 · **Prazo do candidato:** 02/11/2026, 23:59, horário de Brasília · **Data do registro:** 01/11/2026 · **Decisão:** **NO-GO nesta versão** · **Estado:** revisado pela Luna, com parecer favorável; pendente de merge. O NO-GO aplica-se se a justificativa independente continuar ausente até o prazo final; a decisão vale com o merge do Guilherme antes do prazo.
 
+> **Nota de supersessão (01/11/2026, emenda 1.3.2):** este registro foi integrado à `main` em 01/11/2026, às 20:25 (PR #17), antes do prazo, e a decisão de NO-GO permanece válida. Duas passagens abaixo refletem o estado anterior à emenda 1.3.2: o "Estado" do cabeçalho ("pendente de merge") e a Seção 5 ("passa-se ao candidato 2, Chagos"). A emenda 1.3.2 retirou os candidatos 2 e 3, e H1 ficou `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. O texto original foi preservado.
+
 ## 1. A regra aplicada
 
 O pré-registro classifica o par A/B como "presumivelmente NO-GO". Ele só passa se houver uma justificativa física independente, publicada e operacionalizável, anterior a qualquer projeção no dicionário `H_N`, mostrando que existe uma mesma grandeza mensurável nos dois chamados. A Seção 3.2 admite uma única alternativa: uma hipótese mecanística independente que justifique a razão entre grandezas distintas. O pré-registro também proíbe dividir a taxa de repetição de pulsos (`PRR`) pela frequência fundamental (`f0`) por conveniência dimensional. Sem essa justificativa documentada até o prazo, o resultado é NO-GO nesta versão.

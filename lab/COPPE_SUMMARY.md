@@ -1,6 +1,6 @@
 # HMAL — Resumo executivo para a reunião COPPE/UFRJ
 
-**Hubstry Marine Acoustic Layer | 30/10/2026 | Protocolo exploratório v1.3.1-draft**
+**Hubstry Marine Acoustic Layer | 01/11/2026 | Protocolo exploratório v1.3.2-draft** (versão anterior: 30/10/2026, v1.3.1-draft)
 
 ## Pergunta
 
@@ -29,4 +29,4 @@ H3 investiga um possível escore de QA para apoiar a revisão de detecções do 
 
 A fase confirmatória exige múltiplas unidades biológicas independentes, medidas comparáveis, dados/rótulos verificáveis, modelo nulo biologicamente fundamentado, simulação de poder e novo pré-registro com hash próprio. Buscamos interlocução da COPPE/UFRJ para avaliar mensuração vocal, replicação, modelos nulos e estimação em sinais submarinos.
 
-**Resultado apresentado:** protocolo exploratório/viabilidade, pares pré-registrados, prazos de decisão e limites explícitos — não confirmação biológica nem validação em campo.
+**Resultado apresentado:** protocolo exploratório e de viabilidade; NO-GO registrado do único candidato com dados públicos (MBARI A/B); H1 não operacionalizável nesta fase; emenda que retirou os candidatos sem acesso verificado e separou prospecção de fontes de candidatura; limites explícitos. Não é confirmação biológica nem validação em campo. A fase 2 começa por uma carteira de dados com acesso efetivamente verificado.
