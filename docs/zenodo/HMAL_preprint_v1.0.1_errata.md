@@ -8,7 +8,7 @@ lang: pt-BR
 
 # 1. Natureza desta versão
 
-Esta versão 1.0.1 é uma errata da versão 1.0.0 do preprint, depositada no Zenodo em 14 de maio de 2026 (DOI da versão 1.0.0: [PREENCHER ANTES DO DEPÓSITO]).
+Esta versão 1.0.1 é uma errata da versão 1.0.0 do preprint, depositada no Zenodo em 14 de maio de 2026 (DOI da versão 1.0.0: https://doi.org/10.5281/zenodo.20184616).
 
 A versão 1.0.1 é depositada como nova versão do mesmo registro e contém dois arquivos: esta nota de errata e o PDF integral da versão 1.0.0, sem alterações. O manuscrito não foi reescrito. Nos pontos listados abaixo, a leitura correta passa a ser a desta nota. Os demais pontos devem ser lidos com as ressalvas da Seção 4.
 
