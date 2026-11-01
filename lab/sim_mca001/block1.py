@@ -221,7 +221,10 @@ def run_one(args):
                 n_frames=n_frames,
                 order_counts=dict(order_counts),
                 # Somente o conjunto com o menor limiar alimenta a calibração empírica.
-                rows=rows if threshold_db == min(DET_THRESHOLDS_DB) else [],
+                # registros guardados em todos os limiares: o pareamento é refeito em cada
+                # limiar, então a população de cada um é a saída real do detector naquele
+                # limiar (revisão do GLM-5.3 sobre 45aa863)
+                rows=rows,
             )
 
     # Estimador da fundamental avaliado em quadros de 0,5 s. O YIN first fica
@@ -368,7 +371,7 @@ def _cluster_bootstrap_interval(signal_coverages, seed, repetitions=1000):
     ]
 
 
-def verify_empirical_uncertainty(rows, table, min_snr_db, window_s):
+def verify_empirical_uncertainty(rows, table, min_snr_db, window_s, partition="ver"):
     """Verifica a tabela em sinais independentes; não trata quadros como independentes."""
     if min_snr_db is None:
         return dict(status="sem_limiar_snr_calibrado", n_sinais=0)
@@ -413,7 +416,7 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s):
     }
     if signal_coverages:
         observed = float(np.mean(list(signal_coverages.values())))
-        seed = S.seed_int("B1", f"uncertainty-bootstrap-{window_s}", "ver", 0)
+        seed = S.seed_int("B1", f"uncertainty-bootstrap-{window_s}", partition, 0)
         ci = _cluster_bootstrap_interval(signal_coverages, seed)
     else:
         observed, ci = None, None
@@ -537,12 +540,13 @@ def identifiability_order(q95_abs_log_f, max_order=2000):
     return f">={max_order}"
 
 
-def _rows_from_results(results, window_s, partition):
+def _rows_from_results(results, window_s, partition, threshold_db=None):
     rows = []
     for result in results:
         if result["partition"] != partition:
             continue
-        metrics = result["det"][window_s][min(DET_THRESHOLDS_DB)]
+        metrics = result["det"][window_s][
+            min(DET_THRESHOLDS_DB) if threshold_db is None else float(threshold_db)]
         for frame, order, f_true, f_est, snr_db, fdot, modulation in metrics["rows"]:
             rows.append(dict(
                 signal_id=result["signal_id"],
@@ -727,6 +731,14 @@ def summarize(results):
         verification = verify_empirical_uncertainty(
             ver_rows, table, min_snr, window_s
         )
+        # tabela e SNR mínima calibradas em cal para cada limiar de detecção, com o pareamento
+        # feito naquele limiar; build_freeze usa a do limiar escolhido
+        per_threshold = {}
+        for thr in DET_THRESHOLDS_DB:
+            t_thr = fit_empirical_uncertainty_table(
+                _rows_from_results(results, window_s, "cal", thr), window_s)
+            per_threshold[str(thr)] = dict(tabela_calibracao_cal=t_thr,
+                                           limiar_minimo_snr_local_db=select_min_snr(t_thr))
 
         eligible_q95_log = [
             item["q95_abs_erro_centrado_log_f"]
@@ -741,6 +753,7 @@ def summarize(results):
         covariance_cal = estimate_pairwise_covariance(cal_rows, min_snr)
         covariance_ver = estimate_pairwise_covariance(ver_rows, min_snr)
         summary["incerteza"][str(window_s)] = dict(
+            por_limiar_deteccao=per_threshold,
             metodo="quantis empíricos centrais de 95%, por SNR local e modulação",
             sem_hipotese_gaussiana=True,
             limiar_minimo_snr_local_db=min_snr,
@@ -799,7 +812,7 @@ def run_config():
                 orcamento_precisao_fator=PRECISION_BUDGET_FACTOR,
                 min_registros_estrato=MIN_CAL_RECORDS_PER_STRATUM,
                 min_sinais_estrato=MIN_CAL_SIGNALS_PER_STRATUM,
-                tol_log2_f0=TOL_LOG2_F0, max_gate_fraction=0.45,
+                tol_log2_f0=TOL_LOG2_F0, max_gate_fraction=D.MAX_GATE_FRACTION,
                 meia_largura_lobulo_principal_bins=D.MAINLOBE_HALF_WIDTH_BINS)
 
 
@@ -817,9 +830,9 @@ def build_freeze(summary, window_s, det_threshold_db, decided_by, notes="", prov
     e o seu checksum num commit próprio, antes da rodada val."""
     if float(det_threshold_db) not in DET_THRESHOLDS_DB or float(window_s) not in WINDOWS:
         raise ValueError("janela e limiar de detecção precisam estar na grade simulada")
-    unc = summary["incerteza"][str(window_s)]
+    unc = summary["incerteza"][str(window_s)]["por_limiar_deteccao"][str(float(det_threshold_db))]
     if unc["limiar_minimo_snr_local_db"] is None:
-        raise ValueError("sem SNR mínima calibrada em cal para esta janela")
+        raise ValueError("sem SNR mínima calibrada em cal para esta janela e este limiar")
     body = dict(
         esquema=FREEZE_SCHEMA,
         janela_s=float(window_s),
@@ -857,13 +870,13 @@ def evaluate_frozen(results, freeze):
     if parts != {"val"}:
         raise ValueError(f"a avaliação congelada aceita só a partição val; recebeu {sorted(parts)}")
     w = freeze["janela_s"]
-    val_rows = _rows_from_results(results, w, "val")
+    val_rows = _rows_from_results(results, w, "val", freeze["limiar_deteccao_db"])
     # População avaliada = saída do detector com o limiar congelado E controle de qualidade de
     # cal: SNR local ≥ max(SNR mínima de cal, limiar de detecção) (parecer da Luna, 05f2b07).
     effective_snr = max(float(freeze["limiar_minimo_snr_local_db"]),
                         float(freeze["limiar_deteccao_db"]))
     coverage = verify_empirical_uncertainty(
-        val_rows, freeze["tabela_incerteza_cal"], effective_snr, w)
+        val_rows, freeze["tabela_incerteza_cal"], effective_snr, w, partition="val")
     code_now = code_fingerprint()
     detection = _summarize_detection(results, w)["val"][str(freeze["limiar_deteccao_db"])]
     fundamental = _summarize_fundamental(results, freeze["yin_best_limiar"])["por_particao"]["val"]
@@ -874,9 +887,10 @@ def evaluate_frozen(results, freeze):
         congelamento_sha256=freeze["sha256"],
         janela_s=w,
         snr_local_efetivo_db=effective_snr,
-        populacao_avaliada=(f"componentes pareados e resolvidos com SNR local ≥ {effective_snr} dB, "
-                            "isto é, aceitos pelo detector com o limiar congelado e pelo controle de "
-                            "qualidade de cal"),
+        populacao_avaliada=(f"componentes pareados e resolvidos pelo detector com o limiar congelado de "
+                            f"{freeze['limiar_deteccao_db']} dB (pareamento refeito nesse limiar) e com "
+                            f"SNR local ≥ {effective_snr} dB, controle de qualidade calibrado em cal no "
+                            "mesmo limiar"),
         codigo_igual_ao_congelado=(code_now == freeze.get("codigo_sha256")),
         arquivos_de_codigo_alterados=sorted(k for k in code_now
                                             if code_now[k] != freeze.get("codigo_sha256", {}).get(k)),

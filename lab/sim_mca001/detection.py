@@ -92,6 +92,7 @@ def _truth_slope_hz_s(track, truth, index):
 
 
 MAINLOBE_HALF_WIDTH_BINS = 2.0  # meia largura do lóbulo principal da janela de Hann, em 1/T
+MAX_GATE_FRACTION = 0.45        # fração máxima da separação ao vizinho mais próximo
 
 
 def match_truth(
@@ -103,7 +104,7 @@ def match_truth(
     win_s=None,
     df_hz=None,
     fs=FS,
-    max_gate_fraction=0.45,
+    max_gate_fraction=MAX_GATE_FRACTION,
 ):
     """Pareia detecções e componentes verdadeiros com associação global um-a-um.
 

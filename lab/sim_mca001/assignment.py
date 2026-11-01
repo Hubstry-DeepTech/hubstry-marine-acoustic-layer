@@ -145,7 +145,7 @@ def _factored_value(v, d, U):
     return float(tot)
 
 
-def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
+def exact_search(freqs, Sigma, N, delta_T):
     """Busca exata, por ramificação e poda (decodificação em esfera), de todas as atribuições
     crescentes e mínimas com χ² ≤ T_min + Δ_T.
 
@@ -167,6 +167,8 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
     # cota inicial finita: qualquer atribuição viável serve; usa-se a melhor entre (1, …, K)
     # e o resultado da heurística por arredondamento
     seeds = [tuple(range(1, K + 1))] + list(neighbors(rounding_candidates(freqs, N), N))
+    # sem cota externa: só sementes viáveis definem a cota inicial (revisão do GLM-5.3)
+    initial_bound = np.inf
     for hh in seeds:
         vv = y - np.log(np.asarray(hh, float))
         # a cota inicial usa a mesma aritmética da busca (soma dos termos fatorados, na mesma
@@ -182,7 +184,9 @@ def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
         # folga relativa generosa para o arredondamento entre vᵀMv e a soma dos termos, que
         # chegou a ~6e-5 relativo com Σ de número de condição ~1e10; a poda só pode ficar mais
         # permissiva, nunca mais restritiva, e H* é decidido depois pelo valor direto vᵀMv
-        return best[0] + delta_T + SEARCH_SLACK_RTOL * max(1.0, abs(best[0])) + abs_slack
+        # 2·abs_slack: no pior caso, o erro de fatoração subestima a candidata e superestima a
+        # melhor ao mesmo tempo (revisão do GLM-5.3)
+        return best[0] + delta_T + SEARCH_SLACK_RTOL * max(1.0, abs(best[0])) + 2.0 * abs_slack
 
     def rec(k, partial):
         nodes[0] += 1

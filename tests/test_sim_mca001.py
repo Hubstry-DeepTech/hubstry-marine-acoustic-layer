@@ -464,3 +464,26 @@ def test_search_returns_same_chi2_that_decided_hstar():
     tmin, out, _ = A.search(freqs, sigma, N=20, delta_T=2.0)
     _, hx, _ = A.exact_search(freqs, sigma, N=20, delta_T=2.0)
     assert [(h, t) for h, _, t in out] == hx
+
+
+def test_frozen_evaluation_uses_rows_paired_at_frozen_threshold(monkeypatch):
+    """Revisão do GLM-5.3 sobre 45aa863: a população de val é a saída do detector no limiar
+    congelado, com o pareamento refeito nesse limiar, e não um filtro dos pares de 6 dB."""
+    from lab.sim_mca001 import block1 as B1
+    monkeypatch.setattr(B1, "MIN_CAL_RECORDS_PER_STRATUM", 5)
+    monkeypatch.setattr(B1, "MIN_CAL_SIGNALS_PER_STRATUM", 1)
+    cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=20.0, alpha=0.0)
+    val = [B1.run_one((cell, "val", 0))]
+    for thr in B1.DET_THRESHOLDS_DB:
+        rows = B1._rows_from_results(val, 1.0, "val", thr)
+        assert rows and all(r["snr_db"] >= thr - 1e-9 for r in rows)
+    cal = [B1.run_one((c, "cal", 0)) for c in (cell, dict(cell, slope=-0.05))]
+    summary = B1.summarize(cal)
+    w = next(w for w in B1.WINDOWS
+             if summary["incerteza"][str(w)]["por_limiar_deteccao"]["15.0"]["limiar_minimo_snr_local_db"] is not None)
+    freeze = B1.build_freeze(summary, w, 15.0, decided_by="teste")
+    assert freeze["tabela_incerteza_cal"] == summary["incerteza"][str(w)]["por_limiar_deteccao"]["15.0"]["tabela_calibracao_cal"]
+    out = B1.evaluate_frozen(val, freeze)
+    expected = sum(1 for r in B1._rows_from_results(val, w, "val", 15.0)
+                   if r["snr_db"] >= out["snr_local_efetivo_db"])
+    assert out["cobertura_incerteza_val"]["n_componentes"] == expected
