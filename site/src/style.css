@@ -192,4 +192,4 @@ details.acc p { margin: 0.2rem 0 0.6rem; color: var(--ink); font-size: 0.97rem; 
 h2.sub { font-size: 1.3rem; margin: 2.2rem 0 0.4rem; }
 h4 { font-family: var(--serif); font-weight: 600; font-size: 1.1rem; margin: 1.6rem 0 0.4rem; }
 code { font-size: 0.9em; }
-.ruler-title { font-family: var(--sans); font-size: 0.95rem; font-weight: 500; color: var(--muted, #4a5a66); margin: 0 0 0.3rem; }
+.ruler-title { font-family: var(--sans); font-size: 0.95rem; font-weight: 500; color: var(--muted); margin: 1.6rem 0 0.3rem; }
