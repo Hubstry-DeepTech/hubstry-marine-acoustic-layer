@@ -487,3 +487,38 @@ def test_frozen_evaluation_uses_rows_paired_at_frozen_threshold(monkeypatch):
     expected = sum(1 for r in B1._rows_from_results(val, w, "val", 15.0)
                    if r["snr_db"] >= out["snr_local_efetivo_db"])
     assert out["cobertura_incerteza_val"]["n_componentes"] == expected
+
+
+def test_frozen_evaluation_fails_closed_when_code_changed(monkeypatch):
+    """Revisão da Luna sobre 2260df5: com código diferente do congelado, a validação é recusada."""
+    from lab.sim_mca001 import block1 as B1
+    monkeypatch.setattr(B1, "MIN_CAL_RECORDS_PER_STRATUM", 5)
+    monkeypatch.setattr(B1, "MIN_CAL_SIGNALS_PER_STRATUM", 1)
+    cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=20.0, alpha=0.0)
+    cal = [B1.run_one((c, "cal", 0)) for c in (cell, dict(cell, slope=-0.05))]
+    summary = B1.summarize(cal)
+    w = next(w for w in B1.WINDOWS
+             if summary["incerteza"][str(w)]["por_limiar_deteccao"]["10.0"]["limiar_minimo_snr_local_db"] is not None)
+    freeze = B1.build_freeze(summary, w, 10.0, decided_by="teste")
+    assert "congelar_b1.py" in freeze["codigo_sha256"]
+    val = [B1.run_one((cell, "val", 0))]
+    real = B1.code_fingerprint()
+    monkeypatch.setattr(B1, "code_fingerprint", lambda: dict(real, **{"detection.py": "0" * 64}))
+    with pytest.raises(ValueError, match="código diferente"):
+        B1.evaluate_frozen(val, freeze)
+
+
+def test_low_snr_false_peak_stops_stealing_pairing_at_higher_threshold():
+    """Regressão do achado do GLM-5.3: um pico falso fraco, mais próximo do componente, ocupa o
+    pareamento no limiar baixo; refeito no limiar alto, o pico verdadeiro é pareado."""
+    from lab.sim_mca001.generator import Truth
+    t = np.arange(4000) / G.FS
+    truth = Truth(t=t, freqs=[np.full(t.size, 100.0)], amps=[1.0], orders=[1],
+                  f0=np.full(t.size, 100.0))
+    frame = [(100.1, 1.0, 10 ** (7 / 10)), (100.9, 1.0, 10 ** (20 / 10))]  # falso a 7 dB, verdadeiro a 20 dB
+    for thr_db, expected_f in ((6.0, 100.1), (15.0, 100.9)):
+        sel = [[p for p in frame if p[2] >= 10 ** (thr_db / 10)]]
+        rec, false, n_true, missed, unres, unres_peaks = D.match_truth(
+            np.array([1.0]), sel, truth, win_s=1.0, df_hz=0.25)
+        assert len(rec) == 1 and rec[0][3] == pytest.approx(expected_f)
+        assert false == len(sel[0]) - 1

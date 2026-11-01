@@ -788,7 +788,7 @@ def summarize(results):
 
 FREEZE_SCHEMA = "SIM-MCA-001/B1/congelamento/v2"
 CODE_FILES = ("block1.py", "detection.py", "fundamental.py", "generator.py", "seeds.py",
-              "assignment.py", "stats.py")
+              "assignment.py", "stats.py", "congelar_b1.py")
 
 
 def code_fingerprint():
@@ -878,6 +878,12 @@ def evaluate_frozen(results, freeze):
     coverage = verify_empirical_uncertainty(
         val_rows, freeze["tabela_incerteza_cal"], effective_snr, w, partition="val")
     code_now = code_fingerprint()
+    changed = sorted(k for k in set(code_now) | set(freeze.get("codigo_sha256", {}))
+                     if code_now.get(k) != freeze.get("codigo_sha256", {}).get(k))
+    if changed:
+        # política fail closed (revisão da Luna sobre 2260df5): validação congelada não roda
+        # com código diferente do congelado
+        raise ValueError(f"código diferente do congelado em {changed}; validação recusada")
     detection = _summarize_detection(results, w)["val"][str(freeze["limiar_deteccao_db"])]
     fundamental = _summarize_fundamental(results, freeze["yin_best_limiar"])["por_particao"]["val"]
     key = f"yin_best_{freeze['yin_best_limiar']}"
@@ -891,9 +897,7 @@ def evaluate_frozen(results, freeze):
                             f"{freeze['limiar_deteccao_db']} dB (pareamento refeito nesse limiar) e com "
                             f"SNR local ≥ {effective_snr} dB, controle de qualidade calibrado em cal no "
                             "mesmo limiar"),
-        codigo_igual_ao_congelado=(code_now == freeze.get("codigo_sha256")),
-        arquivos_de_codigo_alterados=sorted(k for k in code_now
-                                            if code_now[k] != freeze.get("codigo_sha256", {}).get(k)),
+        codigo_igual_ao_congelado=True,
         cobertura_incerteza_val=coverage,
         deteccao_val=detection,
         fundamental_val_yin_congelado=fundamental,
