@@ -1,6 +1,6 @@
 # HMAL Lab — Fase 1: caracterização acústica básica
 
-**Versão:** 0.2 (incorpora o parecer técnico da Luna sobre a v0.1; aguarda revisão final dela e aprovação do Guilherme) · **Data:** 01/11/2026 · **Estado:** plano técnico; nenhuma linha de implementação foi escrita e nenhum dado novo foi baixado ou observado para elaborá-lo. **Rótulo de todos os resultados desta fase:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3 (incorpora os pareceres técnicos da Luna sobre a v0.1 e a v0.2; aguarda aprovação de implementação) · **Data:** 01/11/2026 · **Estado:** plano técnico; nenhuma linha de implementação foi escrita e nenhum dado novo foi baixado ou observado para elaborá-lo. **Rótulo de todos os resultados desta fase:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos relacionados:**
 - `lab/PREREGISTRATION.md` (v1.3.1-draft), que tem precedência sobre este plano em qualquer conflito;
@@ -168,8 +168,10 @@ Algumas definições exigem cuidado na apresentação:
    1. o workflow produz o artefato;
    2. o Guilherme baixa e inspeciona os resultados;
    3. os arquivos aprovados entram na branch do PR;
-   4. o manifesto `lab/bench/results/MANIFEST.json` ganha o conjunto `c1`, com o SHA-256 de cada arquivo, o identificador da execução e o rótulo `EXPLORATORY/FEASIBILITY`;
-   5. o `site/build_data.py` verifica a integridade antes de cada publicação.
+   4. um manifesto próprio, `lab/char/results/MANIFEST.json`, registra o conjunto `c1`, com o SHA-256 de cada arquivo, o identificador da execução e o rótulo `EXPLORATORY/FEASIBILITY`;
+   5. o `site/build_data.py` verifica esse manifesto antes de cada publicação.
+
+   O manifesto da bancada (`lab/bench/results/MANIFEST.json`) não é alterado. Lá, cada conjunto é tratado como execução da bancada, os caminhos são resolvidos dentro de `lab/bench/results` e o agregador é chamado para os modos hf e lf. Por isso, o `site/build_data.py` ganha uma verificação separada para o manifesto de caracterização, que confere caminhos seguros dentro de `lab/char/results`, resumos SHA-256 e cobertura dos arquivos obrigatórios, sem chamar o agregador da bancada. Os dados entram no `site.json` em um campo próprio.
 4. **Página:**
    - nova seção "Caracterização acústica", depois do E1;
    - seletor de trecho, espectrograma desenhado em canvas a partir do `.psd.bin`, forma de onda e ficha;
@@ -191,15 +193,16 @@ A Fase 1 só será considerada concluída quando todos os critérios abaixo fore
 | S2 | Ruído branco gaussiano de variância conhecida, 1.000 sementes, intervalos de 10 s e de 120 s | Mediana da densidade espectral a até ±0,5 dB do valor teórico; limite superior unilateral exato de Clopper–Pearson a 95% para a proporção de frequências dominantes falsas de no máximo 1%, em cada duração. Com zero falsos em 1.000, o limite fica em cerca de 0,3% |
 | S3 | Tom de 80 Hz somado ao ruído do S2 com proeminência teórica de 10 dB | Frequência dominante = 80 Hz em todas as sementes |
 | S4 | Sequência de zeros e amostras saturadas inseridas em posições conhecidas | Proporções de amostras nulas e saturadas exatas |
-| S5 | Pulso tonal de 80 Hz iniciado em 30,00 s, sobre ruído branco, com relação sinal-ruído de 20 dB na banda | Algoritmo fixado antes da implementação: na envoltória, o início é o primeiro bloco de 50 ms cujo valor quadrático médio excede em 10 dB a mediana dos blocos dos primeiros 10 s; no espectrograma, é a primeira janela cuja densidade em 80 Hz excede em 10 dB a mediana das janelas dos primeiros 10 s. Erro máximo de 50 ms na envoltória e de 0,5 s no espectrograma |
+| S5 | Pulso tonal de 80 Hz iniciado em 30,00 s, sobre ruído branco gaussiano, em sinal de 60 s. A relação sinal-ruído é de 20 dB na banda de 0 a 1.000 Hz: potência do tom (A²/2) dividida pela variância do ruído | Algoritmo fixado antes da implementação. Na envoltória, o nível de cada bloco de 50 ms é `L_i = 20·log10(p_RMS,i / 1 µPa)`, e `L_ref` é a mediana de `L_i` nos blocos dos primeiros 10 s; o início é o primeiro bloco com `L_i ≥ L_ref + 10 dB`. No espectrograma, a densidade em 80 Hz de cada janela é convertida para dB re 1 µPa²/Hz, e a referência é a mediana desses valores nas janelas dos primeiros 10 s; o início é a primeira janela que alcança a referência + 10 dB, datada pelo seu instante inicial. Erro máximo de 50 ms na envoltória e de 0,5 s no espectrograma |
 | S6 | Conversão de unidades | Para uma amostra normalizada conhecida, os valores intermediários (tensão em V, pressão em µPa e em Pa) coincidem com os analíticos, com erro relativo inferior a 10⁻⁹ em cada passo |
+| S7 | Serialização do `.psd.bin` | Para matrizes espectrais sintéticas que cobrem a faixa de valores esperada, a reconstrução a partir dos inteiros de 16 bits tem erro máximo de 0,005 dB (metade do passo de 0,01 dB), e nenhum valor satura; a serialização recusa valores fora da faixa representável, em vez de truncá-los |
 
 ### 6.2 Verificação com os dados reais
 
 | Código | Teste | Critério |
 |---|---|---|
 | R1 | Integridade de origem | Os SHA-256 dos três WAV coincidem com os registrados no E1; qualquer divergência interrompe a execução |
-| R2 | Coerência entre domínios (teorema de Parseval) para a representação de Welch | Para cada trecho, comparam-se dois estimadores sob o mesmo procedimento: a média, entre as janelas, da potência de cada janela de 1 s após remoção da sua média e aplicação da janela Hann, normalizada pela soma dos quadrados da janela; e a integral da densidade espectral unilateral de 0 a 1.000 Hz. Diferença máxima de 0,01 dB. Em teste prévio com ruído colorido simulado, a diferença foi da ordem de 10⁻¹⁴ dB. O nível de banda larga não entra nesta comparação |
+| R2 | Coerência entre domínios (teorema de Parseval) para a representação de Welch | Para cada trecho, comparam-se dois estimadores sob o mesmo procedimento: a média, entre as janelas, da potência de cada janela de 1 s após remoção da sua média e aplicação da janela Hann, normalizada pela soma dos quadrados da janela; e a integral da densidade espectral unilateral de 0 a 1.000 Hz, calculada como soma discreta dos valores de todos os bins, de 0 Hz a 1.000 Hz inclusive, multiplicados pela resolução de 1 Hz, sem regra trapezoidal. A normalização unilateral é a do SciPy, que não dobra os bins de 0 Hz e de Nyquist. Diferença máxima de 0,01 dB. Em teste prévio com ruído colorido simulado, a diferença foi da ordem de 10⁻¹⁴ dB. O nível de banda larga não entra nesta comparação |
 | R3 | Reprodutibilidade | Duas execuções no mesmo workflow produzem arquivos de conteúdo científico byte a byte idênticos; `c1_run.json` fica fora da comparação |
 | R4 | Regra de seleção | Os inícios dos seis trechos coincidem com os calculados independentemente a partir das séries `series_<dia>.json` publicadas |
 
@@ -208,7 +211,7 @@ A Fase 1 só será considerada concluída quando todos os critérios abaixo fore
 | Código | Teste | Critério |
 |---|---|---|
 | P1 | Concordância entre Python e página | Para 20 intervalos determinísticos por trecho, com limites na grade de 0,5 s, os valores da ficha calculados no navegador coincidem com os do Python a até 0,05 dB, com a mesma frequência dominante ou a mesma ausência dela |
-| P2 | Manifesto | O build falha se qualquer arquivo do conjunto `c1` divergir do SHA-256 registrado |
+| P2 | Manifesto | O build falha se qualquer arquivo do conjunto `c1` divergir do SHA-256 registrado em `lab/char/results/MANIFEST.json`, ou se o manifesto da bancada for alterado por esta fase |
 | P3 | Privacidade e robustez | Nenhuma requisição externa, nenhum erro de console e nenhuma rolagem horizontal em 390 px de largura |
 | P4 | Acessibilidade | A seleção de intervalo funciona só com teclado, sem depender do arraste; o espectrograma tem descrição textual equivalente; os estados não dependem só de cor |
 | P5 | Escopo | Nenhuma tela exibe frequência fundamental, harmônicos, espécie ou canal H₁₆; um teste confere que o módulo da Fase 1 não importa o protocolo harmônico |
@@ -226,7 +229,7 @@ Os códigos passam de E1–E3 para G1–G3, porque "E1" já identifica o ensaio 
 ## 7. Limitações declaradas
 
 1. A sensibilidade nominal, medida a 26 Hz, é tratada como plana em toda a banda. A resposta em frequência real do sistema de gravação não é corrigida, porque não está documentada no conjunto de dados consultado.
-2. Os arquivos de 2 kHz são versões decimadas do registro original. Conteúdo acima de 1.000 Hz não existe nesses arquivos, e a página dirá isso.
+2. Os arquivos de 2 kHz são versões decimadas do registro original. Conteúdo acima de 1.000 Hz não pode ser recuperado nem analisado a partir desses arquivos, e a página dirá isso.
 3. O trecho de maior índice B indica maior energia relativa na banda do terceiro harmônico do canto B. Isso não equivale a detecção confirmada de um chamado nem a identificação de indivíduo ou população.
 4. Seis trechos escolhidos pelos extremos de um índice, em três dias, não descrevem a paisagem sonora do local nem sua variação sazonal. Servem para demonstrar o método, e não para tirar conclusões ambientais.
 5. A ficha descreve o intervalo como um todo. Fontes simultâneas, como uma embarcação e um animal, aparecem somadas no espectro, sem separação.
@@ -237,14 +240,26 @@ Os códigos passam de E1–E3 para G1–G3, porque "E1" já identifica o ensaio 
 | Data | Etapa |
 |---|---|
 | 01/11 | Revisão final deste plano v0.2 pela Luna e aprovação do Guilherme |
-| 02/11 | Módulo, testes sintéticos (S1–S6) e workflow; PR em rascunho |
+| 02/11 | Módulo, testes sintéticos (S1–S7) e workflow; PR em rascunho |
 | 02–03/11 | Execução do workflow; conferência de R1–R4; o artefato é baixado e inspecionado pelo Guilherme |
 | 03/11 | Editorial v1.3, seção 5.2, para revisão da Luna; implementação na página e P1–P5 |
 | 04/11 | Revisão final da Luna e merge pelo Guilherme |
 
 A precisão metodológica tem prioridade sobre o cronograma. Se os critérios não estiverem implementados e verificados até 04/11, a seção não será publicada antes da entrevista de 06/11. A página atual permanece como está, e a Fase 1 é apresentada como trabalho em andamento, com este plano como evidência.
 
-## 9. Alterações em relação à v0.1
+## 9. Alterações em relação às versões anteriores
+
+### 9.1 Da v0.2 para a v0.3
+
+| Pendência do parecer da Luna sobre a v0.2 | Onde foi incorporada |
+|---|---|
+| Manifesto de caracterização independente do manifesto da bancada | Seção 5, item 3 |
+| S5 com nível RMS em dB, mediana de referência e banda da relação sinal-ruído | Critério S5 |
+| R2 com soma discreta dos bins e tratamento de 0 Hz e Nyquist | Critério R2 |
+| Redação da limitação sobre conteúdo acima de 1.000 Hz | Limitação 2 |
+| Teste de serialização do `.psd.bin` | Critério S7 |
+
+### 9.2 Da v0.1 para a v0.2
 
 | Pendência do parecer da Luna | Onde foi incorporada |
 |---|---|
@@ -266,7 +281,7 @@ Duas verificações numéricas foram feitas ao preparar esta versão, com dados 
 
 ## 10. Decisões solicitadas
 
-1. Confirmar que os ajustes da Seção 9 atendem ao parecer técnico.
+1. Confirmar que os ajustes da Seção 9.1 atendem ao parecer técnico sobre a v0.2.
 2. Autorizar o início da implementação no PR #13, ou em PR próprio a partir dele.
 
 Generated by Claude
