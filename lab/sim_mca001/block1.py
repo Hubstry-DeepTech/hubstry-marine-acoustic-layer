@@ -587,6 +587,11 @@ def _summarize_detection(results, window_s):
                         if tot("n_elegiveis_ruido_puro") else None),
                     picos_por_quadro_ruido_puro=(
                         tot("n_picos_ruido_puro") / n_frames if n_frames else None),
+                    ic95_associacao_acidental_por_sinal=_cluster_bootstrap_interval(
+                        {i: item["n_match_ruido_puro"] / item["n_elegiveis_ruido_puro"]
+                         for i, item in enumerate(sel) if item["n_elegiveis_ruido_puro"]},
+                        S.seed_int("B1", f"ruido-{partition}-{window_s}-{threshold_db}-{integrated_snr}", "boot", 0)),
+                    n_sinais=len(sel),
                     componentes_verdadeiros=n_true,
                 )
             order_totals = defaultdict(lambda: [0, 0])
@@ -768,6 +773,72 @@ def summarize(results):
     return summary
 
 
+FREEZE_SCHEMA = "SIM-MCA-001/B1/congelamento/v1"
+
+
+def build_freeze(summary, window_s, det_threshold_db, decided_by, notes=""):
+    """Artefato de congelamento das regras do Bloco 1, produzido só a partir de cal.
+
+    Registra o que a validação final (partição val) vai aplicar sem reajuste: janela,
+    limiar de detecção, tabela de incerteza e SNR mínima calibradas em cal, limiar do YIN
+    escolhido em cal, tolerância da fundamental e regra de pareamento. O hash SHA-256 do
+    conteúdo é gravado junto (parecer da Luna sobre 434ca29)."""
+    unc = summary["incerteza"][str(window_s)]
+    if unc["limiar_minimo_snr_local_db"] is None:
+        raise ValueError("sem SNR mínima calibrada em cal para esta janela")
+    body = dict(
+        esquema=FREEZE_SCHEMA,
+        janela_s=float(window_s),
+        limiar_deteccao_db=float(det_threshold_db),
+        limiar_minimo_snr_local_db=unc["limiar_minimo_snr_local_db"],
+        tabela_incerteza_cal=unc["tabela_calibracao_cal"],
+        yin_best_limiar=summary["fundamental"]["yin_best_threshold_escolhido_em_cal"],
+        tol_log2_f0=TOL_LOG2_F0,
+        regra_pareamento="porta max(2/T, |df/dt|*T/2, df_STFT/2); um-a-um; um pico por não resolvido",
+        decidido_por=decided_by,
+        notas=notes,
+    )
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    return dict(body, sha256=digest)
+
+
+def check_freeze(freeze):
+    body = {k: v for k, v in freeze.items() if k != "sha256"}
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    if freeze.get("esquema") != FREEZE_SCHEMA or digest != freeze.get("sha256"):
+        raise ValueError("congelamento inválido ou alterado depois de gerado")
+
+
+def evaluate_frozen(results, freeze):
+    """Validação final: aplica as regras congeladas aos sinais da partição val, sem recalibrar.
+
+    Recusa qualquer resultado de cal ou ver. Nada é ajustado: a tabela de incerteza, a SNR
+    mínima e o limiar do YIN vêm do artefato. A cobertura é a cobertura condicional aos
+    componentes pareados e resolvidos dentro da porta (ver criterio_pareamento)."""
+    check_freeze(freeze)
+    parts = {r["partition"] for r in results}
+    if parts != {"val"}:
+        raise ValueError(f"a avaliação congelada aceita só a partição val; recebeu {sorted(parts)}")
+    w = freeze["janela_s"]
+    val_rows = _rows_from_results(results, w, "val")
+    coverage = verify_empirical_uncertainty(
+        val_rows, freeze["tabela_incerteza_cal"], freeze["limiar_minimo_snr_local_db"], w)
+    detection = _summarize_detection(results, w)["val"][str(freeze["limiar_deteccao_db"])]
+    fundamental = _summarize_fundamental(results, freeze["yin_best_limiar"])["por_particao"]["val"]
+    key = f"yin_best_{freeze['yin_best_limiar']}"
+    fundamental = {prof: {snr: entry.get(key, {}) for snr, entry in by_snr.items()}
+                   for prof, by_snr in fundamental.items()}
+    return dict(
+        congelamento_sha256=freeze["sha256"],
+        janela_s=w,
+        cobertura_incerteza_val=coverage,
+        deteccao_val=detection,
+        fundamental_val_yin_congelado=fundamental,
+        interpretacao=("quantis e cobertura condicionais a componentes pareados e resolvidos dentro "
+                       "da porta de associação; não são erro irrestrito de todos os componentes"),
+    )
+
+
 def f_max_check():
     """Ganho da cadeia de decimação simulada (16 kHz → 2 kHz)."""
     rng = S.rng("B1", "fmax", "cal", 0)
@@ -797,7 +868,11 @@ def main(argv=None):
     parser.add_argument("--particoes", nargs="+", default=list(S.EXPLORATORY_PARTITIONS),
                         choices=list(S.PARTITIONS),
                         help="'val' só na validação final, depois de congeladas as regras")
+    parser.add_argument("--congelamento",
+                        help="arquivo de congelamento; obrigatório com val, que roda sozinha")
     args = parser.parse_args(argv)
+    if "val" in args.particoes and (args.particoes != ["val"] or not args.congelamento):
+        parser.error("val roda sozinha e exige --congelamento (regras fixadas antes, só em cal)")
 
     if args.reps < 1 or args.workers < 1:
         parser.error("--reps e --workers devem ser positivos")
@@ -835,7 +910,9 @@ def main(argv=None):
             "regra de avaliação sintética baseada na verdade; não integra a cadeia de detecção aplicada a sinais reais. "
             "associação global um-a-um sobre todos os componentes; porta max(2/T, |df/dt|*T/2, df_STFT/2), "
             "independente do orçamento de precisão 1/T; componente não resolvido absorve no máximo um pico, "
-            "com porta limitada a 45% da separação; associação acidental medida com ruído puro"
+            "com porta limitada a 45% da separação; associação acidental medida com ruído puro. "
+            "Quantis e cobertura são condicionais a componentes pareados e resolvidos dentro da porta; "
+            "2/T vai até o primeiro zero do lóbulo principal da Hann e não exclui energia de lóbulos laterais"
         ),
         metodo_incerteza=(
             "quantis empíricos centrais de 95% por SNR local e classe de modulação; "
@@ -851,7 +928,8 @@ def main(argv=None):
             scipy=scipy.__version__,
         ),
         f_max=f_max_check(),
-        resultados=summarize(results),
+        resultados=(evaluate_frozen(results, json.load(open(args.congelamento, encoding="utf-8")))
+                    if args.particoes == ["val"] else summarize(results)),
         tempo_s=round(time.time() - started, 1),
     )
 

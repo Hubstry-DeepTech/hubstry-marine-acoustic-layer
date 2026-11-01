@@ -390,3 +390,66 @@ def test_val_partition_is_not_run_by_default():
     from lab.sim_mca001 import block1 as B1  # noqa: F401
     assert S.EXPLORATORY_PARTITIONS == ("cal", "ver")
     assert "val" in S.PARTITIONS
+
+
+def test_val_partition_evaluates_frozen_rules_without_refitting(monkeypatch):
+    """Parecer da Luna sobre 434ca29: val aplica regras congeladas em cal, sem recalibrar."""
+    from lab.sim_mca001 import block1 as B1
+    # amostra mínima reduzida só para o teste caber em segundos
+    monkeypatch.setattr(B1, "MIN_CAL_RECORDS_PER_STRATUM", 5)
+    monkeypatch.setattr(B1, "MIN_CAL_SIGNALS_PER_STRATUM", 1)
+    cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=20.0, alpha=0.0)
+    cell_mod = dict(cell, slope=-0.05)  # a calibração exige estratos plano e modulado
+    cal = [B1.run_one((c, "cal", 0)) for c in (cell, cell_mod)]
+    summary = B1.summarize(cal)
+    window = next(w for w in B1.WINDOWS
+                  if summary["incerteza"][str(w)]["limiar_minimo_snr_local_db"] is not None)
+    freeze = B1.build_freeze(summary, window, 10.0, decided_by="teste")
+    val = [B1.run_one((cell, "val", 0))]
+    out = B1.evaluate_frozen(val, freeze)
+    assert out["congelamento_sha256"] == freeze["sha256"]
+    cov = out["cobertura_incerteza_val"]
+    assert cov["status"] == "verificacao_descritiva_independente" and cov["n_componentes"] > 0
+    assert out["deteccao_val"]["por_snr_integrada"]["20.0"]["componentes_verdadeiros"] > 0
+    # sem recalibração: o mesmo congelamento com outra réplica val não altera a regra aplicada
+    out2 = B1.evaluate_frozen([B1.run_one((cell, "val", 1))], freeze)
+    assert out2["congelamento_sha256"] == out["congelamento_sha256"]
+    # val não aceita mistura com cal/ver, e congelamento adulterado é recusado
+    with pytest.raises(ValueError):
+        B1.evaluate_frozen(val + cal[:1], freeze)
+    bad = dict(freeze, limiar_minimo_snr_local_db=0.0)
+    with pytest.raises(ValueError):
+        B1.evaluate_frozen(val, bad)
+
+
+def test_val_cli_requires_freeze_and_runs_alone():
+    from lab.sim_mca001 import block1 as B1
+    with pytest.raises(SystemExit):
+        B1.main(["--out", "/tmp/x.json", "--particoes", "val"])
+    with pytest.raises(SystemExit):
+        B1.main(["--out", "/tmp/x.json", "--particoes", "cal", "val", "--congelamento", "f.json"])
+
+
+def test_noise_only_control_counts_and_summary():
+    """Controle de associação acidental: contagens coerentes e taxa agregada no resumo."""
+    from lab.sim_mca001 import block1 as B1
+    cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=10.0, alpha=0.0)
+    res = B1.run_one((cell, "cal", 0))
+    for w in B1.WINDOWS:
+        for thr in B1.DET_THRESHOLDS_DB:
+            d = res["det"][w][thr]
+            assert 0 <= d["n_match_ruido_puro"] <= d["n_elegiveis_ruido_puro"] <= d["n_true"]
+    lo = res["det"][1.0][min(B1.DET_THRESHOLDS_DB)]["n_match_ruido_puro"]
+    hi = res["det"][1.0][max(B1.DET_THRESHOLDS_DB)]["n_match_ruido_puro"]
+    assert hi <= lo  # limiar mais alto nunca aumenta associações acidentais
+    entry = B1._summarize_detection([res], 1.0)["cal"]["10.0"]["por_snr_integrada"]["10.0"]
+    assert 0.0 <= entry["taxa_associacao_acidental_ruido_puro"] <= 1.0
+
+
+def test_search_returns_same_chi2_that_decided_hstar():
+    rng = np.random.default_rng(9)
+    freqs = 14.0 * np.array([2, 3, 5, 7.0]) * (1 + rng.normal(0, 1e-3, 4))
+    sigma = A.sigma_matrix(freqs, 0.05, common_lnf=0.002)
+    tmin, out, _ = A.search(freqs, sigma, N=20, delta_T=2.0)
+    _, hx, _ = A.exact_search(freqs, sigma, N=20, delta_T=2.0)
+    assert [(h, t) for h, _, t in out] == hx

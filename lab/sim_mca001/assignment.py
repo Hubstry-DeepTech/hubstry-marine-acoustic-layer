@@ -80,12 +80,19 @@ def chi2_whitened(Sigma, V):
 
 
 def _residual_form(Sigma):
-    """M = Σ⁻¹ − Σ⁻¹11ᵀΣ⁻¹ / 1ᵀΣ⁻¹1, de modo que χ²(h) = vᵀMv com v = y − ln h
-    (a escala ótima já eliminada). M é semidefinida, com núcleo gerado por 1."""
-    P = np.linalg.inv(Sigma)
-    P = 0.5 * (P + P.T)
-    p1 = P @ np.ones(P.shape[0])
-    return P - np.outer(p1, p1) / p1.sum()
+    """M tal que χ²(h) = vᵀMv, com v = y − ln h e a escala ótima eliminada.
+
+    Construída por Cholesky, sem inverter Σ explicitamente (parecer da Luna sobre 434ca29):
+    com Σ = LLᵀ, a = L⁻¹1 e W = L⁻¹ (triangular), M = Wᵀ(I − aaᵀ/aᵀa)W. É a mesma forma
+    usada por chi2_whitened. M é semidefinida, com núcleo gerado por 1."""
+    from scipy.linalg import cholesky, solve_triangular
+    K = Sigma.shape[0]
+    L = cholesky(Sigma, lower=True)
+    W = solve_triangular(L, np.eye(K), lower=True)
+    a = W @ np.ones(K)
+    P = np.eye(K) - np.outer(a, a) / (a @ a)
+    M = W.T @ P @ W
+    return 0.5 * (M + M.T)
 
 
 PIVOT_RTOL = 1e-10          # pivô relativo abaixo do qual a fatoração é considerada degenerada
@@ -244,9 +251,10 @@ def search(freqs, Sigma, N, delta_T, exhaustive=False, monotone=True, method="ex
     if not exhaustive and method == "exact":
         tmin, hs, _ = exact_search(freqs, Sigma, N, delta_T)
         out = []
-        for h, _t in hs:
-            lng, _, _, chi2 = gls_fit(y, np.log(np.asarray(h, float)), Sigma)
-            out.append((h, lng, chi2))
+        for h, t_exact in hs:
+            # ln g vem do ajuste; o χ² devolvido é o mesmo que decidiu H* (Cholesky)
+            lng = gls_fit(y, np.log(np.asarray(h, float)), Sigma)[0]
+            out.append((h, lng, float(t_exact)))
         return tmin, out, out
     if exhaustive:
         base = combinations(range(1, N + 1), K)

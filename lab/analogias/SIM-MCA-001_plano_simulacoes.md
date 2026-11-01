@@ -1,6 +1,6 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.3.2 (incorpora os pareceres da Luna até o piloto v2 e a auditoria independente do Gemini sobre o commit `a71fd60`: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, partição `val` para a validação final) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3.3 (incorpora os pareceres da Luna até a revisão do commit `434ca29` e a auditoria independente do Gemini: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, validação final na partição `val` com regras congeladas) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;
@@ -172,6 +172,8 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 - Poder e estabilidade: pelo menos 500 réplicas por cenário.
 - Número de nulos `B` dentro de cada `p_emp`: candidato 999, a confirmar no Bloco 2 pelo custo de processamento.
 - Se o critério falhar, o parâmetro é recalibrado nas sementes de calibração e verificado de novo em sementes de verificação novas.
+- **Validação final com regras congeladas:** depois da rodada exploratória (`cal` e `ver`), as regras são congeladas em `block1_freeze.json` por `congelar_b1.py`, com SHA-256 e registro de quem decidiu. A partição `val`, de sementes inéditas, roda sozinha e só com esse arquivo (`--particoes val --congelamento ...`). A função `evaluate_frozen` aplica as regras sem recalibrar nada.
+- **Interpretação dos quantis:** a tabela de incerteza e a cobertura são condicionais aos componentes pareados e resolvidos dentro da porta de associação. Não descrevem o erro irrestrito de todos os componentes. Perdas, falsos picos e componentes não resolvidos são reportados à parte.
 - **Separação obrigatória:** nenhum parâmetro é escolhido e avaliado nas mesmas sementes. A partição `cal` ou `ver` faz parte da semente de cada sinal (`seeds.py`), e os relatórios indicam de qual partição vem cada número.
 
 ## 7. Implementação e reprodutibilidade
