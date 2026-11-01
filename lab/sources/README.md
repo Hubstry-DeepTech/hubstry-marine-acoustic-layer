@@ -1,6 +1,6 @@
 # Registro de fontes da pesquisa HMAL
 
-**Versão:** 0.1 · **Data:** 01/11/2026 · **Estado:** rascunho para revisão da Luna.
+**Versão:** 0.2 · **Data:** 01/11/2026 · **Estado:** rascunho para revisão da Luna.
 
 Este registro reúne as fontes, afirmações e consultas que sustentam as decisões da pesquisa. Ele existe porque as buscas feitas por pesquisadores e por modelos de linguagem (Claude, Gemini e Luna) ficavam dispersas em conversas, sem rastreabilidade.
 
@@ -10,22 +10,44 @@ São três entidades separadas, porque uma fonte pode sustentar várias afirmaç
 
 | Arquivo | Conteúdo |
 |---|---|
-| `fontes.csv` | Uma linha por fonte: tipo, autoria, ano, título, veículo, DOI, URL, estado de verificação, quem a encontrou e observações |
+| `fontes.csv` | Uma linha por fonte: tipo, autoria, ano, título, veículo, DOI, URL, natureza, estado de verificação, quem a encontrou e observações |
 | `afirmacoes.jsonl` | Uma linha por afirmação científica: fonte, texto da afirmação, onde está na fonte, estado de verificação e relação com outras afirmações, como divergências |
 | `consultas.jsonl` | Uma linha por consulta: data, responsável (pessoa ou modelo, com a configuração usada), pergunta, fontes encontradas, resultado e arquivos de registro com SHA-256 |
 | `consultas/` | Prompt e resposta integral das consultas feitas a modelos de linguagem |
 
-## Estados de verificação
+## Duas dimensões independentes
+
+A natureza da fonte e o grau de consulta são registrados em colunas separadas. Um estudo historiográfico secundário pode ter sido lido no texto integral; um estudo original pode ter sido conferido só no resumo.
+
+### Natureza (`natureza`)
+
+| Valor | Significado |
+|---|---|
+| `estudo_original` | Artigo, tese ou dissertação com dados, método ou resultado próprios |
+| `revisao` | Revisão ou síntese de literatura |
+| `ensaio` | Texto de perspectiva ou opinião em periódico |
+| `teoria` | Obra teórica ou conceitual usada como fundamento |
+| `historiografia` | Estudo histórico sobre textos ou autores antigos |
+| `traducao_comentada` | Tradução de fonte antiga com apresentação ou comentário |
+| `antologia` | Coletânea organizada de textos |
+| `norma`, `especificacao_tecnica` | Norma ou especificação técnica |
+| `relatorio_tecnico` | Relatório institucional |
+| `dados`, `software` | Conjunto de dados ou programa |
+| `projeto` | Registro de projeto de pesquisa financiado |
+| `divulgacao` | Página institucional ou de divulgação |
+| `a_classificar` | Natureza ainda não conferida |
+
+## Estados de verificação (`verificacao`)
 
 | Estado | Significado |
 |---|---|
 | `texto_primario` | Conferido no texto completo da fonte original |
 | `resumo` | Conferido apenas no resumo oficial |
 | `metadados` | Existência, título e autoria conferidos em registro bibliográfico (Crossref, PubMed, editora); conteúdo não conferido |
-| `secundaria` | Lido apenas por resumo de terceiros |
+| `terceiros` | Lido apenas por resumo de terceiros (antes chamado `secundaria`) |
 | `pendente` | Localizado por pessoa ou modelo, ainda não conferido |
 
-Uma afirmação localizada por um modelo de linguagem só passa de `pendente` depois de conferida na fonte primária. Divergências entre fontes são registradas como tais, sem presumir qual está certa, até que grandeza, unidade, banda, referência e método estejam alinhados.
+Uma afirmação localizada por um modelo de linguagem só passa de `pendente` depois de conferida na fonte primária. A coluna `observacao` diz quem fez cada conferência, porque a conferência feita por um revisor não equivale à feita por outro. Divergências entre fontes são registradas como tais, sem presumir qual está certa, até que grandeza, unidade, banda, referência e método estejam alinhados.
 
 ## Direitos autorais
 
