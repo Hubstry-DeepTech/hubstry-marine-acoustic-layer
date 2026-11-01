@@ -58,7 +58,7 @@ A versão 1.0.0 afirma que os modos normais de propagação acústica subaquáti
 
 A versão 1.0.0 define T_sync = mmc(b₁, …, b_K)/f₀ (Equação 4) e afirma que, para denominadores b_k ≤ 16 e até quatro canais simultâneos, T_sync permanece inferior a 2,8 s com f₀ = 25 Hz. A afirmação é falsa. Com a própria Equação 4 e denominadores 11, 13, 15 e 16, T_sync = 34.320/25 = 1.372,8 s, ou cerca de 22 minutos e 53 segundos.
 
-A Equação 4 também precisa de qualificação. Para frequências f_k = (a_k/b_k)·f₀, com cada fração reduzida, o período comum real da combinação de sinais é mmc(b₁, …, b_K)/(mdc(a₁, …, a_K)·f₀). A Equação 4 coincide com ele apenas quando o máximo divisor comum dos numeradores é 1. A definição de T_sync deverá declarar qual dos dois períodos representa.
+A Equação 4 permanece válida: mmc(b₁, …, b_K)/f₀ é um período comum a todos os canais, isto é, um instante em que todos se realinham. Para frequências f_k = (a_k/b_k)·f₀, com cada fração reduzida, o menor período comum é mmc(b₁, …, b_K)/(mdc(a₁, …, a_K)·f₀). Os dois coincidem quando o máximo divisor comum dos numeradores é 1, e o valor da Equação 4 é um múltiplo inteiro do menor período nos demais casos.
 
 O termo "codas", usado na comparação com ritmos de vocalização, designa padrões rítmicos de cliques de cachalotes, e não vocalizações de baleias-azuis.
 
