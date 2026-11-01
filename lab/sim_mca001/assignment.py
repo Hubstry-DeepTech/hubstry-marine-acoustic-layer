@@ -59,8 +59,110 @@ def neighbors(cands, N):
     return out
 
 
-def search(freqs, Sigma, N, delta_T, exhaustive=False, monotone=True):
-    """Devolve (T_min, lista de (h, ln g, qui-quadrado) em H*, todas as avaliações).
+def _residual_form(Sigma):
+    """M = Σ⁻¹ − Σ⁻¹11ᵀΣ⁻¹ / 1ᵀΣ⁻¹1, de modo que χ²(h) = vᵀMv com v = y − ln h
+    (a escala ótima já eliminada). M é semidefinida, com núcleo gerado por 1."""
+    P = np.linalg.inv(Sigma)
+    P = 0.5 * (P + P.T)
+    p1 = P @ np.ones(P.shape[0])
+    return P - np.outer(p1, p1) / p1.sum()
+
+
+def _udu(M):
+    """M = UᵀDU, com U triangular superior unitária. Então
+    vᵀMv = Σ_k d_k·(v_k + Σ_{j>k} U_kj·v_j)²: cada termo depende só de v_k, …, v_{K−1}.
+    Como 1 está no núcleo de M, o último pivô é zero (a menos de arredondamento)."""
+    K = M.shape[0]
+    U = np.eye(K)
+    d = np.zeros(K)
+    for k in range(K):
+        d[k] = M[k, k] - np.sum(d[:k] * U[:k, k] ** 2)
+        if d[k] <= 1e-12 * max(1.0, abs(M[k, k])):
+            d[k] = 0.0
+            continue
+        for j in range(k + 1, K):
+            U[k, j] = (M[k, j] - np.sum(d[:k] * U[:k, k] * U[:k, j])) / d[k]
+    return d, U
+
+
+def exact_search(freqs, Sigma, N, delta_T, initial_bound=np.inf):
+    """Busca exata, por ramificação e poda (decodificação em esfera), de todas as atribuições
+    crescentes e mínimas com χ² ≤ T_min + Δ_T.
+
+    A cada nível k (de K−1 até 0), o termo d_k·(v_k + c_k)² é uma cota inferior parcial de
+    χ², porque todos os termos são não negativos. Assim, h_k só precisa percorrer as ordens
+    com |ln h_k − (y_k + c_k)| ≤ √(orçamento/d_k). Nenhuma atribuição com χ² dentro do raio é
+    descartada: a busca é completa (decisão D1, parecer da Luna sobre o Bloco 1).
+    Devolve (T_min, lista de (h, χ²), número de nós visitados)."""
+    y = np.log(np.asarray(freqs, float))
+    K = y.size
+    if K < 2 or N < K:
+        return np.nan, [], 0
+    M = _residual_form(Sigma)
+    d, U = _udu(M)
+    # cota inicial finita: qualquer atribuição viável serve; usa-se a melhor entre (1, …, K)
+    # e o resultado da heurística por arredondamento
+    seeds = [tuple(range(1, K + 1))] + list(neighbors(rounding_candidates(freqs, N), N))
+    for hh in seeds:
+        vv = y - np.log(np.asarray(hh, float))
+        initial_bound = min(initial_bound, float(vv @ M @ vv))
+    found = []
+    best = [initial_bound]
+    nodes = [0]
+    h = np.zeros(K, dtype=int)
+    v = np.zeros(K)
+
+    def radius():
+        # folga relativa para arredondamento numérico entre vᵀMv e a soma dos termos
+        return best[0] + delta_T + 1e-9 * max(1.0, abs(best[0]))
+
+    def rec(k, partial):
+        nodes[0] += 1
+        hi = (h[k + 1] - 1) if k + 1 < K else N
+        lo = k + 1
+        if hi < lo:
+            return
+        c = float(U[k, k + 1:] @ v[k + 1:]) if k + 1 < K else 0.0
+        if d[k] > 0:
+            budget = radius() - partial
+            if budget < 0:
+                return
+            r = np.sqrt(budget / d[k])
+            center = y[k] + c
+            lo = max(lo, int(np.ceil(np.exp(center - r) - 1e-12)))
+            hi = min(hi, int(np.floor(np.exp(center + r) + 1e-12)))
+        for hk in range(hi, lo - 1, -1):
+            h[k] = hk
+            v[k] = y[k] - np.log(hk)
+            term = d[k] * (v[k] + c) ** 2
+            tot = partial + term
+            if tot > radius():
+                continue
+            if k == 0:
+                if gcd_all(h) == 1:
+                    found.append((tuple(int(x) for x in h), tot))
+                    if tot < best[0]:
+                        best[0] = tot
+            else:
+                rec(k - 1, tot)
+
+    rec(K - 1, 0.0)
+    if not found:
+        return np.nan, [], nodes[0]
+    tmin = min(t for _, t in found)
+    tol = 1e-9 * max(1.0, abs(tmin))
+    hstar = sorted([(hh, t) for hh, t in found if t <= tmin + delta_T + tol], key=lambda e: e[1])
+    return tmin, hstar, nodes[0]
+
+
+def gcd_all(h):
+    return reduce(gcd, map(int, h))
+
+
+def search(freqs, Sigma, N, delta_T, exhaustive=False, monotone=True, method="exact"):
+    """method="exact" (padrão): busca completa por ramificação e poda. method="rounding":
+    heurística antiga por arredondamento, mantida só como comparador; ela NÃO é completa
+    (contraexemplo da Luna na revisão do Bloco 1). Devolve (T_min, lista de (h, ln g, qui-quadrado) em H*, todas as avaliações).
 
     exhaustive=True avalia todas as atribuições injetivas e mínimas (crescentes se monotone,
     ou todas as permutações se não); só para N e K pequenos."""
@@ -68,6 +170,13 @@ def search(freqs, Sigma, N, delta_T, exhaustive=False, monotone=True):
     K = y.size
     if K < 2:
         return np.nan, [], []
+    if not exhaustive and method == "exact":
+        tmin, hs, _ = exact_search(freqs, Sigma, N, delta_T)
+        out = []
+        for h, _t in hs:
+            lng, _, _, chi2 = gls_fit(y, np.log(np.asarray(h, float)), Sigma)
+            out.append((h, lng, chi2))
+        return tmin, out, out
     if exhaustive:
         base = combinations(range(1, N + 1), K)
         cands = (p for c in base for p in (permutations(c) if not monotone else [c]))

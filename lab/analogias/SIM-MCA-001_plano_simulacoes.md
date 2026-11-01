@@ -1,6 +1,6 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.2 (incorpora o parecer da Luna sobre a v0.1: GO condicional para testes, gerador, cadeia e Bloco 1) · **Data:** 01/11/2026 · **Estado:** em execução: testes automáticos, gerador, cadeia de processamento e piloto do Bloco 1. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3 (incorpora o parecer da Luna sobre a v0.1 e a revisão do Bloco 1: busca D1 refeita como busca exata; proposta de `Σ`) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;
@@ -67,17 +67,31 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 ## 4. Cadeia de processamento sob teste
 
 1. **Detecção de componentes.** Espectrograma por STFT (Short-Time Fourier Transform, transformada de Fourier de tempo curto), com janela e passo fixados no Bloco 1. Picos locais acima de um limiar sobre o piso de ruído local. Frequência refinada por interpolação parabólica do pico. A detecção não usa nenhuma hipótese sobre a fundamental.
-2. **Incerteza `σ_f` e covariância `Σ`.** Calibradas empiricamente no Bloco 1, como função da SNR do componente e da taxa de modulação. A covariância entre componentes do mesmo quadro vem da comodulação e é estimada nas simulações.
+2. **Incerteza e covariância `Σ`.** A incerteza é descrita por quantis empíricos do erro em `ln f`, por estrato de SNR local e de modulação, com SNR local mínima como controle de qualidade (decisão da Luna sobre o piloto). Picos falsos são contados à parte e não entram na distribuição do erro.
+   - **Proposta para a matriz operacional `Σ` (pendente de aprovação, condição para o Bloco 2):** `Σ = S·R·S`. A escala marginal `s_k` de cada componente é a metade da largura do intervalo empírico central de 68% do erro em `ln f`, no estrato do componente. Essa metade é uma medida de escala, e não um desvio-padrão gaussiano. A correlação `R` vem da estimativa de covariância cruzada da partição `cal`, verificada em `ver`.
+   - **Por que isso não reintroduz a hipótese gaussiana:** em ρ₂, `χ²` é só uma forma quadrática que ordena as atribuições. A sua significância vem da distribuição nula empírica, e não da distribuição qui-quadrado. Uma escala mal calibrada muda a estatística igualmente nos dados e nos nulos. Em ρ₁, a tolerância usa diretamente os quantis empíricos.
+   - **A componente comum da correlação não afeta ρ₂:** um termo `c²·11ᵀ` é absorvido pela escala (ver abaixo). A parte de `R` que pesa em ρ₂ é a correlação que não é comum a todos os componentes.
 3. **Estimador independente `f̂₀`.** Candidatos: autocorrelação normalizada (família YIN) e cepstro. Estimadores por soma de harmônicos ficam fora, porque pressupõem a estrutura harmônica que ρ₂ testa e tornariam `E(t)` dependente dessa hipótese.
 4. **Ordem máxima `N(t)` e conjunto esperado `E(t)`.** Como na ficha, Seção 3.4.
 5. **Busca de atribuições e `H*`.** Ajuste por mínimos quadrados generalizados para cada atribuição injetiva e mínima, e conjunto `H*` pela margem `Δ_T`.
 6. **Relações.** ρ₁, ρ₂, ρ₃ e ρ₄ exatamente como no perfil v0.1.4.
 
-**Decisão D1 (aprovada condicionalmente).** Se `g > 0`, a ordem crescente das frequências impõe ordem crescente das ordens atribuídas. A busca usa duas etapas.
-- Enumeração exata das atribuições consistentes com arredondamento: `h = round(f/g)` para `g` em cada intervalo entre os pontos de quebra `f_k/(j + ½)`, com `j` de 0 a `N`. São no máximo `K·(N + 1)` intervalos, em vez de `C(N, K)` combinações.
-- Acréscimo das perturbações de ±1 em cada ordem, para que `H*` inclua atribuições quase ótimas que não são pontos fixos do arredondamento.
+**Decisão D1 (aprovada condicionalmente; busca refeita após a revisão do Bloco 1).** Se `g > 0`, a ordem crescente das frequências impõe ordem crescente das ordens atribuídas. A busca é restrita às atribuições crescentes e mínimas, igualmente para dados e nulos.
 
-A comparação exigida pela Luna com a busca exaustiva sobre todas as funções injetivas, inclusive não monótonas e com covariância não diagonal, é um teste automático (`test_rounding_search_matches_exhaustive_on_small_case`). Ela passa em 20 casos sorteados com `N = 10` e `K = 4`. A comparação em escala maior, com `K` e `N` do canto B, entra no Bloco 2.
+**Contraexemplo da Luna.** A primeira versão enumerava as atribuições consistentes com arredondamento e acrescentava perturbações de ±1. A Luna mostrou que essa busca não é completa: num caso, ela parou em χ² = 2.900,87, com `(4, 5, 7, 9)`, enquanto a busca exaustiva achou χ² = 1.917,24, com `(5, 6, 8, 10)`. Reproduzi o problema: em 3.000 casos sorteados, a heurística errou o mínimo em 622. As falhas se concentram nos ajustes ruins, justamente os dos sinais nulos. O teste anterior passava porque só usava sinais quase harmônicos. Um teste que passa não demonstrava a completude.
+
+**Busca exata adotada (`assignment.exact_search`).** Ramificação e poda, no estilo da decodificação em esfera.
+- Com a escala ótima eliminada, `χ²(h) = vᵀMv`, em que `v = y − ln h` e `M = Σ⁻¹ − Σ⁻¹11ᵀΣ⁻¹/(1ᵀΣ⁻¹1)`, semidefinida.
+- A decomposição `M = UᵀDU` escreve `χ²` como soma de termos não negativos, `d_k·(v_k + Σ_{j>k} U_kj·v_j)²`, em que cada termo depende só das ordens `k` em diante.
+- A busca fixa as ordens da maior para a menor. A soma parcial é uma cota inferior de `χ²`. Assim, cada ordem só percorre o intervalo em que a cota não excede `T_min + Δ_T`. Nenhuma atribuição dentro desse raio é descartada.
+- A cota inicial é finita: a melhor entre `(1, …, K)` e o resultado da heurística.
+
+**Verificação.**
+- Em 3.000 casos sorteados, com covariância não diagonal, ajustes bons e ruins e `Δ_T` de 0, 1 e 5, a busca exata coincidiu com a exaustiva no mínimo e no conjunto `H*` inteiro, sem nenhuma diferença.
+- Os testes automáticos `test_exact_search_matches_exhaustive_including_poor_fits` e `test_rounding_heuristic_is_not_complete` registram as duas coisas.
+- Custo em escala do canto B, com nulos aleatórios: mediana de 7 a 12 ms por busca para `K` de 6 a 10 e `N` de 60 a 70; máximo de 0,18 s.
+
+**Efeito da restrição monótona.** Em 400 nulos aleatórios, a busca exaustiva sem a restrição de ordem achou `χ²` menor que a busca monótona uma única vez. A restrição é parte da definição da estatística e vale igualmente para dados e nulos. Por isso não compromete a validade de `p_emp`, mas fica registrada.
 
 **Propriedade verificada nos testes:** um termo comum de covariância `c²·11ᵀ`, que representa a comodulação, não altera o qui-quadrado do ajuste, porque é absorvido pela escala. Ele aumenta apenas a variância de `ln g`. Portanto, a comodulação afeta ρ₁ e a incerteza da escala, mas não a estatística de ρ₂.
 
@@ -200,7 +214,7 @@ Parecer da Luna sobre a v0.1:
 
 | Decisão | Estado |
 |---|---|
-| D1 — atribuições crescentes | Aprovada condicionalmente; comparação com a busca exaustiva implementada como teste (Seção 4) |
+| D1 — atribuições crescentes | Aprovada condicionalmente. A heurística por arredondamento falhou na revisão independente da Luna; foi substituída por busca exata, verificada contra a exaustiva (Seção 4). Aguarda nova aprovação |
 | D2 — margens físicas | Aprovada para `m_t`; `m_r` com derivação probabilística própria no Bloco 4 |
 | D3 — famílias G3 e G4 | Aprovadas; distribuição e zona de exclusão de G3 formalizadas na Seção 3.3 |
 | D4 — fundamental independente | Aprovada |

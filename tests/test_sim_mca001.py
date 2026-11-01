@@ -75,20 +75,38 @@ def test_common_mode_covariance_does_not_change_chi2():
     assert v1 > v0
 
 
-def test_rounding_search_matches_exhaustive_on_small_case():
-    rng = np.random.default_rng(3)
-    for _ in range(20):
-        f0 = rng.uniform(10, 20)
-        orders = np.sort(rng.choice(np.arange(1, 9), size=4, replace=False))
-        freqs = f0 * orders * (1 + rng.normal(0, 0.003, 4))
-        sigma = A.sigma_matrix(freqs, 0.05, common_lnf=0.005)
-        sigma[0, 1] = sigma[1, 0] = sigma[0, 1] + 1e-7
-        t_round, h_round, _ = A.search(freqs, sigma, N=10, delta_T=0.0)
-        t_exact, h_exact, _ = A.search(
-            freqs, sigma, N=10, delta_T=0.0, exhaustive=True, monotone=False
-        )
-        assert t_round == pytest.approx(t_exact)
-        assert h_round[0][0] == h_exact[0][0]
+def test_exact_search_matches_exhaustive_including_poor_fits():
+    """Decisão D1, após o contraexemplo da Luna: a busca exata (ramificação e poda) encontra o
+    mesmo mínimo e o mesmo conjunto H* que a busca exaustiva sobre atribuições crescentes,
+    inclusive em ajustes ruins (nulos) e com covariância não diagonal."""
+    rng = np.random.default_rng(0)
+    for _ in range(150):
+        K = int(rng.integers(2, 6))
+        freqs = np.sort(np.exp(rng.uniform(np.log(10), np.log(150), K)))
+        sigma = A.sigma_matrix(freqs, rng.uniform(0.01, 0.5, K), common_lnf=rng.uniform(0, 0.01))
+        b = rng.normal(size=(K, K)) * 1e-5
+        sigma = sigma + b @ b.T
+        delta_t = float(rng.choice([0.0, 1.0, 5.0]))
+        t_x, h_x, _ = A.search(freqs, sigma, N=10, delta_T=delta_t)
+        t_e, h_e, _ = A.search(freqs, sigma, N=10, delta_T=delta_t, exhaustive=True)
+        assert t_x == pytest.approx(t_e, rel=1e-9, abs=1e-9)
+        assert {h for h, _, _ in h_x} == {h for h, _, _ in h_e}
+
+
+def test_rounding_heuristic_is_not_complete():
+    """Registro do contraexemplo: a heurística por arredondamento perde o mínimo global em
+    ajustes ruins. Ela não pode ser usada para H* nem para a distribuição nula."""
+    rng = np.random.default_rng(0)
+    misses = 0
+    for _ in range(200):
+        K = int(rng.integers(3, 6))
+        freqs = np.sort(np.exp(rng.uniform(np.log(10), np.log(150), K)))
+        sigma = A.sigma_matrix(freqs, rng.uniform(0.01, 0.5, K))
+        t_r, _, _ = A.search(freqs, sigma, N=12, delta_T=0.0, method="rounding")
+        t_e, _, _ = A.search(freqs, sigma, N=12, delta_T=0.0, exhaustive=True)
+        if not (np.isfinite(t_r) and np.isclose(t_r, t_e)):
+            misses += 1
+    assert misses > 0
 
 
 def test_detection_finds_harmonics_of_clean_signal():

@@ -9,9 +9,10 @@ EXPLORATORY/FEASIBILITY. Nenhum dado real é lido por este código.
 | generator.py | Gerador G1 a G4, ruído com convenção SNR_integrated, interferências e decimação |
 | detection.py | STFT, detecção sem hipótese sobre a fundamental e pareamento sintético um-a-um |
 | fundamental.py | Estimadores independentes de f0: YIN e cepstro |
-| assignment.py | Mínimos quadrados generalizados, busca de atribuições e conjunto H* |
+| assignment.py | Mínimos quadrados generalizados, busca exata de atribuições (ramificação e poda) e conjunto H*; a heurística por arredondamento fica só como comparador, porque não é completa |
 | stats.py | Valor-p empírico, Clopper–Pearson e dimensionamento do critério de aceite |
 | block1.py | Bloco 1: detecção, incerteza empírica e estimador da fundamental |
+| diag_cobertura.py | Diagnóstico da cobertura da incerteza por faixa de ordem e por fator (auditoria do piloto v2) |
 | results/ | Saídas JSON e relatórios |
 
 ## Revisões do runner do Bloco 1
