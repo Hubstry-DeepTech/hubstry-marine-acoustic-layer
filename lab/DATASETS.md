@@ -6,7 +6,7 @@
 **Protocolo associado:** `HMAL-PREREG-2026-001`, `PREREGISTRATION v1.3.2-draft` (matriz verificada em 30/10/2026, sob a v1.3.1-draft)  
 **Operador:** `guilhermemachado.ceo@hubstry.dev`
 
-> **Regra de uso:** esta matriz registra recursos e evidências de disponibilidade; não significa que os arquivos foram baixados, inspecionados, processados ou autorizados para uso comercial. Não substituir candidatos nem alterar a ordem pré-registrada. Desde a emenda 1.3.2, as fontes aqui listadas sem acesso efetivamente verificado constituem **lista de prospecção**, e não candidatos. Campos não sustentados pelas páginas consultadas estão marcados `Não verificado`.
+> **Regra de uso:** esta matriz registra recursos e evidências de disponibilidade; não significa que os arquivos foram baixados, inspecionados, processados ou autorizados para uso comercial. Desde a emenda 1.3.2 do pré-registro, esta matriz é uma **lista de prospecção**: nenhuma fonte aqui listada é candidata. Uma fonte só passa a candidata depois de cumprir os oito requisitos da emenda 1.3.2 (Seção 2.1 do pré-registro), por nova emenda versionada. Campos não sustentados pelas páginas consultadas estão marcados `Não verificado`.
 
 ## 1. Estados de verificação
 
@@ -45,7 +45,7 @@ H1 fica `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. As pistas de fonte desta matriz p
 
 A matriz não promove automaticamente nenhum dataset a par elegível. O MBARI disponibiliza um notebook de índice de chamado B e outro de classificação A; a disponibilidade desses notebooks não demonstra, sozinha, rótulos independentes de eventos A/B nem a comparabilidade física de suas variáveis. O dataset Chagos depositado em Zenodo não contém áudio original e não contém as medidas das unidades 2/3. O TemporalContext é outra espécie e permanece teste de generalização posterior.
 
-Se nenhum par passar pelo go/no-go nos prazos pré-registrados, registrar `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`; não incluir novos pares após consultar resultados.
+**Situação atual:** H1 está registrada como `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. As fontes desta matriz que ainda dependem de diligência permanecem na lista de prospecção. Nenhuma será considerada candidata até cumprir os requisitos da emenda 1.3.2.
 
 ## 4. H3 — possível aplicação de engenharia em QA de MAP
 

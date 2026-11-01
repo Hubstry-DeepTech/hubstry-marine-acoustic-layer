@@ -36,7 +36,7 @@ O pré-registro não presume que a hipótese seja verdadeira. Resultados descrit
 
 - **Espécie inicial:** baleia-azul (*Balaenoptera musculus*).
 - **Populações/variantes candidatas (v1.3.2):** apenas Pacífico Nordeste (MBARI), com NO-GO registrado em 01/11/2026. Chagos (unidades 2/3) e Atlântico Norte (partes/unidades A/B), listados na v1.3.1, foram retirados na emenda 1.3.2 por falta de diligência de acesso concluída.
-- **Fonte candidata prioritária para áudio e processamento:** MBARI Pacific Sound, bucket `pacific-sound-2khz`.
+- **Fonte examinada no ciclo de viabilidade:** MBARI Pacific Sound, bucket `pacific-sound-2khz`. O par A/B recebeu NO-GO e não constitui candidato elegível ativo na v1.3.2. O acesso aos arquivos para finalidades distintas de H1, como bancada ou controle de qualidade, não implica elegibilidade científica.
 - **Registro de pares vocais candidatos:** a tabela abaixo é o registro histórico da v1.3.1; na v1.3.2, só o candidato 1 permanece, já decidido. A prioridade do dataset para processamento não equivale à prioridade científica do par para H1.
 
 **Regra geral de comparabilidade:** a razão só poderá ser formada entre medidas da mesma grandeza física operacionalmente definida. Frequência fundamental de componente tonal (`f0`, Hz), frequência de pico de unidade tonal (`f_peak`, Hz) e taxa de repetição de pulsos (`PRR`, pulsos/s) não serão intercambiadas apenas por terem dimensão temporal inversa. A escolha do par será feita por documentação acústica, acesso e critérios de identificação independentes de `H_N`, `D_log` e de qualquer resultado de projeção.
@@ -468,9 +468,19 @@ Esta versão separa o congelamento de um **protocolo exploratório/viabilidade (
 
 ### 10.1 Nível 1 — congelamento exploratório e de viabilidade (v1.3.2)
 
-**Situação na v1.3.2:** o candidato 1 tem NO-GO registrado e os candidatos 2 e 3 foram retirados. Aplica-se a regra condicional abaixo: blocos B, C e D como `N/A`, resultado `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. Os itens de prazo de Chagos e Atlântico Norte ficam como histórico.
+**Situação atual na v1.3.2 (01/11/2026).** As listas de verificação abaixo são preservadas integralmente como **critérios para uma futura emenda com candidato elegível**. Os quadrados vazios não indicam pendência nem execução neste ciclo. A situação deste ciclo é a do quadro:
 
-O Nível 1 pode ser congelado para pré-especificar a ordem dos candidatos, o procedimento de go/no-go e as análises estritamente exploratórias. Não exige que já exista replicação biológica suficiente para H1 confirmatória. Para congelar e executar a avaliação exploratória, devem estar concluídos e documentados:
+| Bloco | Situação neste ciclo | Evidência |
+|---|---|---|
+| A. Seleção prévia do par vocal | Concluído | NO-GO do candidato 1 registrado em 01/11/2026, antes do prazo, sem consultar `H_N`, `D_log`, `Δ(q)` ou `P(a/b)` (`lab/go_nogo/H1_candidato1_MBARI_AB.md`, PR #17). Candidatos 2 e 3 retirados pela emenda 1.3.2, sem acesso a dados |
+| B. Mensuração e comparabilidade | `N/A` — nenhum candidato elegível | Nenhuma variável foi medida para H1 |
+| C. SNR, resolução e calibração exploratória | `N/A` — nenhum candidato elegível | Nenhuma calibração de H1 com áudio foi executada. As simulações sintéticas da MCA-001 são outra linha e não pertencem a H1 |
+| D. Dados e proveniência | `N/A` — nenhum candidato elegível | Nenhum áudio foi baixado ou processado para H1 |
+| E. Escopo e comunicação | Aplicável | Resultado comunicado como `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, sem valor-p biológico nem confirmação |
+
+**Resultado do ciclo:** `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. O congelamento do Nível 1 da v1.3.2 pode ser feito sob a regra condicional abaixo. Os itens de prazo de Chagos e do Atlântico Norte ficam como histórico.
+
+Para uma futura emenda com candidato elegível, o Nível 1 pode ser congelado para pré-especificar os candidatos, o procedimento de go/no-go e as análises estritamente exploratórias. Não exige que já exista replicação biológica suficiente para H1 confirmatória. Para congelar e executar a avaliação exploratória, devem estar concluídos e documentados:
 
 **A. Seleção prévia do par vocal**
 
