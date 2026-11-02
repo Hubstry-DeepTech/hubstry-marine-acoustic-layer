@@ -1,9 +1,9 @@
 # Pré-Registro Exploratório: Relações entre Medidas Acústicas Comparáveis de Unidades Vocais Distintas no HMAL
 
 **ID do Protocolo:** `HMAL-PREREG-2026-001`  
-**Versão:** `1.3.1-draft`  
+**Versão:** `1.3.2-draft` (emenda de 01/11/2026: retirada dos candidatos sem acesso verificado a dados)  
 **Status:** CANDIDATO A CONGELAMENTO NÍVEL 1 — protocolo exploratório e de viabilidade. Nível 1 autoriza apenas análise de viabilidade/estimativa exploratória; não autoriza inferência confirmatória. Nível 2 exige protocolo confirmatório futuro, com versão e hash próprios.  
-**Data da revisão:** 30/10/2026  
+**Data da revisão:** 01/11/2026 (versão anterior: 30/10/2026)  
 **Autor:** Guilherme Gonçalves Machado (Hubstry Deep Tech)  
 **Repositório alvo:** `Hubstry-DeepTech/hubstry-marine-acoustic-layer`  
 **Operador:** `guilhermemachado.ceo@hubstry.dev`  
@@ -35,27 +35,47 @@ O pré-registro não presume que a hipótese seja verdadeira. Resultados descrit
 ### 2.1 População-alvo e comparabilidade das variáveis
 
 - **Espécie inicial:** baleia-azul (*Balaenoptera musculus*).
-- **Populações/variantes candidatas:** Pacífico Nordeste (MBARI), Chagos (unidades 2/3) e Atlântico Norte (partes/unidades A/B), todas condicionadas às fontes, ao acesso, à identificação independente e à comparabilidade descritos no registro ordenado abaixo.
-- **Fonte candidata prioritária para áudio e processamento:** MBARI Pacific Sound, bucket `pacific-sound-2khz`.
-- **Registro de pares vocais candidatos:** a seleção seguirá, sem reordenação pós-hoc, a lista fixa abaixo. A prioridade do dataset para processamento não equivale à prioridade científica do par para H1.
+- **Caso de H1 examinado no ciclo de viabilidade:** Pacífico Nordeste (MBARI), candidato registrado na v1.3.1 e encerrado com NO-GO em 01/11/2026. Chagos (unidades 2/3) e Atlântico Norte (partes/unidades A/B), também registrados na v1.3.1, foram retirados na emenda 1.3.2 por falta de diligência de acesso concluída. Não há candidato elegível ativo na v1.3.2.
+- **Fonte examinada no ciclo de viabilidade:** MBARI Pacific Sound, bucket `pacific-sound-2khz`. O par A/B recebeu NO-GO e não constitui candidato elegível ativo na v1.3.2. O acesso aos arquivos para finalidades distintas de H1, como bancada ou controle de qualidade, não implica elegibilidade científica.
+- **Registro histórico de pares:** a tabela abaixo preserva os candidatos registrados na v1.3.1 e as decisões de retirada ou NO-GO. Nenhum deles permanece como candidato ativo na v1.3.2. A prioridade do dataset para processamento não equivale à prioridade científica do par para H1.
 
 **Regra geral de comparabilidade:** a razão só poderá ser formada entre medidas da mesma grandeza física operacionalmente definida. Frequência fundamental de componente tonal (`f0`, Hz), frequência de pico de unidade tonal (`f_peak`, Hz) e taxa de repetição de pulsos (`PRR`, pulsos/s) não serão intercambiadas apenas por terem dimensão temporal inversa. A escolha do par será feita por documentação acústica, acesso e critérios de identificação independentes de `H_N`, `D_log` e de qualquer resultado de projeção.
 
-#### Registro prévio e ordenado de pares candidatos
+#### Registro prévio e ordenado de pares candidatos (histórico da v1.3.1; ver emenda 1.3.2 abaixo)
 
 | Ordem | População/canto e par | Variável candidata | Fonte de caracterização | Estado inicial e regra de decisão | Prazo final de decisão |
 |---|---|---|---|---|---|
 | 1 | Pacífico Nordeste — chamado A / chamado B (MBARI) | A: taxa de repetição de pulsos (`PRR`); B: frequência fundamental tonal (`f0`) | Lewis et al. (2018), [DOI 10.1111/mms.12458](https://doi.org/10.1111/mms.12458); documentação [MBARI Blue B Call Index](https://docs.mbari.org/pacific-sound/notebooks/bluewhales/classify/blueB/PacificSoundBlueBCallIndex/) | **Presumivelmente NO-GO** para a razão A/B: A é descrito como pulsado e B como tonal. Só poderá passar se uma justificativa física independente, publicada e operacionalizável antes da projeção em `H_N` demonstrar que há uma mesma grandeza mensurável nos dois. Não dividir `PRR` por `f0` por conveniência dimensional. | **02/11/2026** (até 23:59, horário de Brasília). Sem justificativa independente documentada até o prazo: NO-GO nesta versão. |
-| 2 | Chagos — unidade 2 / unidade 3 do canto | Frequência de pico de unidade tonal pura (`f_peak`, Hz) em cada unidade | Leroy et al. (2021), [Scientific Reports, DOI 10.1038/s41598-021-88062-5](https://doi.org/10.1038/s41598-021-88062-5) | **Candidato condicional de melhor comparabilidade tonal.** O artigo descreve as unidades 2 e 3 como tons puros; a unidade 3 pode estar ausente. O dataset Zenodo de Jancovich & Rogers (2026), [DOI 10.5281/zenodo.22654272](https://doi.org/10.5281/zenodo.22654272), não contém áudio original e reporta medidas das subunidades 1 e 2 da primeira unidade, não das unidades 2 e 3. Só será GO se gravações originais contendo ambas as unidades forem obtidas por acesso autorizado, documentado e com termos de uso verificados. As médias publicadas por Leroy et al. não substituem áudio/eventos individuais nem constituem dataset para esta análise. | **04/11/2026** (até 23:59, horário de Brasília). Sem áudio autorizado de ambas as unidades e termos de uso verificados até o prazo: NO-GO nesta versão. |
-| 3 | Atlântico Norte — parte/unidade tonal A / parte/unidade tonal B da sequência | Frequência fundamental/instantânea da componente tonal (`f0`, Hz), com resumo por unidade definido antes da análise | Mellinger & Clark (2003), [PubMed record](https://pubmed.ncbi.nlm.nih.gov/12942988/) | **Reserva condicional, acesso não verificado.** A descrição publicada caracteriza A como tonal de frequência aproximadamente constante e B como tonal modulado em frequência. Só será elegível se uma fonte de áudio acessível e seus metadados permitirem identificar ambas as unidades e estimar a mesma variável `f0` com método compatível. Não presumir disponibilidade, licença ou rótulos. | **05/11/2026** (até 23:59, horário de Brasília). Sem áudio, metadados, identificação e termos de uso verificados até o prazo: NO-GO nesta versão. |
+| 2 | **[Retirado na emenda 1.3.2]** Chagos — unidade 2 / unidade 3 do canto | Frequência de pico de unidade tonal pura (`f_peak`, Hz) em cada unidade | Leroy et al. (2021), [Scientific Reports, DOI 10.1038/s41598-021-88062-5](https://doi.org/10.1038/s41598-021-88062-5) | **Candidato condicional de melhor comparabilidade tonal.** O artigo descreve as unidades 2 e 3 como tons puros; a unidade 3 pode estar ausente. O dataset Zenodo de Jancovich & Rogers (2026), [DOI 10.5281/zenodo.22654272](https://doi.org/10.5281/zenodo.22654272), não contém áudio original e reporta medidas das subunidades 1 e 2 da primeira unidade, não das unidades 2 e 3. Só será GO se gravações originais contendo ambas as unidades forem obtidas por acesso autorizado, documentado e com termos de uso verificados. As médias publicadas por Leroy et al. não substituem áudio/eventos individuais nem constituem dataset para esta análise. | **04/11/2026** (até 23:59, horário de Brasília). Sem áudio autorizado de ambas as unidades e termos de uso verificados até o prazo: NO-GO nesta versão. |
+| 3 | **[Retirado na emenda 1.3.2]** Atlântico Norte — parte/unidade tonal A / parte/unidade tonal B da sequência | Frequência fundamental/instantânea da componente tonal (`f0`, Hz), com resumo por unidade definido antes da análise | Mellinger & Clark (2003), [PubMed record](https://pubmed.ncbi.nlm.nih.gov/12942988/) | **Reserva condicional, acesso não verificado.** A descrição publicada caracteriza A como tonal de frequência aproximadamente constante e B como tonal modulado em frequência. Só será elegível se uma fonte de áudio acessível e seus metadados permitirem identificar ambas as unidades e estimar a mesma variável `f0` com método compatível. Não presumir disponibilidade, licença ou rótulos. | **05/11/2026** (até 23:59, horário de Brasília). Sem áudio, metadados, identificação e termos de uso verificados até o prazo: NO-GO nesta versão. |
 
-A ordem acima e os prazos da última coluna são fixos. Cada decisão GO/NO-GO deverá ser registrada com data, evidência consultada e justificativa até o prazo específico do candidato. A ausência de resposta de instituição, autorização pendente ou acesso não concluído até o prazo equivale a NO-GO nesta versão; não haverá extensão informal nem espera indefinida. Se um candidato passar, a seleção se encerra nele; candidatos posteriores não poderão substituí-lo após a inspeção de resultados. A elegibilidade será decidida por critérios de acesso, caracterização acústica, mensuração e identificação, **sem consultar o erro de projeção em `H_N`, `D_log`, `\Delta(q)` ou a prioridade `P(a/b)`**. O primeiro par que satisfizer todos os critérios documentados poderá ser usado para a estimativa exploratória. A falha de um candidato leva apenas ao próximo candidato já listado; não autoriza inserir novos pares depois de inspecionar os resultados. Se nenhum dos três passar, H1 será declarada **não operacionalizável nesta fase**. Não haverá substituição pós-hoc.
+**Emenda 1.3.2 (01/11/2026) — retirada dos candidatos 2 e 3 e regra de acesso verificado.**
+
+1. **Por que:** os candidatos 2 (Chagos) e 3 (Atlântico Norte) foram registrados sem verificação prévia da origem dos dados, das condições de acesso e do prazo de liberação. Para Chagos, o artigo de referência (Leroy et al., 2021) usa gravações da estação hidroacústica HA08 do Centro Internacional de Dados da CTBTO (Comprehensive Nuclear-Test-Ban Treaty Organization), de acesso controlado, e nenhum pedido de acesso foi feito. Para o Atlântico Norte, o próprio registro declarava acesso "não verificado". Na data desta emenda, não foram verificadas a disponibilidade efetiva dos arquivos necessários, a presença das unidades vocais pretendidas nem a existência de rótulos independentes. A única pista, o conjunto NEFSC do arquivo de acústica passiva do NOAA NCEI, tem metadados divergentes: o catálogo o classifica como `non-public`, mas indica uma distribuição pública no Google Cloud Storage. Por ausência de diligência concluída, o conjunto não atende aos requisitos de candidato elegível nesta versão; isso não é afirmação sobre o conteúdo integral do conjunto. Manter candidatos sem diligência concluída não acrescenta informação: só adia um NO-GO previsível. A falha foi de planejamento e está registrada como tal.
+2. **O que muda:** os candidatos 2 e 3 são retirados desta versão. O candidato 1 (MBARI A/B) já está encerrado com NO-GO registrado em 01/11/2026 (`lab/go_nogo/H1_candidato1_MBARI_AB.md`). Não resta candidato ativo.
+3. **Resultado desta fase:** com o único candidato registrado em NO-GO, H1 fica declarada `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, conforme a Seção 10.1. Nenhum par novo é incluído nesta versão.
+4. **Regra nova: prospecção não é candidatura.** Fontes promissoras que ainda dependem de autorização, resposta institucional, licença ou identificação dos arquivos ficam numa **lista de prospecção**, fora do pré-registro. Um pedido de acesso protocolado mantém a fonte na prospecção; não a torna candidata. Uma fonte só entra no pré-registro como **candidato elegível** quando houver, documentados antes do registro:
+   1. origem e versão exatas dos dados;
+   2. acesso efetivamente concedido ou disponibilidade pública confirmada;
+   3. termos de uso verificados para a finalidade pretendida;
+   4. confirmação de que o áudio original contém os sinais necessários;
+   5. metadados e rótulos independentes, ou procedimento viável e documentado de identificação;
+   6. prazo compatível com a disponibilidade real dos dados;
+   7. viabilidade de armazenamento, transferência e processamento;
+   8. leitura ou download de uma amostra real do material autorizado, com verificação de formato, integridade e metadados.
+
+   A ordem de trabalho passa a ser: verificar o material, depois a viabilidade científica, e só então registrar o candidato e comprometer prazo e recurso.
+5. **Integridade:** nenhum dado de Chagos ou do Atlântico Norte foi solicitado, aberto ou analisado. A retirada não decorre de nenhum resultado. O texto original dos candidatos permanece abaixo, na tabela e no histórico do repositório, para rastreabilidade.
+6. **Fase 2:** os dados da CTBTO (centro vDEC), o conjunto NEFSC do NOAA e outras fontes entram na lista de prospecção da fase 2, sob a regra do item 4.
+7. **Regras operacionais superadas:** os parágrafos seguintes desta seção e as Seções 2.2, 10.1 e 10.3 conservam o texto da v1.3.1 sobre ordem de seleção e prazos de Chagos e Atlântico Norte como **registro histórico**. Na v1.3.2, essas regras não se aplicam aos candidatos retirados. Onde houver conflito, prevalece esta emenda.
+
+**[Histórico da v1.3.1, superado pela emenda 1.3.2 para os candidatos 2 e 3.]** A ordem acima e os prazos da última coluna são fixos. Cada decisão GO/NO-GO deverá ser registrada com data, evidência consultada e justificativa até o prazo específico do candidato. A ausência de resposta de instituição, autorização pendente ou acesso não concluído até o prazo equivale a NO-GO nesta versão; não haverá extensão informal nem espera indefinida. Se um candidato passar, a seleção se encerra nele; candidatos posteriores não poderão substituí-lo após a inspeção de resultados. A elegibilidade será decidida por critérios de acesso, caracterização acústica, mensuração e identificação, **sem consultar o erro de projeção em `H_N`, `D_log`, `\Delta(q)` ou a prioridade `P(a/b)`**. O primeiro par que satisfizer todos os critérios documentados poderá ser usado para a estimativa exploratória. A falha de um candidato leva apenas ao próximo candidato já listado; não autoriza inserir novos pares depois de inspecionar os resultados. Se nenhum dos três passar, H1 será declarada **não operacionalizável nesta fase**. Não haverá substituição pós-hoc.
 
 O índice convencional do chamado B do MBARI quantifica ocorrência/intensidade por energia em bandas associadas ao chamado; ele não identifica, por si só, eventos A/B nem fornece automaticamente a frequência fundamental. O pico do terceiro harmônico usado no índice não será rotulado como `f0` (ver documentação MBARI acima).
 
 ### 2.2 Critério de viabilidade (go/no-go)
 
-A decisão de cada candidato deverá ser registrada até o prazo individual da Seção 2.1: MBARI A/B até 02/11/2026; Chagos unidades 2/3 até 04/11/2026; Atlântico Norte A/B até 05/11/2026 (todos até 23:59, horário de Brasília). Pendências de autorização ou respostas institucionais não prorrogam esses prazos. A análise exploratória de estimação de H1 só poderá ocorrer para o primeiro par elegível da lista pré-registrada na Seção 2.1 e somente se:
+**[Prazos de Chagos e Atlântico Norte superados pela emenda 1.3.2.]** A decisão de cada candidato deverá ser registrada até o prazo individual da Seção 2.1: MBARI A/B até 02/11/2026; Chagos unidades 2/3 até 04/11/2026; Atlântico Norte A/B até 05/11/2026 (todos até 23:59, horário de Brasília). Pendências de autorização ou respostas institucionais não prorrogam esses prazos. A análise exploratória de estimação de H1 só poderá ocorrer para o primeiro par elegível da lista pré-registrada na Seção 2.1 e somente se:
 
 1. houver áudio acessível e versionado para o período escolhido;
 2. houver critérios reproduzíveis para identificar cada tipo vocal, independentes da aderência a `H_N`;
@@ -68,7 +88,7 @@ A decisão de cada candidato deverá ser registrada até o prazo individual da S
 
 Se houver apenas uma população, um par vocal e uma temporada, `n_eff = 1`: o resultado será exclusivamente uma estimativa exploratória de `q`, sua incerteza e a comparação geométrica dos dicionários. Não será calculado valor-p biológico, não será declarada confirmação e os blocos não serão usados como substitutos de replicações biológicas.
 
-Os pares serão avaliados exclusivamente na ordem pré-registrada da Seção 2.1. Se um candidato falhar, passa-se apenas ao próximo candidato já listado. Se todos falharem em acesso, identificação ou comparabilidade, H1 será marcada como **não operacionalizável nesta fase**, sem inclusão de um novo par. Se algum par passar na mensuração, mas houver apenas uma unidade de replicação biológica, H1 será marcada como **estimável, porém não confirmatória**. Não se substituirá silenciosamente espécie, população, unidade vocal, variável ou dataset.
+**[Na v1.3.2 não há candidato ativo: o candidato 1 foi encerrado com NO-GO e os demais foram retirados; ver emenda 1.3.2.]** Os pares serão avaliados exclusivamente na ordem pré-registrada da Seção 2.1. Se um candidato falhar, passa-se apenas ao próximo candidato já listado. Se todos falharem em acesso, identificação ou comparabilidade, H1 será marcada como **não operacionalizável nesta fase**, sem inclusão de um novo par. Se algum par passar na mensuração, mas houver apenas uma unidade de replicação biológica, H1 será marcada como **estimável, porém não confirmatória**. Não se substituirá silenciosamente espécie, população, unidade vocal, variável ou dataset.
 
 ### 2.3 Escopo excluído desta versão
 
@@ -436,7 +456,7 @@ Exclusões por qualidade só serão permitidas com base em critérios técnicos 
 
 ### 9.5 Congelamento por hash e proveniência
 
-**Nível 1 — exploratório:** após cumprir a Seção 10.1, congelar a versão exploratória v1.3.1 e seu manifesto aplicável. Registrar separadamente `L1_EXPLORATORY_PROTOCOL_SHA256`, `L1_EXPLORATORY_MANIFEST_SHA256` e o hash dos scripts usados. Os resultados devem carregar o rótulo `EXPLORATORY/FEASIBILITY`; esse hash não autoriza inferência confirmatória.
+**Nível 1 — exploratório:** após cumprir a Seção 10.1, congelar a versão exploratória v1.3.2 e seu manifesto aplicável. Registrar separadamente `L1_EXPLORATORY_PROTOCOL_SHA256`, `L1_EXPLORATORY_MANIFEST_SHA256` e o hash dos scripts usados. Os resultados devem carregar o rótulo `EXPLORATORY/FEASIBILITY`; esse hash não autoriza inferência confirmatória.
 
 **Nível 2 — confirmatório:** antes de qualquer abertura/análise confirmatória, emitir protocolo/versão própria e manifesto confirmatório, calculando `L2_CONFIRMATORY_PROTOCOL_SHA256`, `L2_CONFIRMATORY_MANIFEST_SHA256` e hashes dos scripts. O congelamento Nível 2 é independente do Nível 1; o hash exploratório não poderá ser reaproveitado como confirmação.
 
@@ -446,20 +466,32 @@ Qualquer alteração após o congelamento de cada nível exigirá nova versão/e
 
 Esta versão separa o congelamento de um **protocolo exploratório/viabilidade (Nível 1)** do congelamento futuro de um **protocolo confirmatório (Nível 2)**. O cumprimento do Nível 1 não autoriza inferência confirmatória nem converte uma estimativa com `n_eff=1` em evidência populacional.
 
-### 10.1 Nível 1 — congelamento exploratório e de viabilidade (v1.3.1)
+### 10.1 Nível 1 — congelamento exploratório e de viabilidade (v1.3.2)
 
-O Nível 1 pode ser congelado para pré-especificar a ordem dos candidatos, o procedimento de go/no-go e as análises estritamente exploratórias. Não exige que já exista replicação biológica suficiente para H1 confirmatória. Para congelar e executar a avaliação exploratória, devem estar concluídos e documentados:
+**Situação atual na v1.3.2 (01/11/2026).** As listas de verificação abaixo são preservadas integralmente como **critérios para uma futura emenda com candidato elegível**. Os quadrados vazios não indicam pendência nem execução neste ciclo. A situação deste ciclo é a do quadro:
+
+| Bloco | Situação neste ciclo | Evidência |
+|---|---|---|
+| A. Seleção prévia do par vocal | Concluído | NO-GO do candidato 1 registrado em 01/11/2026, antes do prazo, sem consultar `H_N`, `D_log`, `Δ(q)` ou `P(a/b)` (`lab/go_nogo/H1_candidato1_MBARI_AB.md`, PR #17). Candidatos 2 e 3 retirados pela emenda 1.3.2, sem acesso a dados |
+| B. Mensuração e comparabilidade | `N/A` — nenhum candidato elegível | Nenhuma variável foi medida para H1 |
+| C. SNR, resolução e calibração exploratória | `N/A` — nenhum candidato elegível | Nenhuma calibração de H1 com áudio foi executada. As simulações sintéticas da MCA-001 são outra linha e não pertencem a H1 |
+| D. Dados e proveniência | `N/A` — nenhum candidato elegível | Nenhum áudio foi baixado ou processado para H1 |
+| E. Escopo e comunicação | Aplicável | Resultado comunicado como `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, sem valor-p biológico nem confirmação |
+
+**Resultado do ciclo:** `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. O congelamento do Nível 1 da v1.3.2 pode ser feito sob a regra condicional abaixo. Os itens de prazo de Chagos e do Atlântico Norte ficam como histórico.
+
+Para uma futura emenda com candidato elegível, o Nível 1 pode ser congelado para pré-especificar os candidatos, o procedimento de go/no-go e as análises estritamente exploratórias. Não exige que já exista replicação biológica suficiente para H1 confirmatória. Para congelar e executar a avaliação exploratória, devem estar concluídos e documentados:
 
 **A. Seleção prévia do par vocal**
 
 - [ ] A ordem dos candidatos da Seção 2.1 está fixa e não foi alterada após inspeção dos resultados de projeção.
 - [ ] O go/no-go de cada candidato foi registrado usando documentação acústica, acesso, identificação e comparabilidade, sem consultar `H_N`, `D_log`, `\Delta(q)` ou `P(a/b)`.
-- [ ] Cada decisão foi registrada até o prazo individual: MBARI A/B até 02/11/2026; Chagos unidades 2/3 até 04/11/2026; Atlântico Norte A/B até 05/11/2026 (23:59, horário de Brasília).
+- [ ] Cada decisão foi registrada até o prazo individual: MBARI A/B até 02/11/2026 (registrado em 01/11/2026). Chagos (04/11/2026) e Atlântico Norte (05/11/2026): retirados na emenda 1.3.2, sem decisão de prazo aplicável.
 - [ ] Ausência de autorização, resposta ou acesso concluído até o prazo foi classificada como NO-GO nesta versão; não houve extensão informal ou espera indefinida.
 - [ ] Ao obter o primeiro GO, a seleção foi encerrada; nenhum candidato posterior foi usado como substituto após observação de resultados.
 - [ ] O chamado A/B do MBARI não é tratado como par comparável sem justificativa física independente; o estado presumido de no-go está explicitado.
-- [ ] Chagos unidades 2/3 só pode avançar com áudio autorizado contendo ambas as unidades; o Zenodo 10.5281/zenodo.22654272 não é tratado como fonte desse áudio.
-- [ ] O par Atlântico Norte A/B só pode avançar mediante fonte de áudio, acesso/termos de uso e identificação das duas unidades efetivamente verificados.
+- [ ] (Retirado na emenda 1.3.2.) Chagos unidades 2/3 só pode avançar com áudio autorizado contendo ambas as unidades; o Zenodo 10.5281/zenodo.22654272 não é tratado como fonte desse áudio.
+- [ ] (Retirado na emenda 1.3.2.) O par Atlântico Norte A/B só pode avançar mediante fonte de áudio, acesso/termos de uso e identificação das duas unidades efetivamente verificados.
 - [ ] Se nenhum candidato passar, o resultado será `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`; nenhum par novo será introduzido nesta versão.
 
 **Regra condicional para os blocos B, C e D:** se todos os candidatos da Seção 2.1 forem NO-GO nos respectivos prazos, marcar cada item aplicável dos blocos B, C e D como `N/A — nenhum candidato elegível; H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, registrando a razão. Isso não impede o congelamento do Nível 1 como protocolo de viabilidade. Os registros de busca, evidência e decisão de cada candidato continuam obrigatórios no bloco A. Se pelo menos um candidato passar, B, C e D deixam de ser N/A e os requisitos pertinentes ao candidato selecionado devem ser cumpridos. O bloco E é sempre obrigatório.
@@ -493,11 +525,11 @@ O Nível 1 pode ser congelado para pré-especificar a ordem dos candidatos, o pr
 - [ ] H3 permanece hipótese secundária de engenharia e não é apresentada como evidência bioacústica.
 - [ ] A documentação distingue explicitamente no-go de dados, não operacionalizabilidade, estimativa exploratória e inconclusão instrumental.
 
-Ao concluir A–E — ou, quando todos os candidatos forem NO-GO, ao concluir A e E e marcar justificadamente B, C e D como `N/A` — o operador poderá congelar o protocolo exploratório v1.3.1 com o rótulo `FREEZE_LEVEL_1_EXPLORATORY`. Nesse caso, o resultado será `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`; não haverá estimativa de `q`, análise H1 com áudio nem inferência biológica nesta fase.
+Ao concluir A–E — ou, quando todos os candidatos forem NO-GO, ao concluir A e E e marcar justificadamente B, C e D como `N/A` — o operador poderá congelar o protocolo exploratório v1.3.2 com o rótulo `FREEZE_LEVEL_1_EXPLORATORY`. Nesse caso, o resultado será `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`; não haverá estimativa de `q`, análise H1 com áudio nem inferência biológica nesta fase.
 
 ### 10.2 Nível 2 — congelamento confirmatório futuro (novo protocolo/versão)
 
-O Nível 2 será especificado em versão própria, com data e hash independentes. Não é requisito para congelar o protocolo exploratório v1.3.1 e não pode ser declarado concluído por cumprir apenas a checklist do Nível 1.
+O Nível 2 será especificado em versão própria, com data e hash independentes. Não é requisito para congelar o protocolo exploratório v1.3.2 e não pode ser declarado concluído por cumprir apenas a checklist do Nível 1.
 
 Antes de qualquer análise confirmatória, deverão ser concluídos:
 
@@ -514,7 +546,7 @@ Não será reutilizado o hash do Nível 1 como se fosse congelamento confirmató
 
 ### 10.3 Resultado para a reunião da COPPE/UFRJ
 
-Até a reunião, o resultado defensável é o protocolo exploratório pré-especificado, a lista ordenada de candidatos, os critérios de go/no-go, a matriz de proveniência e os limites do que os dados permitem estimar. Não apresentar valores de H1 como confirmação. Se nenhum par passar, apresentar a não operacionalizabilidade nesta fase como resultado de viabilidade, juntamente com o requisito de dados para a fase 2.
+Até a reunião, o resultado defensável é o protocolo exploratório pré-especificado, o NO-GO registrado do candidato 1, a emenda 1.3.2 com a retirada dos candidatos sem acesso verificado e a regra que separa prospecção de candidatura, os critérios de go/no-go, a matriz de proveniência e os limites do que os dados permitem estimar. Não apresentar valores de H1 como confirmação. Se nenhum par passar, apresentar a não operacionalizabilidade nesta fase como resultado de viabilidade, juntamente com o requisito de dados para a fase 2.
 
 ## 11. Registro de alterações desta versão
 
@@ -530,4 +562,6 @@ Em relação à versão 1.2.0-draft:
 8. **v1.3.1:** a checklist do Nível 1 permite marcar os blocos B, C e D como `N/A — nenhum candidato elegível` quando todos os pares forem NO-GO, registrando `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`, sem impedir o congelamento exploratório.
 9. **v1.3.1:** o título foi alterado para “Relações entre Medidas Acústicas Comparáveis de Unidades Vocais Distintas”, evitando pressupor que todas as variáveis mensuradas sejam frequências fundamentais.
 
-**Estado final:** versão 1.3.1-draft, candidata a congelamento do Nível 1. O Nível 1 autoriza somente protocolo exploratório/viabilidade após os critérios da Seção 10.1; não autoriza inferência confirmatória. O Nível 2 depende de replicação biológica independente, simulação de poder, modelo nulo biologicamente fundamentado, mensuração comparável e congelamento/hash separados.
+10. **v1.3.2 (emenda de 01/11/2026):** retirados os candidatos 2 (Chagos) e 3 (Atlântico Norte), registrados sem diligência de acesso concluída; H1 declarada `H1_NOT_OPERATIONALIZABLE_THIS_PHASE` após o NO-GO do candidato 1; criada a separação entre lista de prospecção e candidato elegível, com oito requisitos documentados, inclusive amostra real do material (Seção 2.1, emenda 1.3.2); regras de ordem e prazos da v1.3.1 mantidas como histórico; referências de congelamento alinhadas à v1.3.2.
+
+**Estado final:** versão 1.3.2-draft, candidata a congelamento do Nível 1, com resultado `H1_NOT_OPERATIONALIZABLE_THIS_PHASE`. O Nível 1 autoriza somente protocolo exploratório/viabilidade após os critérios da Seção 10.1; não autoriza inferência confirmatória. O Nível 2 depende de replicação biológica independente, simulação de poder, modelo nulo biologicamente fundamentado, mensuração comparável e congelamento/hash separados.
