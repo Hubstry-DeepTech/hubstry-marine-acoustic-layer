@@ -38,7 +38,7 @@ A pesquisa começa com baleias-azuis, cujas vocalizações são estereotipadas, 
 | Entrega | Onde |
 |---|---|
 | Biblioteca Python `hmal` com dicionário `H_N`, projeção de medidas, erro em ppm (partes por milhão) e métrica interna `P(a/b)` | `src/hmal/` |
-| Suíte de testes automatizados (138 em 02/11/2026), executada em integração contínua (CI) nas versões 3.11, 3.12 e 3.13 do Python, com análise de segurança CodeQL | `tests/`, `.github/workflows/` |
+| Suíte de testes automatizados, executada em integração contínua (CI) nas versões 3.11, 3.12 e 3.13 do Python, com análise de segurança CodeQL. A contagem de cada commit aparece no registro da CI | `tests/`, `.github/workflows/` |
 | Pré-registro exploratório com hipóteses, pares vocais candidatos, regras de decisão *go/no-go* e prazos | `lab/PREREGISTRATION.md` |
 | Lista de prospecção de dados públicos, com licença, acesso e limitações de cada fonte | `lab/DATASETS.md` |
 | Bancada digital do núcleo computacional: TRL 4 (autoavaliação) do subsistema, sob critérios congelados 0.4.0 | `lab/bench/results/v04-run41231673988/REPORT_V04.md` |
