@@ -1,6 +1,6 @@
 ﻿__version__ = '0.1.0-alpha'
 __author__ = 'Guilherme G. Machado'
-__zenodo_doi__ = '10.5281/zenodo.placeholder'
+__zenodo_doi__ = '10.5281/zenodo.20184616'  # preprint v1.0.0
 
 from .core.harmonic_protocol import HarmonicProtocol, RationalChannel
 from .bioacoustics.vocalization_mapper import map_cetacean_vocalization, classify_vocalization

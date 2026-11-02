@@ -30,7 +30,7 @@ O HMAL é um programa de pesquisa e engenharia da Hubstry Deep Tech sobre a estr
 A pesquisa começa com baleias-azuis, cujas vocalizações são estereotipadas, de baixa frequência e amplamente documentadas em bases públicas. O projeto combina três frentes:
 
 1. **Ciência:** uma hipótese bioacústica testável, com pré-registro, critérios de decisão e prazos fixados antes da análise.
-2. **Dados:** um mapa de fontes públicas reais (MBARI, NOAA, Chagos, IBAMA) com licença, proveniência e adequação documentadas.
+2. **Dados:** uma lista de prospecção de fontes públicas. Nenhuma fonte vira candidata antes de o acesso a uma amostra real ser verificado (emenda 1.3.2 do pré-registro).
 3. **Engenharia:** uma biblioteca Python testada e uma linha de aplicação em controle de qualidade para Monitoramento Acústico Passivo (MAP).
 
 ## O que já está entregue
@@ -38,9 +38,10 @@ A pesquisa começa com baleias-azuis, cujas vocalizações são estereotipadas, 
 | Entrega | Onde |
 |---|---|
 | Biblioteca Python `hmal` com dicionário `H_N`, projeção de medidas, erro em ppm (partes por milhão) e métrica interna `P(a/b)` | `src/hmal/` |
-| 43 testes automatizados, executados em integração contínua (CI) nas versões 3.11, 3.12 e 3.13 do Python, com análise de segurança CodeQL | `tests/`, `.github/workflows/` |
+| Suíte de testes automatizados (138 em 02/11/2026), executada em integração contínua (CI) nas versões 3.11, 3.12 e 3.13 do Python, com análise de segurança CodeQL | `tests/`, `.github/workflows/` |
 | Pré-registro exploratório com hipóteses, pares vocais candidatos, regras de decisão *go/no-go* e prazos | `lab/PREREGISTRATION.md` |
-| Matriz de dados públicos com licença, acesso e limitações de cada fonte | `lab/DATASETS.md` |
+| Lista de prospecção de dados públicos, com licença, acesso e limitações de cada fonte | `lab/DATASETS.md` |
+| Bancada digital do núcleo computacional: TRL 4 (autoavaliação) do subsistema, sob critérios congelados 0.4.0 | `lab/bench/results/v04-run41231673988/REPORT_V04.md` |
 | Resumo executivo para a reunião com a COPPE/UFRJ | `lab/COPPE_SUMMARY.md` |
 | Diretrizes éticas e de uso dual | `docs/ETHICS_GUIDELINES.md` |
 | Publicação de referência com DOI | [Zenodo 10.5281/zenodo.20184616](https://doi.org/10.5281/zenodo.20184616) |
