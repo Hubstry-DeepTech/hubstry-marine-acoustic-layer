@@ -203,30 +203,112 @@ def test_match_truth_flags_unresolved_nearby_chirped_components():
     assert len(records) + unresolved_peaks + false == len(frames[0])
 
 
-def test_empirical_uncertainty_uses_snr_and_modulation_strata():
+def _synthetic_rows(rng, window_s, scale_low_snr=3.0, scale=0.1, n=250, f_true=25.0):
+    """Linhas sintéticas cobrindo todos os bins de SNR e todas as classes de excursão."""
+    fdot_by_class = {"baixa": 0.0, "media": 1.0 / window_s ** 2, "alta": 4.0 / window_s ** 2}
     rows = []
-    rng = np.random.default_rng(42)
     for bin_index, (lower, upper) in enumerate(B1.SNR_BINS):
         snr = lower + 0.5 if upper is not None else lower + 5.0
-        for modulation in (0.0, 0.05):
-            scale = 3.0 if bin_index == 0 else 0.1
-            for index in range(250):
-                error = float(rng.normal(0.0, scale))
-                rows.append(dict(
-                    signal_id=f"sig-{bin_index}-{modulation}-{index}",
-                    f_true=25.0,
-                    f_est=25.0 + error,
-                    snr_db=snr,
-                    modulation_oct_s=modulation,
-                    error_hz=error,
-                ))
+        for klass, fdot in fdot_by_class.items():
+            s = scale_low_snr if bin_index == 0 else scale
+            for index in range(n):
+                error = float(rng.normal(0.0, s))
+                rows.append(dict(signal_id=f"sig-{bin_index}-{klass}-{index}", frame=0,
+                                 order=1 + index % 40, f_true=f_true, f_est=f_true + error,
+                                 snr_db=snr, fdot_hz_s=fdot, modulation_oct_s=0.0,
+                                 error_hz=error))
+    return rows
+
+
+def test_empirical_uncertainty_uses_snr_and_excursion_strata_in_hz():
+    rows = _synthetic_rows(np.random.default_rng(42), window_s=0.5)
     table = B1.fit_empirical_uncertainty_table(rows, window_s=0.5)
+    assert {e["excursao"] for e in table} == set(B1.EXCURSION_CLASSES)
     assert all(entry["status"] == "ok" for entry in table)
-    assert all("q025_erro_log_f" in entry for entry in table)
-    assert all("q95_abs_erro_centrado_log_f" in entry for entry in table)
+    assert all("q025_erro_hz" in e and "q975_erro_hz" in e for e in table)
+    assert not any("log_f" in key for e in table for key in e)  # ln f vem de f_est, não da tabela
     assert B1.select_min_snr(table) == 10.0
-    assert B1.identifiability_order(0.00001) == ">=2000"
-    assert B1.identifiability_order(0.2) == 2
+
+
+def test_excursion_class_edges():
+    assert B1._excursion_class(0.0, 1.0) == "baixa"
+    assert B1._excursion_class(0.49, 1.0) == "baixa"
+    assert B1._excursion_class(0.5, 1.0) == "media"
+    assert B1._excursion_class(-1.99, 1.0) == "media"
+    assert B1._excursion_class(2.0, 1.0) == "alta"
+    assert B1._excursion_class(2.0, 0.5) == "media"  # e = |df/dt|·T²
+
+
+def test_high_excursion_class_does_not_block_min_snr():
+    rng = np.random.default_rng(7)
+    rows = _synthetic_rows(rng, window_s=1.0)
+    for r in rows:  # erro grande só na classe alta
+        if r["fdot_hz_s"] >= 4.0:
+            r["error_hz"] *= 100.0
+            r["f_est"] = r["f_true"] + r["error_hz"]
+    table = B1.fit_empirical_uncertainty_table(rows, window_s=1.0)
+    alta = [e for e in table if e["excursao"] == "alta" and e["snr_bin"] > 0]
+    assert all(not e["passa_orcamento_precisao"] and not e["orcamento_exigido"] for e in alta)
+    assert B1.select_min_snr(table) == 10.0
+
+
+def test_log_interval_from_hz_starts_from_estimate_and_matches_hz_coverage():
+    rng = np.random.default_rng(3)
+    q025, q975 = -0.4, 0.7
+    for _ in range(2000):
+        f_true = float(rng.uniform(5.0, 400.0))
+        e = float(rng.uniform(-1.0, 1.2))
+        f_est = f_true + e
+        lo, hi = B1.log_interval_from_hz(f_est, q025, q975)
+        assert lo < hi
+        assert (lo <= np.log(f_est / f_true) <= hi) == (q025 <= e <= q975)
+    assert B1.log_interval_from_hz(0.5, -0.4, 0.7) is None  # f_est − q975 <= 0
+
+
+def test_verification_reports_coverage_by_order_band_and_no_hz_log_disagreement():
+    rng = np.random.default_rng(11)
+    cal = _synthetic_rows(rng, window_s=0.5)
+    ver = _synthetic_rows(rng, window_s=0.5)
+    table = B1.fit_empirical_uncertainty_table(cal, window_s=0.5)
+    out = B1.verify_empirical_uncertainty(ver, table, 10.0, 0.5)
+    assert out["discordancias_hz_log_f"] == 0
+    assert set(out["cobertura_por_faixa_de_ordem"]) == {"1-3", "4-10", "11-30", "31+"}
+    assert 0.9 < out["cobertura_media_por_sinal"] <= 1.0
+
+
+def _table_with(q025, q975, classes=B1.EXCURSION_CLASSES, snr_low=10.0):
+    return [dict(snr_bin=1, snr_low_db=snr_low, excursao=k, status="ok",
+                 q025_erro_hz=q025, q975_erro_hz=q975) for k in classes]
+
+
+def test_identifiability_exact_condition_f0_greater_than_interval_extremes():
+    # quantis simétricos de raio r: separação exige f0 > 2r, independente da ordem
+    ok = B1.identifiability_by_scenario(_table_with(-2.0, 2.0), 10.0, 1.0, 12.0, 0.0)
+    assert ok["status"] == "identificavel_ate_o_limite_de_banda"
+    assert ok["ordem_identificavel"] == ok["limite_de_banda"] == int(B1.BAND[1] // 12.0)
+    assert ok["menor_folga_hz"] == pytest.approx(8.0)
+    bad = B1.identifiability_by_scenario(_table_with(-6.5, 6.5), 10.0, 1.0, 12.0, 0.0)
+    assert bad["status"] == "sobreposicao" and bad["ordem_identificavel"] == 1
+    # assimétrico: conta q975_n − q025_{n+1}, não um raio simétrico
+    asym = B1.identifiability_by_scenario(_table_with(-1.0, 10.5), 10.0, 1.0, 12.0, 0.0)
+    assert asym["status"] == "identificavel_ate_o_limite_de_banda"
+    assert asym["menor_folga_hz"] == pytest.approx(12.0 - 11.5)
+
+
+def test_identifiability_uses_lowest_f0_and_per_order_excursion_strata():
+    table = (_table_with(-1.0, 1.0, classes=("baixa", "media"))
+             + _table_with(-5.0, 5.0, classes=("alta",)))
+    # slope −0.05 oct/s, 10 s: f0 cai de 12 para ~8,49 Hz; ordens altas entram na classe alta,
+    # onde 10 Hz de largura combinada supera 8,49 Hz
+    out = B1.identifiability_by_scenario(table, 10.0, 1.0, 12.0, -0.05)
+    assert out["f0_min_hz"] == pytest.approx(12.0 * 2 ** -0.5)
+    assert out["status"] == "sobreposicao" and 0 < out["ordem_identificavel"] < out["limite_de_banda"]
+    first_high = next(n for n in range(1, 200)
+                      if B1._excursion_class(n * 12.0 * 0.05 * np.log(2.0), 1.0) == "alta")
+    # (n−1, n) com n na classe alta ainda separa (1 + 5 < 8,49); (n, n+1), ambos na alta, não
+    assert out["ordem_identificavel"] == first_high
+    # bins abaixo da SNR mínima não entram
+    assert B1.identifiability_by_scenario(table, 15.0, 1.0, 12.0, 0.0)["status"] == "estrato_sem_calibracao"
 
 
 def test_ambiguous_even_only_subharmonic_is_not_labelled_as_error():
@@ -399,7 +481,7 @@ def test_val_partition_evaluates_frozen_rules_without_refitting(monkeypatch):
     monkeypatch.setattr(B1, "MIN_CAL_RECORDS_PER_STRATUM", 5)
     monkeypatch.setattr(B1, "MIN_CAL_SIGNALS_PER_STRATUM", 1)
     cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=20.0, alpha=0.0)
-    cell_mod = dict(cell, slope=-0.05)  # a calibração exige estratos plano e modulado
+    cell_mod = dict(cell, slope=-0.05)  # a calibração exige as classes de excursão baixa e média
     cal = [B1.run_one((c, "cal", 0)) for c in (cell, cell_mod)]
     summary = B1.summarize(cal)
     window = next(w for w in B1.WINDOWS

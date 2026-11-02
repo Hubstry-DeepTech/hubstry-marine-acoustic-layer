@@ -1,11 +1,11 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.3.4 (população da cobertura alinhada ao limiar congelado e proveniência do congelamento; incorpora os pareceres da Luna até a revisão do commit `434ca29` e a auditoria independente do Gemini: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, validação final na partição `val` com regras congeladas) · **Data:** 01/11/2026 · **Estado:** em execução: piloto v2 do Bloco 1. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3.5 (incerteza em hertz por SNR local e excursão de frequência; identificabilidade pela condição exata com extremos assimétricos; réplicas inéditas para a rodada final. Proposta, aguarda a Luna) · **Versão anterior:** 0.3.4 (população da cobertura alinhada ao limiar congelado e proveniência do congelamento; incorpora os pareceres da Luna até a revisão do commit `434ca29` e a auditoria independente do Gemini: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, validação final na partição `val` com regras congeladas) · **Data:** 02/11/2026 · **Estado:** em execução: Bloco 1, antes da rodada final. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;
 - `lab/analogias/PERFIL_OPERACIONAL_HMAL_seis_relacoes.md` (v0.1.4): as definições operacionais das relações;
-- `lab/PREREGISTRATION.md` (v1.3.1-draft): tem precedência em qualquer conflito.
+- `lab/PREREGISTRATION.md` (v1.3.2-draft): tem precedência em qualquer conflito.
 
 ## 1. Objetivo
 
@@ -108,7 +108,24 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 - Viés e dispersão de `ln f_k`; comparação com a `σ_f` declarada.
 - Erro de `f̂₀`, taxa de erro de oitava e de fator 3, e o critério de confiabilidade de `f̂₀`, nos três cenários determinados pela Luna: fundamental presente; fundamental ausente com periodicidade identificável; fundamental ausente com periodicidade ambígua. No terceiro, a saída esperada é indisponibilidade ou o período do sinal, e nada é contado como erro.
 - Verificação de `f_max` com ruído branco processado pela cadeia de decimação.
-- Verificação do limite de identificabilidade: acima da ordem prevista por `ln((n + 1)/n) > 2σ`, a taxa de atribuição errada de ordem adjacente deve subir.
+- Verificação do limite de identificabilidade: acima da ordem prevista pela condição exata (abaixo), a taxa de atribuição errada de ordem adjacente deve subir.
+
+**Incerteza e identificabilidade (v0.3.5, proposta para a revisão).** Substitui os quantis de `ln f` agregados sobre todas as ordens, que subcobriam as ordens 1 a 3 no piloto v2.
+
+1. **Unidade primária: hertz.** A tabela guarda os quantis de 2,5% e 97,5% do erro `e = f_est − f_true`, por bin de SNR local e por classe de excursão.
+2. **Excursão no lugar de "plano/modulado".** A excursão de um componente na janela é `e_T = |df/dt|·T²`, em unidades de `1/T`. As classes são baixa (`e_T < 0,5`), média (`0,5 ≤ e_T < 2`) e alta (`e_T ≥ 2`). Sob modulação, a excursão cresce com a ordem, e o estrato passa a acompanhar cada componente (achado 4 da auditoria do Gemini).
+3. **Intervalo em `ln f` a partir de `f_est`.** Para cada componente, `ln(f_est/f_true) ∈ [ln(f_est/(f_est − q₀₂₅)), ln(f_est/(f_est − q₉₇₅))]`, quando `f_est − q₉₇₅ > 0`. A cobertura em hertz e a cobertura em `ln f` coincidem; a verificação conta as discordâncias, que devem ser zero.
+4. **SNR mínima, escolhida em `cal`.** É o menor bin a partir do qual, em todos os bins superiores, as classes baixa e média têm amostra suficiente e `q95` do erro centrado `≤ 1/T`. A classe alta é calibrada e usada, mas sem esse orçamento, porque nela o erro é dominado pela própria modulação. Componentes em estratos sem amostra suficiente são excluídos e contados.
+5. **Verificação.** Cobertura média por sinal, com intervalo bootstrap por sinal, e cobertura por faixa de ordem (1–3, 4–10, 11–30, 31 ou mais).
+6. **Identificabilidade: condição exata.** O componente `k` é observado em `[k·f₀ + q₀₂₅,ₖ, k·f₀ + q₉₇₅,ₖ]`. Os componentes `n` e `n + 1` ficam separados quando `f₀ > q₉₇₅,ₙ − q₀₂₅,ₙ₊₁`. Com quantis simétricos de raio `r`, isso é `f₀ > 2r`, sem depender de `n`.
+   - Cada componente usa o estrato da sua própria excursão; a dependência da ordem volta por aí.
+   - Como a SNR local de cada componente não é conhecida antes, usa-se o pior caso entre os bins elegíveis: o maior `q₉₇₅` para `n` e o menor `q₀₂₅` para `n + 1`.
+   - Também no tempo, o pior caso: a separação usa a menor fundamental do sinal, e a excursão, a maior.
+   - `N_id` é o maior `N` tal que todos os pares vizinhos entre 1 e `N` estão separados, limitado por `⌊f_max/f₀,min⌋`.
+7. **Critério de cobertura a fixar antes da rodada final (proposta).** Cobertura média por sinal com limite inferior do IC bootstrap de 95% ≥ 93%, e cobertura ≥ 92% em cada faixa de ordem com ao menos 200 componentes. Os números são proposta e dependem da aprovação da Luna.
+8. **Sementes inéditas.** A rodada final usa réplicas a partir do índice 1000 (`--offset-replica 1000`). O piloto consumiu as réplicas 0 a 5 de `cal` e `ver`.
+
+A matriz `Σ` continua estimada em `ln f`. O alinhamento das suas escalas com os quantis em hertz é a validação seguinte, antes do congelamento.
 
 **Fixa:** janela e passo da STFT, limiar de detecção, modelo de `σ_f` e de `Σ`, estimador `f̂₀` e o seu critério de confiabilidade, `f_max`.
 

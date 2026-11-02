@@ -50,7 +50,16 @@ TOL_LOG2_F0 = 0.05
 
 # Faixas fixadas antes da verificação. A primeira começa no limiar mínimo do detector.
 SNR_BINS = [(6.0, 10.0), (10.0, 15.0), (15.0, 20.0), (20.0, None)]
-MODULATION_SPLIT_OCT_S = 0.01
+MODULATION_SPLIT_OCT_S = 0.01  # só para ler o piloto v2 (diag_cobertura.py)
+# Estratos de excursão de frequência na janela, em unidades de 1/T: e = |df/dt|·T².
+# Substituem a classe binária plano/modulado (achado 4 da auditoria do Gemini): o erro em Hz
+# depende da excursão do próprio componente, que cresce com a ordem sob modulação.
+EXCURSION_EDGES_BINS = (0.5, 2.0)
+EXCURSION_CLASSES = ("baixa", "media", "alta")
+# Classes em que o orçamento de precisão 1/T é exigido na escolha da SNR mínima. Na classe
+# "alta" (excursão >= 2/T) o erro é dominado pela própria modulação: os quantis são calibrados
+# e usados, mas o orçamento 1/T não se aplica (proposta, aguarda a Luna).
+BUDGET_CLASSES = ("baixa", "media")
 MIN_CAL_RECORDS_PER_STRATUM = 200
 MIN_CAL_SIGNALS_PER_STRATUM = 50
 QUANTILE_LOW = 0.025
@@ -88,7 +97,36 @@ def classify_f0(estimate, f0_true, profile):
 
 
 def _modulation_class(slope_oct_s):
+    """Classe binária do piloto v2; mantida só para reler aquele resultado."""
     return "plano" if abs(slope_oct_s) < MODULATION_SPLIT_OCT_S else "modulado"
+
+
+def _excursion_class(fdot_hz_s, window_s):
+    """Excursão de frequência do componente dentro da janela, em unidades de 1/T."""
+    excursion = abs(float(fdot_hz_s)) * float(window_s) ** 2
+    if excursion < EXCURSION_EDGES_BINS[0]:
+        return "baixa"
+    if excursion < EXCURSION_EDGES_BINS[1]:
+        return "media"
+    return "alta"
+
+
+def log_interval_from_hz(f_est, q025_hz, q975_hz):
+    """Intervalo do resíduo ln(f_est/f_true) obtido dos quantis do erro e = f_est − f_true.
+
+    Parte da frequência estimada, porque a verdadeira é desconhecida em dados reais
+    (parecer da Luna sobre o piloto v2): e ∈ [q025, q975] ⇔ f_true ∈ [f_est − q975,
+    f_est − q025] ⇔ ln(f_est/f_true) ∈ [ln(f_est/(f_est − q025)), ln(f_est/(f_est − q975))].
+    Devolve None quando f_est − q975 <= 0 (intervalo indefinido em ln f)."""
+    lower_true = f_est - q975_hz
+    upper_true = f_est - q025_hz
+    if lower_true <= 0 or upper_true <= 0:
+        return None
+    return (float(np.log(f_est / upper_true)), float(np.log(f_est / lower_true)))
+
+
+def _order_band(order):
+    return "1-3" if order <= 3 else "4-10" if order <= 10 else "11-30" if order <= 30 else "31+"
 
 
 def _snr_bin(snr_db):
@@ -259,14 +297,18 @@ def run_one(args):
 
 
 def fit_empirical_uncertainty_table(rows, window_s):
-    """Tabela de intervalos empíricos centrais de 95%, por SNR e modulação."""
+    """Tabela de intervalos empíricos centrais de 95% do erro em Hz, por SNR local e excursão.
+
+    A incerteza primária é o erro e = f_est − f_true em Hz, cuja escala é aproximadamente
+    constante entre ordens (diagnóstico do piloto v2). O intervalo em ln f de cada componente
+    sai de log_interval_from_hz, a partir de f_est, sem hipótese gaussiana."""
     table = []
     for bin_index, (lower, upper) in enumerate(SNR_BINS):
-        for modulation_class in ("plano", "modulado"):
+        for excursion_class in EXCURSION_CLASSES:
             selected = [
                 row for row in rows
                 if _snr_bin(row["snr_db"]) == bin_index
-                and _modulation_class(row["modulation_oct_s"]) == modulation_class
+                and _excursion_class(row["fdot_hz_s"], window_s) == excursion_class
             ]
             errors = np.asarray([row["error_hz"] for row in selected], dtype=float)
             n_signals = len({row["signal_id"] for row in selected})
@@ -274,7 +316,7 @@ def fit_empirical_uncertainty_table(rows, window_s):
                 snr_bin=bin_index,
                 snr_low_db=lower,
                 snr_high_db=upper,
-                modulation=modulation_class,
+                excursao=excursion_class,
                 n=int(errors.size),
                 n_sinais=n_signals,
                 min_n=MIN_CAL_RECORDS_PER_STRATUM,
@@ -288,70 +330,42 @@ def fit_empirical_uncertainty_table(rows, window_s):
             )
             if errors.size >= MIN_CAL_RECORDS_PER_STRATUM:
                 bias_hz = float(np.median(errors))
-                q_low_hz = float(np.quantile(errors, QUANTILE_LOW, method="lower"))
-                q_high_hz = float(np.quantile(errors, QUANTILE_HIGH, method="higher"))
                 q95_centered_hz = float(np.quantile(
                     np.abs(errors - bias_hz), 0.95, method="higher"
                 ))
-
-                log_errors = np.asarray([
-                    np.log(row["f_est"] / row["f_true"])
-                    for row in selected
-                    if row["f_est"] > 0 and row["f_true"] > 0
-                ], dtype=float)
-                bias_log_f = float(np.median(log_errors))
-                q_low_log_f = float(np.quantile(
-                    log_errors, QUANTILE_LOW, method="lower"
-                ))
-                q_high_log_f = float(np.quantile(
-                    log_errors, QUANTILE_HIGH, method="higher"
-                ))
-                q95_centered_log_f = float(np.quantile(
-                    np.abs(log_errors - bias_log_f), 0.95, method="higher"
-                ))
-
+                budget_hz = PRECISION_BUDGET_FACTOR / window_s
                 entry.update(
                     bias_mediano_hz=bias_hz,
-                    q025_erro_hz=q_low_hz,
-                    q975_erro_hz=q_high_hz,
+                    q025_erro_hz=float(np.quantile(errors, QUANTILE_LOW, method="lower")),
+                    q975_erro_hz=float(np.quantile(errors, QUANTILE_HIGH, method="higher")),
                     q95_abs_erro_centrado_hz=q95_centered_hz,
-                    bias_mediano_log_f=bias_log_f,
-                    q025_erro_log_f=q_low_log_f,
-                    q975_erro_log_f=q_high_log_f,
-                    q95_abs_erro_centrado_log_f=q95_centered_log_f,
-                    mediana_f_verdadeira_hz=float(np.median([
-                        row["f_true"] for row in selected
-                    ])),
-                    orçamento_precisão_hz=PRECISION_BUDGET_FACTOR / window_s,
-                    passa_orcamento_precisao=(
-                        q95_centered_hz <= PRECISION_BUDGET_FACTOR / window_s
-                    ),
+                    orcamento_precisao_hz=budget_hz,
+                    orcamento_exigido=excursion_class in BUDGET_CLASSES,
+                    passa_orcamento_precisao=q95_centered_hz <= budget_hz,
                 )
             table.append(entry)
     return table
 
 
-def select_min_snr(table):
-    """Escolhe em cal o menor SNR cujo estrato e todos os superiores são suportados e passam."""
-    by_key = {
-        (entry["snr_bin"], entry["modulation"]): entry
-        for entry in table
-    }
-    n_bins = len(SNR_BINS)
+def _usable(entry):
+    return entry is not None and entry["status"] == "ok"
 
+
+def select_min_snr(table):
+    """Escolhe em cal o menor bin de SNR a partir do qual, em todos os bins superiores, as
+    classes de excursão com orçamento exigido têm amostra suficiente e q95 centrado <= 1/T.
+
+    A classe "alta" não entra no critério; seus componentes só são usados nos estratos com
+    amostra suficiente (e excluídos, com contagem, nos demais)."""
+    by_key = {(entry["snr_bin"], entry["excursao"]): entry for entry in table}
+    n_bins = len(SNR_BINS)
     for candidate_bin in range(n_bins):
-        tail_passes = True
-        for bin_index in range(candidate_bin, n_bins):
-            for modulation in ("plano", "modulado"):
-                entry = by_key[(bin_index, modulation)]
-                if (
-                    entry["status"] != "ok"
-                    or not entry.get("passa_orcamento_precisao", False)
-                ):
-                    tail_passes = False
-                    break
-            if not tail_passes:
-                break
+        tail_passes = all(
+            _usable(by_key.get((bin_index, excursion)))
+            and by_key[(bin_index, excursion)].get("passa_orcamento_precisao", False)
+            for bin_index in range(candidate_bin, n_bins)
+            for excursion in BUDGET_CLASSES
+        )
         if tail_passes:
             return float(SNR_BINS[candidate_bin][0])
     return None
@@ -372,42 +386,43 @@ def _cluster_bootstrap_interval(signal_coverages, seed, repetitions=1000):
 
 
 def verify_empirical_uncertainty(rows, table, min_snr_db, window_s, partition="ver"):
-    """Verifica a tabela em sinais independentes; não trata quadros como independentes."""
+    """Verifica a tabela em sinais independentes; não trata quadros como independentes.
+
+    A cobertura é medida em Hz e, para cada componente, também no intervalo em ln f obtido
+    de f_est (log_interval_from_hz). As duas coincidem quando o intervalo em ln f é definido;
+    a discordância é contada como verificação da transformação. A cobertura é reportada
+    por sinal (unidade do IC), por faixa de ordem e por estrato."""
     if min_snr_db is None:
         return dict(status="sem_limiar_snr_calibrado", n_sinais=0)
 
-    by_key = {
-        (entry["snr_bin"], entry["modulation"]): entry
-        for entry in table
-    }
+    by_key = {(entry["snr_bin"], entry["excursao"]): entry for entry in table}
     per_signal = defaultdict(lambda: [0, 0])
     per_stratum = defaultdict(lambda: [0, 0])
-    per_stratum_hz = defaultdict(lambda: [0, 0])
-    n_skipped = 0
+    per_order = defaultdict(lambda: [0, 0])
+    skipped = defaultdict(int)
+    undefined_log = 0
+    log_disagreement = 0
 
     for row in rows:
         if row["snr_db"] < min_snr_db:
             continue
-        bin_index = _snr_bin(row["snr_db"])
-        modulation = _modulation_class(row["modulation_oct_s"])
-        entry = by_key.get((bin_index, modulation))
-        if entry is None or entry["status"] != "ok":
-            n_skipped += 1
+        key = (_snr_bin(row["snr_db"]), _excursion_class(row["fdot_hz_s"], window_s))
+        entry = by_key.get(key)
+        if not _usable(entry):
+            skipped[key[1]] += 1
             continue
-
-        log_error = float(np.log(row["f_est"] / row["f_true"]))
-        covered_log = (
-            entry["q025_erro_log_f"] <= log_error <= entry["q975_erro_log_f"]
-        )
-        covered_hz = (
-            entry["q025_erro_hz"] <= row["error_hz"] <= entry["q975_erro_hz"]
-        )
-        per_signal[row["signal_id"]][0] += int(covered_log)
-        per_signal[row["signal_id"]][1] += 1
-        per_stratum[(bin_index, modulation)][0] += int(covered_log)
-        per_stratum[(bin_index, modulation)][1] += 1
-        per_stratum_hz[(bin_index, modulation)][0] += int(covered_hz)
-        per_stratum_hz[(bin_index, modulation)][1] += 1
+        covered = entry["q025_erro_hz"] <= row["error_hz"] <= entry["q975_erro_hz"]
+        interval = log_interval_from_hz(row["f_est"], entry["q025_erro_hz"], entry["q975_erro_hz"])
+        if interval is None:
+            undefined_log += 1
+        else:
+            residual = float(np.log(row["f_est"] / row["f_true"]))
+            if (interval[0] <= residual <= interval[1]) != covered:
+                log_disagreement += 1
+        for bucket, k in ((per_signal, row["signal_id"]), (per_stratum, key),
+                          (per_order, _order_band(int(row["order"])))):
+            bucket[k][0] += int(covered)
+            bucket[k][1] += 1
 
     signal_coverages = {
         signal_id: covered / total
@@ -421,30 +436,26 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s, partition="v
     else:
         observed, ci = None, None
 
-    strata = {
-        f"{bin_index}:{modulation}": dict(
-            cobertura_log_f=covered / total if total else None,
-            cobertura_hz=(
-                per_stratum_hz[(bin_index, modulation)][0]
-                / per_stratum_hz[(bin_index, modulation)][1]
-                if per_stratum_hz[(bin_index, modulation)][1] else None
-            ),
-            n_componentes=total,
-            cobertos_log_f=covered,
-        )
-        for (bin_index, modulation), (covered, total) in per_stratum.items()
-    }
     return dict(
         status="verificacao_descritiva_independente",
         unidade_ic="sinal sintético; bootstrap em clusters de sinal",
         n_sinais=len(signal_coverages),
         n_componentes=sum(v[1] for v in per_stratum.values()),
-        n_pulados_sem_estrato_calibrado=n_skipped,
+        n_pulados_sem_estrato_calibrado=int(sum(skipped.values())),
+        pulados_por_excursao=dict(skipped),
+        intervalo_log_f_indefinido=undefined_log,
+        discordancias_hz_log_f=log_disagreement,
         cobertura_media_por_sinal=observed,
         ic_bootstrap_95_por_sinal=ci,
-        estratos=strata,
+        cobertura_por_faixa_de_ordem={
+            band: dict(cobertura=c / n, n_componentes=n)
+            for band, (c, n) in sorted(per_order.items())
+        },
+        estratos={
+            f"{b}:{e}": dict(cobertura_hz=c / n if n else None, n_componentes=n, cobertos=c)
+            for (b, e), (c, n) in sorted(per_stratum.items())
+        },
     )
-
 
 
 def estimate_pairwise_covariance(rows, min_snr_db):
@@ -528,16 +539,67 @@ def estimate_pairwise_covariance(rows, min_snr_db):
 
 
 def identifiability_order(q95_abs_log_f, max_order=2000):
-    """Diagnóstico estrutural conservador: separação > 2 × raio empírico q95 em ln(f).
-
-    Não pressupõe normalidade e não transforma detectabilidade em teto de N(t).
-    """
+    """Critério antigo, com raio constante em ln f. Mantido só para reler o piloto v2:
+    a condição exata, com intervalo em Hz, é identifiability_by_scenario."""
     if q95_abs_log_f is None or not np.isfinite(q95_abs_log_f) or q95_abs_log_f < 0:
         return None
     for order in range(1, max_order + 1):
         if np.log((order + 1) / order) <= 2.0 * q95_abs_log_f:
             return order - 1
     return f">={max_order}"
+
+
+def identifiability_by_scenario(table, min_snr_db, window_s, f0_hz, slope_oct_s,
+                                duration_s=None, f_max_hz=None):
+    """Maior ordem n tal que os intervalos de componentes vizinhos não se sobrepõem até n.
+
+    Com e = f_est − f_true ∈ [q025, q975], o componente k é observado em
+    [k·f0 + q025_k, k·f0 + q975_k]. Os componentes n e n + 1 ficam separados quando
+    f0 > q975_n − q025_{n+1} (parecer da Luna sobre o piloto v2; com quantis simétricos de
+    raio r, vale f0 > 2r). Cada componente usa o estrato da sua excursão; como a SNR local de
+    cada componente não é conhecida antes, usa-se o pior caso entre os bins de SNR elegíveis
+    (>= min_snr_db, amostra suficiente): maior q975 para n e menor q025 para n + 1.
+    Pior caso também no tempo: a separação usa a menor fundamental do sinal e a excursão,
+    a maior. O teto é o limite de banda, ⌊f_max/f0_min⌋."""
+    duration_s = DUR if duration_s is None else duration_s
+    f_max_hz = BAND[1] if f_max_hz is None else f_max_hz
+    if min_snr_db is None:
+        return dict(status="sem_limiar_snr_calibrado")
+    f0_end = f0_hz * 2.0 ** (slope_oct_s * duration_s)
+    f0_min, f0_max = min(f0_hz, f0_end), max(f0_hz, f0_end)
+    band_limit = int(np.floor(f_max_hz / f0_min))
+
+    eligible = defaultdict(list)
+    for entry in table:
+        if _usable(entry) and entry["snr_low_db"] >= min_snr_db:
+            eligible[entry["excursao"]].append(entry)
+
+    def bounds(order):
+        fdot = order * f0_max * abs(slope_oct_s) * np.log(2.0)
+        entries = eligible.get(_excursion_class(fdot, window_s), [])
+        if not entries:
+            return None
+        return (min(e["q025_erro_hz"] for e in entries), max(e["q975_erro_hz"] for e in entries))
+
+    # ordem_identificavel = maior N tal que todos os pares vizinhos entre 1 e N estão separados
+    worst_margin = None
+    if bounds(1) is None:
+        return dict(status="estrato_sem_calibracao", ordem_identificavel=0,
+                    limite_de_banda=band_limit, f0_min_hz=f0_min)
+    for order in range(1, band_limit):
+        b_n, b_next = bounds(order), bounds(order + 1)
+        if b_next is None:
+            return dict(status="estrato_sem_calibracao", ordem_identificavel=order,
+                        limite_de_banda=band_limit, f0_min_hz=f0_min,
+                        menor_folga_hz=worst_margin)
+        margin = f0_min - (b_n[1] - b_next[0])
+        worst_margin = margin if worst_margin is None else min(worst_margin, margin)
+        if margin <= 0:
+            return dict(status="sobreposicao", ordem_identificavel=order,
+                        limite_de_banda=band_limit, f0_min_hz=f0_min,
+                        menor_folga_hz=worst_margin)
+    return dict(status="identificavel_ate_o_limite_de_banda", ordem_identificavel=band_limit,
+                limite_de_banda=band_limit, f0_min_hz=f0_min, menor_folga_hz=worst_margin)
 
 
 def _rows_from_results(results, window_s, partition, threshold_db=None):
@@ -740,45 +802,34 @@ def summarize(results):
             per_threshold[str(thr)] = dict(tabela_calibracao_cal=t_thr,
                                            limiar_minimo_snr_local_db=select_min_snr(t_thr))
 
-        eligible_q95_log = [
-            item["q95_abs_erro_centrado_log_f"]
-            for item in table
-            if item["status"] == "ok"
-            and min_snr is not None
-            and item["snr_low_db"] >= min_snr
-        ]
-        q95_log_reference = (
-            float(max(eligible_q95_log)) if eligible_q95_log else None
-        )
         covariance_cal = estimate_pairwise_covariance(cal_rows, min_snr)
         covariance_ver = estimate_pairwise_covariance(ver_rows, min_snr)
         summary["incerteza"][str(window_s)] = dict(
             por_limiar_deteccao=per_threshold,
-            metodo="quantis empíricos centrais de 95%, por SNR local e modulação",
+            metodo=("quantis empíricos centrais de 95% do erro em Hz, por SNR local e excursão "
+                    "de frequência na janela; intervalo em ln f obtido de f_est"),
             sem_hipotese_gaussiana=True,
             limiar_minimo_snr_local_db=min_snr,
             critério_do_limiar=(
-                "menor bin em que todos os bins superiores, plano e modulado, "
-                "têm pelo menos MIN_CAL_RECORDS_PER_STRATUM e q95 do erro centrado <= 1/T"
+                "menor bin em que todos os bins superiores, nas classes de excursão baixa e média, "
+                "têm pelo menos MIN_CAL_RECORDS_PER_STRATUM registros e MIN_CAL_SIGNALS_PER_STRATUM "
+                "sinais e q95 do erro centrado <= 1/T; a classe alta é calibrada sem orçamento"
             ),
+            bordas_excursao_em_1_sobre_T=EXCURSION_EDGES_BINS,
             minimo_registros_por_estrato=MIN_CAL_RECORDS_PER_STRATUM,
             minimo_sinais_independentes_por_estrato=MIN_CAL_SIGNALS_PER_STRATUM,
             tabela_calibracao_cal=table,
             verificacao_ver=verification,
             covariancia_cruzada_cal=covariance_cal,
             diagnostico_covariancia_ver=covariance_ver,
-            raio_q95_log_f_referencia=q95_log_reference,
             ressalva=(
-                "quantis empíricos em ln(f) são a incerteza primária; não há conversão "
-                "por fator normal para sigma. A tabela em Hz é mantida para o orçamento "
-                "de precisão do detector."
+                "a covariância cruzada ainda é estimada em ln f com vieses por ordem; o alinhamento "
+                "das escalas entre os quantis em Hz e a matriz Sigma é a validação seguinte"
             ),
         )
         summary["identificabilidade"][str(window_s)] = {
-            f"f0={f0}|slope={slope}": (
-                identifiability_order(q95_log_reference)
-                if q95_log_reference is not None else None
-            )
+            f"f0={f0}|slope={slope}": identifiability_by_scenario(
+                table, min_snr, window_s, f0, slope)
             for f0 in GRID["f0"]
             for slope in GRID["slope"]
         }
@@ -786,7 +837,7 @@ def summarize(results):
     return summary
 
 
-FREEZE_SCHEMA = "SIM-MCA-001/B1/congelamento/v2"
+FREEZE_SCHEMA = "SIM-MCA-001/B1/congelamento/v3"
 CODE_FILES = ("block1.py", "detection.py", "fundamental.py", "generator.py", "seeds.py",
               "assignment.py", "stats.py", "congelar_b1.py")
 
@@ -807,7 +858,8 @@ def run_config():
     return dict(grade=GRID, janelas_s=WINDOWS, limiares_deteccao_db=DET_THRESHOLDS_DB,
                 yin_limiares=YIN_THRESHOLDS, banda_hz=BAND, duracao_s=DUR,
                 prefiltro_f0_hz=F0_PREFILTER, faixas_snr_local_db=SNR_BINS,
-                limiar_modulacao_oct_s=MODULATION_SPLIT_OCT_S,
+                bordas_excursao_em_1_sobre_T=EXCURSION_EDGES_BINS,
+                classes_com_orcamento=BUDGET_CLASSES,
                 quantis=(QUANTILE_LOW, QUANTILE_HIGH),
                 orcamento_precisao_fator=PRECISION_BUDGET_FACTOR,
                 min_registros_estrato=MIN_CAL_RECORDS_PER_STRATUM,
@@ -935,14 +987,17 @@ def main(argv=None):
     parser.add_argument("--particoes", nargs="+", default=list(S.EXPLORATORY_PARTITIONS),
                         choices=list(S.PARTITIONS),
                         help="'val' só na validação final, depois de congeladas as regras")
+    parser.add_argument("--offset-replica", type=int, default=0,
+                        help="índice da primeira réplica; a rodada final usa sementes inéditas "
+                             "(o piloto consumiu as réplicas 0 a 5 de cal e ver)")
     parser.add_argument("--congelamento",
                         help="arquivo de congelamento; obrigatório com val, que roda sozinha")
     args = parser.parse_args(argv)
     if "val" in args.particoes and (args.particoes != ["val"] or not args.congelamento):
         parser.error("val roda sozinha e exige --congelamento (regras fixadas antes, só em cal)")
 
-    if args.reps < 1 or args.workers < 1:
-        parser.error("--reps e --workers devem ser positivos")
+    if args.reps < 1 or args.workers < 1 or args.offset_replica < 0:
+        parser.error("--reps e --workers devem ser positivos e --offset-replica, não negativo")
 
     started = time.time()
     keys = list(GRID)
@@ -951,7 +1006,7 @@ def main(argv=None):
         (cell, partition, replicate)
         for cell in cells
         for partition in args.particoes
-        for replicate in range(args.reps)
+        for replicate in range(args.offset_replica, args.offset_replica + args.reps)
     ]
 
     with Pool(args.workers) as pool:
@@ -959,7 +1014,7 @@ def main(argv=None):
 
     report = dict(
         bloco="B1",
-        plano="SIM-MCA-001 v0.3.2 — runner revisado após a auditoria do Gemini",
+        plano="SIM-MCA-001 v0.3.5 — incerteza em Hz por excursão; identificabilidade exata",
         particoes=args.particoes,
         rotulo="EXPLORATORY/FEASIBILITY",
         tipo="piloto" if args.reps <= 6 else "rodada exploratória",
@@ -970,8 +1025,9 @@ def main(argv=None):
         limiares_deteccao_db=DET_THRESHOLDS_DB,
         prefiltro_f0_hz=F0_PREFILTER,
         faixas_snr_local_db=[dict(min_db=lo, max_db=hi) for lo, hi in SNR_BINS],
-        limiar_modulacao_oct_s=MODULATION_SPLIT_OCT_S,
+        bordas_excursao_em_1_sobre_T=EXCURSION_EDGES_BINS,
         replicas_por_celula_e_particao=args.reps,
+        deslocamento_de_replica=args.offset_replica,
         n_sinais=len(jobs),
         criterio_pareamento=(
             "regra de avaliação sintética baseada na verdade; não integra a cadeia de detecção aplicada a sinais reais. "
@@ -982,8 +1038,9 @@ def main(argv=None):
             "2/T vai até o primeiro zero do lóbulo principal da Hann e não exclui energia de lóbulos laterais"
         ),
         metodo_incerteza=(
-            "quantis empíricos centrais de 95% por SNR local e classe de modulação; "
-            "SNR mínimo selecionado somente em cal e verificado somente em ver"
+            "quantis empíricos centrais de 95% do erro em Hz, por SNR local e excursão de frequência "
+            "na janela; intervalo em ln f a partir de f_est; SNR mínima selecionada somente em cal "
+            "e verificada somente em ver"
         ),
         selecao_fundamental=(
             "YIN best; limiar selecionado somente em cal nos perfis identificáveis; "
