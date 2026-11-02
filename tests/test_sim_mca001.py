@@ -604,3 +604,80 @@ def test_low_snr_false_peak_stops_stealing_pairing_at_higher_threshold():
             np.array([1.0]), sel, truth, win_s=1.0, df_hz=0.25)
         assert len(rec) == 1 and rec[0][3] == pytest.approx(expected_f)
         assert false == len(sel[0]) - 1
+
+
+def _verification(ci_low, bands, excursion=None):
+    return dict(status="verificacao_descritiva_independente",
+                ic_bootstrap_95_por_sinal=[ci_low, 0.99],
+                cobertura_por_faixa_de_ordem={b: dict(cobertura=c, n_componentes=n)
+                                              for b, (c, n) in bands.items()},
+                cobertura_por_excursao=excursion or {})
+
+
+def test_coverage_criterion_fixed_by_luna():
+    """Critério de 02/11: IC inferior da média por sinal >= 93%; cada faixa >= 92% com >= 200."""
+    ok = B1.evaluate_coverage_criterion(_verification(0.931, {"1-3": (0.95, 500), "31+": (0.921, 300)}))
+    assert ok["veredito"] == "aprovado"
+    assert B1.evaluate_coverage_criterion(
+        _verification(0.929, {"1-3": (0.95, 500)}))["veredito"] == "reprovado"
+    assert B1.evaluate_coverage_criterion(
+        _verification(0.95, {"1-3": (0.95, 500), "4-10": (0.919, 250)}))["veredito"] == "reprovado"
+    # faixa com menos de 200 componentes fica não avaliável e não reprova nem aprova sozinha
+    small = B1.evaluate_coverage_criterion(_verification(0.95, {"1-3": (0.95, 500), "31+": (0.5, 150)}))
+    assert small["veredito"] == "aprovado" and small["faixas_de_ordem"]["31+"]["status"] == "nao_avaliavel"
+    assert B1.evaluate_coverage_criterion(
+        _verification(0.95, {"31+": (0.99, 10)}))["veredito"] == "nao_avaliavel"
+    assert B1.COVERAGE_CRITERIA["limite_inferior_ic_media_por_sinal_min"] == 0.93
+
+
+def test_verification_marks_excursion_class_without_calibration_as_not_evaluable():
+    rng = np.random.default_rng(5)
+    cal = [r for r in _synthetic_rows(rng, window_s=0.5) if r["fdot_hz_s"] < 1.0 / 0.25]
+    ver = _synthetic_rows(rng, window_s=0.5)
+    table = B1.fit_empirical_uncertainty_table(cal, window_s=0.5)
+    out = B1.verify_empirical_uncertainty(ver, table, 10.0, 0.5)
+    alta = out["cobertura_por_excursao"]["alta"]
+    assert alta["status"] == "nao_avaliavel" and alta["pulados"] > 0
+    assert out["cobertura_por_excursao"]["baixa"]["status"] == "avaliada"
+
+
+def _fake_f0_result(partition, profile, snr, pairs, thr=0.3):
+    return dict(partition=partition, cell=dict(profile=profile, snr=snr),
+                f0={f"yin_best_{thr}_raw": pairs})
+
+
+def test_yin_criterion_error_availability_and_ambiguous_profile_excluded():
+    good = [[12.0 * (1 + 0.001), 12.0]] * 999 + [[None, 12.0]] * 1
+    res = [_fake_f0_result("ver", "decrescente", 10.0, good),
+           _fake_f0_result("ver", "ausente_ambigua", 20.0, [[None, 12.0]] * 500),  # fora
+           _fake_f0_result("ver", "h3_dominante", 5.0, [[36.0, 12.0]] * 500)]       # abaixo de 10 dB
+    out = B1.evaluate_yin_criterion(res, 0.3, "ver")
+    assert out["veredito"] == "aprovado" and out["n_quadros"] == 1000
+    assert out["disponibilidade"] == pytest.approx(0.999)
+    low_avail = [[12.0, 12.0]] * 990 + [[None, 12.0]] * 10
+    assert B1.evaluate_yin_criterion([_fake_f0_result("ver", "decrescente", 20.0, low_avail)],
+                                     0.3, "ver")["veredito"] == "reprovado"
+    big_err = [[12.0, 12.0]] * 940 + [[12.24, 12.0]] * 60
+    assert B1.evaluate_yin_criterion([_fake_f0_result("ver", "decrescente", 20.0, big_err)],
+                                     0.3, "ver")["veredito"] == "reprovado"
+    assert B1.evaluate_yin_criterion(res, 0.3, "val")["veredito"] == "nao_avaliavel"
+
+
+def test_freeze_records_acceptance_criteria_and_val_reports_verdicts(monkeypatch):
+    monkeypatch.setattr(B1, "MIN_CAL_RECORDS_PER_STRATUM", 5)
+    monkeypatch.setattr(B1, "MIN_CAL_SIGNALS_PER_STRATUM", 1)
+    cell = dict(profile="decrescente", f0=12.0, slope=0.0, snr=20.0, alpha=0.0)
+    cal = [B1.run_one((c, "cal", 0)) for c in (cell, dict(cell, slope=-0.05))]
+    summary = B1.summarize(cal)
+    w = next(w for w in B1.WINDOWS
+             if summary["incerteza"][str(w)]["por_limiar_deteccao"]["10.0"]["limiar_minimo_snr_local_db"] is not None)
+    freeze = B1.build_freeze(summary, w, 10.0, decided_by="teste")
+    crit = freeze["criterios_aceite"]
+    assert crit["cobertura"] == B1.COVERAGE_CRITERIA and crit["yin"]["disponibilidade_min"] == 0.994
+    out = B1.evaluate_frozen([B1.run_one((cell, "val", 0))], freeze)
+    assert out["veredito_cobertura"]["veredito"] in ("aprovado", "reprovado", "nao_avaliavel")
+    assert out["veredito_yin"]["particao"] == "val" and out["veredito_yin"]["n_quadros"] > 0
+    with pytest.raises(ValueError):  # critérios fazem parte do hash: não podem ser relaxados
+        tampered = dict(freeze, criterios_aceite=dict(crit, cobertura=dict(
+            crit["cobertura"], limite_inferior_ic_media_por_sinal_min=0.80)))
+        B1.evaluate_frozen([B1.run_one((cell, "val", 0))], tampered)

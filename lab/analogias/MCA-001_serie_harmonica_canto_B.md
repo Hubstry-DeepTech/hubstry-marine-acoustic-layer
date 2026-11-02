@@ -1,6 +1,8 @@
 # MCA-001 — Série harmônica musical e canto B da baleia-azul
 
-**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.5.4 (aplica o perfil operacional HMAL das seis relações v0.1.4; incorpora a revisão adversarial da v0.4 e os pareceres da Luna de 01/11/2026, até o parecer sobre a v0.5.3) · **Data:** 01/11/2026 · **Estado:** protocolo de verificação em especificação, liberado pela revisão para simulações sintéticas exploratórias e não liberado para dados reais; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-lo. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+**Matriz de Correspondências Analógicas do HMAL (MCA), ficha 001** · **Versão:** 0.5.5 (nota de proveniência após o NO-GO MBARI; `f_max` obtido da cadeia sintética; limite de identificabilidade pela condição exata em hertz, conforme a SIM-MCA-001 v0.3.5) · **Versão anterior:** 0.5.4 (aplica o perfil operacional HMAL das seis relações v0.1.4; incorpora a revisão adversarial da v0.4 e os pareceres da Luna de 01/11/2026, até o parecer sobre a v0.5.3) · **Data:** 02/11/2026 · **Estado:** protocolo de verificação em especificação, liberado pela revisão para simulações sintéticas exploratórias e não liberado para dados reais; nenhuma medição foi feita e nenhum dado foi aberto para elaborá-lo. **Rótulo:** `EXPLORATORY/FEASIBILITY`.
+
+> **Nota de proveniência — MBARI:** o par vocal MBARI foi encerrado como NO-GO na avaliação de viabilidade da v1.3.1. Não há candidato ativo de dados na emenda 1.3.2. A taxa sintética de 2 kHz e a simulação do filtro de decimação são parâmetros de engenharia preservados do cenário anterior, não evidência de acesso, disponibilidade ou seleção de arquivos MBARI. Nenhum resultado das simulações desta ficha deve ser interpretado como validação com dados MBARI.
 
 **Documentos relacionados:**
 - `lab/analogias/PERFIL_OPERACIONAL_HMAL_seis_relacoes.md`: as definições operacionais das seis relações usadas aqui. Esta ficha não as repete; aplica-as;
@@ -15,7 +17,7 @@ O objetivo não é mostrar que as seis relações se aplicam ao canto B. É inve
 
 ## 2. Relação com o pré-registro e com a Fase 1
 
-Esta ficha não integra a hipótese H1 do pré-registro v1.3.1-draft. A Seção 3.2 desse documento exclui os harmônicos de uma mesma vocalização como evidência de relações entre unidades vocais distintas, e essa exclusão permanece. A harmonicidade do canto B é uma pergunta diferente, que só poderá ser investigada depois de registrada em emenda versionada, com motivação, data e indicação dos dados já observados, antes de qualquer medição.
+Esta ficha não integra a hipótese H1 do pré-registro v1.3.2-draft. A Seção 3.2 desse documento exclui os harmônicos de uma mesma vocalização como evidência de relações entre unidades vocais distintas, e essa exclusão permanece. A harmonicidade do canto B é uma pergunta diferente, que só poderá ser investigada depois de registrada em emenda versionada, com motivação, data e indicação dos dados já observados, antes de qualquer medição.
 
 A ficha também não altera a Fase 1, cujo escopo exclui frequência fundamental e harmônicos. As medições aqui especificadas pertencem à Fase 2.
 
@@ -52,8 +54,8 @@ O antecedente é fundamento histórico-conceitual. Não é evidência empírica 
 As definições gerais (componente, evento, estrutura ideal `𝓘_N`, atribuição `h`, escala `g`, desvio `εₖ`) estão na Seção 4 do perfil operacional. Esta ficha fixa o seguinte.
 
 **Ordem máxima efetiva `N(t)`.** A ordem máxima depende do instante, porque a fundamental varia durante o chamado. Ela é calculada com o estimador independente `f̂₀(t)`, e não com a escala `g(t)` ajustada aos componentes, para não depender da busca de atribuições. É o menor de dois limites:
-- o limite de banda, `⌊f_max / f̂₀(t)⌋`, em que `f_max` é a frequência acima da qual a resposta do filtro de decimação dos arquivos de 2 kHz deixa de ser plana. O valor de `f_max` será fixado a partir da documentação do MBARI e verificado com ruído branco sintético processado pela mesma cadeia;
-- o limite de identificabilidade: a maior ordem `n` para a qual a separação entre ordens adjacentes no domínio logarítmico, `ln((n + 1)/n)`, ainda é maior que duas vezes a incerteza típica de `ln f_k`. A aproximação `1/n` superestima sempre a separação, com erro relativo de cerca de `1/(2n)`, e não é usada no critério. Acima dessa ordem, não é possível distinguir `n` de `n + 1`.
+- o limite de banda, `⌊f_max / f̂₀(t)⌋`, em que `f_max` é a frequência acima da qual a resposta do filtro da cadeia sintética de referência (2 kHz, com decimação simulada) deixa de ser plana. Nas simulações, `f_max` é obtido da resposta desse filtro e verificado com ruído branco processado pela mesma cadeia. Se uma fonte real vier a ser aprovada, a cadeia será recalibrada com os metadados e a resposta de filtragem documentados para ela;
+- o limite de identificabilidade: a maior ordem `N` tal que os intervalos de componentes vizinhos, de 1 a `N`, não se sobrepõem. Com o erro `e = f_est − f_true` nos quantis `[q₀₂₅, q₉₇₅]` do estrato de cada componente, os componentes `n` e `n + 1` ficam separados quando `f̂₀ > q₉₇₅,ₙ − q₀₂₅,ₙ₊₁`. Com quantis simétricos de raio `r`, a condição é `f̂₀ > 2r`, e a dependência da ordem vem do estrato de excursão e de SNR de cada componente. A regra de cálculo está na SIM-MCA-001 v0.3.5, Bloco 1. Acima dessa ordem, não é possível distinguir `n` de `n + 1`.
 
 A finitude de `𝓘_N` não é exigida pela existência de `h`, que poderia ser definida em todos os naturais. Ela é necessária para definir o isomorfismo parcial e para limitar a busca de atribuições.
 

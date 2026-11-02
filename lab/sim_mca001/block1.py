@@ -60,6 +60,15 @@ EXCURSION_CLASSES = ("baixa", "media", "alta")
 # "alta" (excursão >= 2/T) o erro é dominado pela própria modulação: os quantis são calibrados
 # e usados, mas o orçamento 1/T não se aplica (proposta, aguarda a Luna).
 BUDGET_CLASSES = ("baixa", "media")
+
+# Critérios de aceite fixados pela Luna em 02/11/2026, antes da rodada final (SIM-MCA-001
+# v0.3.5). São registrados no congelamento e aplicados sem ajuste depois de ver o resultado.
+COVERAGE_CRITERIA = dict(
+    nominal=0.95,
+    limite_inferior_ic_media_por_sinal_min=0.93,
+    cobertura_por_faixa_de_ordem_min=0.92,
+    componentes_min_por_faixa=200,
+)
 MIN_CAL_RECORDS_PER_STRATUM = 200
 MIN_CAL_SIGNALS_PER_STRATUM = 50
 QUANTILE_LOW = 0.025
@@ -67,6 +76,15 @@ QUANTILE_HIGH = 0.975
 PRECISION_BUDGET_FACTOR = 1.0
 AMBIGUOUS_LABEL = "subarmonica_compativel_nao_identificavel"
 IDENTIFIABLE_PROFILES = ("decrescente", "h3_dominante", "ausente_identificavel")
+# Critério do estimador independente (Luna, 02/11/2026). O perfil "ausente_ambigua" não entra
+# no denominador: lá a fundamental física não é identificável no sinal.
+YIN_CRITERIA = dict(
+    estimador="yin_best",
+    p95_erro_relativo_abs_max=0.01,
+    disponibilidade_min=0.994,
+    snr_min_db=10.0,
+    perfis=IDENTIFIABLE_PROFILES,
+)
 
 
 def scenario_name(cell):
@@ -285,6 +303,13 @@ def run_one(args):
                 classify_f0(value, reference, cell["profile"])
                 for value, reference in zip(estimates, true_f0)
             ]
+            if mode == "best":
+                # estimativa e referência por quadro, para os critérios de erro relativo e
+                # disponibilidade (None = indisponível)
+                f0_results[f"yin_best_{threshold}_raw"] = [
+                    [float(value) if np.isfinite(value) else None, float(reference)]
+                    for value, reference in zip(estimates, true_f0)
+                ]
 
     cepstrum = [F0.cepstrum(frame, min_prominence=0.0) for frame in f0_frames]
     f0_results["cep_raw"] = [
@@ -399,6 +424,7 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s, partition="v
     per_signal = defaultdict(lambda: [0, 0])
     per_stratum = defaultdict(lambda: [0, 0])
     per_order = defaultdict(lambda: [0, 0])
+    per_excursion = defaultdict(lambda: [0, 0])
     skipped = defaultdict(int)
     undefined_log = 0
     log_disagreement = 0
@@ -420,7 +446,8 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s, partition="v
             if (interval[0] <= residual <= interval[1]) != covered:
                 log_disagreement += 1
         for bucket, k in ((per_signal, row["signal_id"]), (per_stratum, key),
-                          (per_order, _order_band(int(row["order"])))):
+                          (per_order, _order_band(int(row["order"]))),
+                          (per_excursion, key[1])):
             bucket[k][0] += int(covered)
             bucket[k][1] += 1
 
@@ -451,10 +478,109 @@ def verify_empirical_uncertainty(rows, table, min_snr_db, window_s, partition="v
             band: dict(cobertura=c / n, n_componentes=n)
             for band, (c, n) in sorted(per_order.items())
         },
+        # cada classe de excursão tem cobertura medida e reportada; a classe sem nenhum
+        # estrato calibrado acima da SNR mínima fica registrada como não avaliável
+        cobertura_por_excursao={
+            klass: (
+                dict(status="avaliada", cobertura=per_excursion[klass][0] / per_excursion[klass][1],
+                     n_componentes=per_excursion[klass][1], pulados=skipped.get(klass, 0))
+                if per_excursion[klass][1]
+                else dict(status="nao_avaliavel", n_componentes=0, pulados=skipped.get(klass, 0))
+            )
+            for klass in EXCURSION_CLASSES
+        },
         estratos={
             f"{b}:{e}": dict(cobertura_hz=c / n if n else None, n_componentes=n, cobertos=c)
             for (b, e), (c, n) in sorted(per_stratum.items())
         },
+    )
+
+
+def evaluate_coverage_criterion(verification, criteria=None):
+    """Aplica o critério de cobertura fixado antes da rodada final, sem ajuste posterior.
+
+    Aprovado só se o limite inferior do IC bootstrap (reamostragem de sinais inteiros) da
+    cobertura média por sinal e a cobertura de cada faixa de ordem avaliável atingem os
+    mínimos. Faixas com menos componentes que o mínimo são registradas como não avaliáveis;
+    se nenhuma faixa é avaliável, o resultado é não avaliável."""
+    criteria = COVERAGE_CRITERIA if criteria is None else criteria
+    ci = verification.get("ic_bootstrap_95_por_sinal")
+    if verification.get("status") != "verificacao_descritiva_independente" or not ci:
+        return dict(veredito="nao_avaliavel", motivo="sem verificação ou sem IC por sinal",
+                    criterios=criteria)
+    bands = {}
+    for band, item in verification.get("cobertura_por_faixa_de_ordem", {}).items():
+        if item["n_componentes"] < criteria["componentes_min_por_faixa"]:
+            bands[band] = dict(item, status="nao_avaliavel")
+        else:
+            bands[band] = dict(item, status=(
+                "aprovada" if item["cobertura"] >= criteria["cobertura_por_faixa_de_ordem_min"]
+                else "reprovada"))
+    evaluable = [b for b in bands.values() if b["status"] != "nao_avaliavel"]
+    signal_ok = ci[0] >= criteria["limite_inferior_ic_media_por_sinal_min"]
+    if not evaluable:
+        verdict = "nao_avaliavel"
+    elif signal_ok and all(b["status"] == "aprovada" for b in evaluable):
+        verdict = "aprovado"
+    else:
+        verdict = "reprovado"
+    return dict(
+        veredito=verdict,
+        limite_inferior_ic_media_por_sinal=ci[0],
+        media_por_sinal_aprovada=signal_ok,
+        faixas_de_ordem=bands,
+        classes_de_excursao=verification.get("cobertura_por_excursao"),
+        criterios=criteria,
+    )
+
+
+def evaluate_yin_criterion(results, threshold, partition, criteria=None):
+    """Aplica o critério do YIN best fixado antes da rodada final.
+
+    Denominador: quadros dos perfis identificáveis com SNR integrada >= snr_min_db. O perfil
+    "ausente_ambigua" fica fora, por não ter fundamental identificável. Erro: percentil 95 do
+    erro relativo absoluto |f̂0/f0 − 1| entre as estimativas disponíveis. Disponibilidade:
+    fração de quadros com estimativa."""
+    criteria = YIN_CRITERIA if criteria is None else criteria
+    key = f"yin_best_{threshold}_raw"
+    by_cell = defaultdict(lambda: [0, []])
+    for result in results:
+        cell = result["cell"]
+        if (result["partition"] != partition or cell["profile"] not in criteria["perfis"]
+                or cell["snr"] < criteria["snr_min_db"]):
+            continue
+        bucket = by_cell[(cell["profile"], cell["snr"])]
+        for estimate, reference in result["f0"][key]:
+            bucket[0] += 1
+            if estimate is not None:
+                bucket[1].append(abs(estimate / reference - 1.0))
+    total = sum(v[0] for v in by_cell.values())
+    errors = [e for v in by_cell.values() for e in v[1]]
+    if total == 0:
+        return dict(veredito="nao_avaliavel", motivo="sem quadros elegíveis", criterios=criteria)
+    availability = len(errors) / total
+    p95 = float(np.quantile(errors, 0.95, method="higher")) if errors else None
+    ok = (p95 is not None and p95 <= criteria["p95_erro_relativo_abs_max"]
+          and availability >= criteria["disponibilidade_min"])
+    return dict(
+        veredito="aprovado" if ok else "reprovado",
+        limiar=threshold,
+        particao=partition,
+        n_quadros=total,
+        disponibilidade=availability,
+        p95_erro_relativo_abs=p95,
+        por_perfil_e_snr={
+            f"{profile}|{snr}": dict(
+                n_quadros=n,
+                disponibilidade=len(errs) / n if n else None,
+                p95_erro_relativo_abs=(float(np.quantile(errs, 0.95, method="higher"))
+                                       if errs else None),
+            )
+            for (profile, snr), (n, errs) in sorted(by_cell.items())
+        },
+        criterios=criteria,
+        ressalva=("SNR do critério = SNR integrada da célula, porque a fundamental é estimada "
+                  "no sinal inteiro do quadro; não demonstra a fundamental física do canto B"),
     )
 
 
@@ -782,6 +908,9 @@ def summarize(results):
     chosen_yin_threshold, yin_candidates = select_yin_best_threshold(results)
     summary["fundamental"] = _summarize_fundamental(results, chosen_yin_threshold)
     summary["fundamental"]["candidatos_yin_best_em_cal"] = yin_candidates
+    if any(r["partition"] == "ver" for r in results):
+        summary["fundamental"]["criterio_yin_ver_descritivo"] = evaluate_yin_criterion(
+            results, chosen_yin_threshold, "ver")
 
     for window_s in WINDOWS:
         summary["deteccao"][str(window_s)] = _summarize_detection(results, window_s)
@@ -827,6 +956,8 @@ def summarize(results):
                 "das escalas entre os quantis em Hz e a matriz Sigma é a validação seguinte"
             ),
         )
+        summary["incerteza"][str(window_s)]["criterio_cobertura_ver_descritivo"] = (
+            evaluate_coverage_criterion(verification))
         summary["identificabilidade"][str(window_s)] = {
             f"f0={f0}|slope={slope}": identifiability_by_scenario(
                 table, min_snr, window_s, f0, slope)
@@ -893,6 +1024,10 @@ def build_freeze(summary, window_s, det_threshold_db, decided_by, notes="", prov
         tabela_incerteza_cal=unc["tabela_calibracao_cal"],
         yin_best_limiar=summary["fundamental"]["yin_best_threshold_escolhido_em_cal"],
         tol_log2_f0=TOL_LOG2_F0,
+        criterios_aceite=dict(cobertura=COVERAGE_CRITERIA, yin=YIN_CRITERIA,
+                              classes_de_excursao=dict(bordas_em_1_sobre_T=EXCURSION_EDGES_BINS,
+                                                       classes_com_orcamento=BUDGET_CLASSES),
+                              fixados_por="Luna, 02/11/2026, antes da rodada final"),
         regra_pareamento="porta max(2/T, |df/dt|*T/2, df_STFT/2); um-a-um; um pico por não resolvido",
         decidido_por=decided_by,
         notas=notes,
@@ -941,9 +1076,15 @@ def evaluate_frozen(results, freeze):
     key = f"yin_best_{freeze['yin_best_limiar']}"
     fundamental = {prof: {snr: entry.get(key, {}) for snr, entry in by_snr.items()}
                    for prof, by_snr in fundamental.items()}
+    criteria = freeze["criterios_aceite"]
+    coverage_verdict = evaluate_coverage_criterion(coverage, criteria["cobertura"])
+    yin_verdict = evaluate_yin_criterion(results, freeze["yin_best_limiar"], "val",
+                                         dict(criteria["yin"], perfis=tuple(criteria["yin"]["perfis"])))
     return dict(
         congelamento_sha256=freeze["sha256"],
         janela_s=w,
+        veredito_cobertura=coverage_verdict,
+        veredito_yin=yin_verdict,
         snr_local_efetivo_db=effective_snr,
         populacao_avaliada=(f"componentes pareados e resolvidos pelo detector com o limiar congelado de "
                             f"{freeze['limiar_deteccao_db']} dB (pareamento refeito nesse limiar) e com "
@@ -974,7 +1115,8 @@ def f_max_check():
         criterio="primeira frequência acima de 20 Hz com ganho fora de ±0,5 dB da mediana 20–500 Hz",
         f_max_hz=f_max,
         ganho_ref_db=float(reference),
-        nota="filtro FIR do scipy, não o filtro do MBARI; valida o procedimento, não o valor real",
+        nota=("filtro FIR do scipy da cadeia sintética de referência; não é filtro de fonte real "
+              "nem de arquivo MBARI (NO-GO); valida o procedimento"),
     )
 
 

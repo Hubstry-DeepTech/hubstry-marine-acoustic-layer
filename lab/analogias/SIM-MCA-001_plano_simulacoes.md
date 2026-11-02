@@ -1,6 +1,8 @@
 # SIM-MCA-001 — Plano de simulações sintéticas da ficha MCA-001
 
-**Versão:** 0.3.5 (incerteza em hertz por SNR local e excursão de frequência; identificabilidade pela condição exata com extremos assimétricos; réplicas inéditas para a rodada final. Proposta, aguarda a Luna) · **Versão anterior:** 0.3.4 (população da cobertura alinhada ao limiar congelado e proveniência do congelamento; incorpora os pareceres da Luna até a revisão do commit `434ca29` e a auditoria independente do Gemini: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, validação final na partição `val` com regras congeladas) · **Data:** 02/11/2026 · **Estado:** em execução: Bloco 1, antes da rodada final. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+**Versão:** 0.3.5 (incerteza em hertz por SNR local e excursão de frequência; identificabilidade pela condição exata com extremos assimétricos; réplicas inéditas para a rodada final; critérios de aceite fixados pela Luna em 02/11/2026; nota de proveniência após o NO-GO MBARI) · **Versão anterior:** 0.3.4 (população da cobertura alinhada ao limiar congelado e proveniência do congelamento; incorpora os pareceres da Luna até a revisão do commit `434ca29` e a auditoria independente do Gemini: pareamento um-a-um com porta independente do orçamento de precisão, controle com ruído puro, validação final na partição `val` com regras congeladas) · **Data:** 02/11/2026 · **Estado:** em execução: Bloco 1, antes da rodada final. Bloco 2 bloqueado até a aprovação da busca exata e de `Σ`. Nenhum dado real foi aberto. **Rótulo de todos os resultados:** `EXPLORATORY/FEASIBILITY`.
+
+> **Nota de proveniência — MBARI:** o par vocal MBARI foi encerrado como NO-GO na avaliação de viabilidade da v1.3.1. Não há candidato ativo de dados na emenda 1.3.2. A taxa sintética de 2 kHz e a simulação do filtro de decimação são parâmetros de engenharia preservados do cenário anterior, não evidência de acesso, disponibilidade ou seleção de arquivos MBARI. Nenhum resultado desta simulação deve ser interpretado como validação com dados MBARI.
 
 **Documentos de referência:**
 - `lab/analogias/MCA-001_serie_harmonica_canto_B.md` (v0.5.4): a ficha cujos critérios estas simulações calibram;
@@ -19,8 +21,8 @@ As simulações não testam se o canto B é harmônico. Elas testam se o instrum
 ## 2. Princípios
 
 1. **Cadeia completa a partir da forma de onda.** Todo sinal sintético é gerado como forma de onda, passa pela mesma detecção de componentes, pelo mesmo estimador da fundamental e pela mesma busca de atribuições. Nenhuma etapa recebe picos ideais.
-2. **Mesma taxa de amostragem dos dados previstos.** Os sinais são gerados a 2 kHz, a taxa dos arquivos decimados do MBARI (Monterey Bay Aquarium Research Institute). Uma variante passa por decimação a partir de 16 kHz, para simular o filtro de decimação.
-3. **Parâmetros de literatura, não de dados.** As faixas de frequência, duração e modulação vêm de valores publicados (S01) e são deliberadamente amplas. Nenhum arquivo do MBARI é aberto para ajustá-las.
+2. **Taxa sintética de referência.** Os sinais são gerados a 2 kHz, condição preservada do cenário anterior por comparabilidade, e não característica de uma fonte selecionada. Uma variante passa por decimação a partir de 16 kHz, para simular o filtro de decimação.
+3. **Parâmetros de literatura, não de dados.** As faixas de frequência, duração e modulação vêm de valores publicados (S01) e são deliberadamente amplas. Nenhum arquivo de dados reais é aberto para ajustá-las.
 4. **Sementes determinísticas.** Cada sinal tem semente derivada de `SHA-256("SIM-MCA-001" | bloco | cenário | réplica)`. Esse espaço é separado do `MASTER_SEED` do pré-registro, que pertence ao conjunto `DS-00-SYNTH`.
 5. **Calibração em um conjunto, verificação em outro.** Para cada parâmetro calibrado, as sementes usadas para escolher o valor são distintas das usadas para verificar o seu desempenho. Sem isso, as taxas de erro reportadas ficariam otimistas.
 
@@ -110,7 +112,7 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
 - Verificação de `f_max` com ruído branco processado pela cadeia de decimação.
 - Verificação do limite de identificabilidade: acima da ordem prevista pela condição exata (abaixo), a taxa de atribuição errada de ordem adjacente deve subir.
 
-**Incerteza e identificabilidade (v0.3.5, proposta para a revisão).** Substitui os quantis de `ln f` agregados sobre todas as ordens, que subcobriam as ordens 1 a 3 no piloto v2.
+**Incerteza e identificabilidade (v0.3.5).** Substitui os quantis de `ln f` agregados sobre todas as ordens, que subcobriam as ordens 1 a 3 no piloto v2.
 
 1. **Unidade primária: hertz.** A tabela guarda os quantis de 2,5% e 97,5% do erro `e = f_est − f_true`, por bin de SNR local e por classe de excursão.
 2. **Excursão no lugar de "plano/modulado".** A excursão de um componente na janela é `e_T = |df/dt|·T²`, em unidades de `1/T`. As classes são baixa (`e_T < 0,5`), média (`0,5 ≤ e_T < 2`) e alta (`e_T ≥ 2`). Sob modulação, a excursão cresce com a ordem, e o estrato passa a acompanhar cada componente (achado 4 da auditoria do Gemini).
@@ -122,10 +124,14 @@ A relação sinal-ruído (SNR, signal-to-noise ratio) é declarada como `SNR_int
    - Como a SNR local de cada componente não é conhecida antes, usa-se o pior caso entre os bins elegíveis: o maior `q₉₇₅` para `n` e o menor `q₀₂₅` para `n + 1`.
    - Também no tempo, o pior caso: a separação usa a menor fundamental do sinal, e a excursão, a maior.
    - `N_id` é o maior `N` tal que todos os pares vizinhos entre 1 e `N` estão separados, limitado por `⌊f_max/f₀,min⌋`.
-7. **Critério de cobertura a fixar antes da rodada final (proposta).** Cobertura média por sinal com limite inferior do IC bootstrap de 95% ≥ 93%, e cobertura ≥ 92% em cada faixa de ordem com ao menos 200 componentes. Os números são proposta e dependem da aprovação da Luna.
+7. **Critérios de aceite, fixados pela Luna em 02/11/2026 antes da rodada final.** São registrados no congelamento, entram no seu hash e são aplicados à partição `val` sem ajuste.
+   - **Cobertura:** intervalo nominal central de 95%. O limite inferior do IC bootstrap de 95% da cobertura média por sinal deve ser ≥ 93%, reamostrando sinais inteiros. A cobertura de cada faixa de ordem deve ser ≥ 92%, nas faixas com pelo menos 200 componentes; faixas menores ficam registradas como não avaliáveis.
+   - **Classes de excursão:** aprovadas. A classe alta fica isenta só do orçamento `1/T`. Seus quantis são estimados, sua cobertura é medida e reportada, e ela cumpre os controles de SNR e de identificabilidade. Uma classe sem amostra suficiente é registrada como não avaliável, sem relaxar o critério.
+   - **YIN `best`:** é o candidato. O YIN `first` e o cepstro ficam como comparadores. Nos perfis identificáveis, a partir de 10 dB de SNR, o percentil 95 do erro relativo absoluto de `f̂₀` deve ser ≤ 1%, e a disponibilidade, ≥ 99,4%. O limiar é escolhido só em `cal`. O perfil só com ordens pares fica fora do denominador e continua classificado como não identificável. Na implementação, a SNR do critério é a SNR integrada da célula, porque `f̂₀` é estimada sobre o quadro inteiro. Esses limites não demonstram que a fundamental física do canto B foi identificada.
+   - **Falha:** se a rodada falhar, a falha é registrada. As metas não são deslocadas.
 8. **Sementes inéditas.** A rodada final usa réplicas a partir do índice 1000 (`--offset-replica 1000`). O piloto consumiu as réplicas 0 a 5 de `cal` e `ver`.
 
-A matriz `Σ` continua estimada em `ln f`. O alinhamento das suas escalas com os quantis em hertz é a validação seguinte, antes do congelamento.
+A matriz `Σ` continua estimada em `ln f`. O alinhamento das suas escalas com os quantis em hertz é a validação seguinte, antes do congelamento. A rodada final verifica a cadeia de medição sintética; não autoriza o Bloco 2 nem dados reais. A aprovação de `Σ` e a verificação independente da busca continuam sendo portas próprias.
 
 **Fixa:** janela e passo da STFT, limiar de detecção, modelo de `σ_f` e de `Σ`, estimador `f̂₀` e o seu critério de confiabilidade, `f_max`.
 
@@ -244,7 +250,7 @@ Parecer da Luna sobre a v0.1:
 
 ## 11. O que estas simulações não fazem
 
-- Não abrem dados do MBARI nem de outra fonte real.
+- Não abrem dados de nenhuma fonte real, incluindo o MBARI, encerrado como NO-GO.
 - Não dizem nada sobre o canto B. Um critério bem calibrado em simulação pode ainda falhar com dados reais, por fatores não simulados.
 - Não tocam a hipótese H1 do pré-registro nem o par de chamados A e B.
 
