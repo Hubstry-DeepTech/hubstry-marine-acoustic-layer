@@ -1,0 +1,5 @@
+commit=31a341ebf24d3c2f86999672206e3d084b213f43
+run_id=41890176596
+nproc=4
+ce7d25843b094a259e2973f81dda7c7b1d485fc932b7dac491d4dc8481fa1d77  lab/sim_mca001/results/block1_rodada_final_cal_ver.json
+python 3.13.17 numpy 2.5.3 scipy 1.18.1

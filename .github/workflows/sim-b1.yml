@@ -1,0 +1,54 @@
+name: SIM-MCA-001 Bloco 1 (rodada final cal/ver)
+
+# Rodada exploratória final do Bloco 1 nas partições cal e ver, com sementes inéditas
+# (réplicas a partir de 1000; o piloto consumiu as réplicas 0 a 5). A partição val não
+# roda aqui: ela exige congelamento gravado em commit (block1.py recusa val sem --congelamento).
+# Dispara quando este arquivo é alterado no branch research/mca-001.
+
+on:
+  push:
+    branches: [research/mca-001]
+    paths: [".github/workflows/sim-b1.yml"]
+
+permissions:
+  contents: read
+
+env:
+  REPS: "6"
+  OFFSET_REPLICA: "1000"
+  OUT: lab/sim_mca001/results/block1_rodada_final_cal_ver.json
+
+jobs:
+  rodada-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Dependências (mesmas versões do piloto)
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy==2.5.3 scipy==1.18.1
+      - name: Rodada final cal/ver
+        run: |
+          python -m lab.sim_mca001.block1 \
+            --reps "$REPS" --offset-replica "$OFFSET_REPLICA" \
+            --workers "$(nproc)" --out "$OUT"
+      - name: Proveniência
+        run: |
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "nproc=$(nproc)"
+            sha256sum "$OUT"
+            python -c "import platform,numpy,scipy;print('python',platform.python_version(),'numpy',numpy.__version__,'scipy',scipy.__version__)"
+          } | tee "${OUT%.json}.proveniencia.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: block1-rodada-final-cal-ver
+          path: |
+            ${{ env.OUT }}
+            lab/sim_mca001/results/block1_rodada_final_cal_ver.proveniencia.txt
+          retention-days: 90
