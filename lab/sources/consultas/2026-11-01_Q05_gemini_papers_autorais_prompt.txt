@@ -1,0 +1,10 @@
+[Prompt enviado ao Gemini 4 Argon (Vertex AI, região global, sem busca na web, temperatura 0,2, maxOutputTokens 32768), acompanhado de seis PDFs do autor: π√f(A) Álgebra Hexarrelacional; HALE v3.0; HPG 1.0; Morfologia Harmônica, Manifesto Fundacional v1.0; TICA v0.1; preprint HMAL v1.0.0. O texto integral do prompt está no arquivo prompt-integracao-papers.txt do Cloud Shell do autor; esta é a transcrição.]
+
+Você é um revisor científico independente. Responda em português.
+Leia integralmente os documentos anexados, todos de autoria de Guilherme Gonçalves Machado.
+Cite seção ou página para cada afirmação sua. Se algo não estiver nos textos, diga "não consta".
+Não invente referências.
+
+CONTEXTO DO PROJETO HMAL, ESTADO ATUAL (novembro de 2026): [regras de rastreabilidade e modelo nulo; bancada H16 de 159 razões com TRL 4 em autoavaliação; harmônicos intrachamado não são evidência biológica; A e B sem grandeza comum; proibido projetar dados reais em H16; linhas L1 a L8: caracterização descritiva, harmonicidade do canto B, anotação de eventos A/B, analogia heurística/funcional/homológica com homologia como homomorfismo, Matriz de Correspondências Analógicas com as seis relações, refatoração do HexaSign, paisagem sonora e zoossemiótica, escolha epistemológica.]
+
+TAREFAS: 1. tese e conceitos integráveis por documento, com a linha; 2. afirmações a corrigir, a reformular como hipótese ou já ressalvadas; 3. inconsistências entre documentos; 4. proposta de integração priorizada em até 10 itens; 5. grau de confiança e limites.
