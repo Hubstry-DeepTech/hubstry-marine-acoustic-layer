@@ -7,7 +7,7 @@
 
 | Linha | Avaliação atual | Meta |
 |---|---|---|
-| Núcleo computacional racional (`H_N`, canais, formas de onda, sincronização) | Prova de conceito implementada e testada: TRL 3 | TRL 4 do subsistema, conforme `lab/BENCH_CRITERIA.md` |
+| Núcleo computacional racional (`H_N`, canais, formas de onda, sincronização) | TRL 4 (autoavaliação) do subsistema em bancada digital sintética, sob os critérios congelados 0.4.0 (`lab/bench/results/v04-run41231673988/REPORT_V04.md`). O TRL 3 da v0.3.1 continua registrado | Avaliação independente da bancada; integração com a cadeia física |
 | Comunicação acústica submarina | Arquitetura e módulos experimentais, sem cadeia física testada | Bancada eletroacústica (*breadboard*) em parceria |
 | Hipótese bioacústica H1 | Protocolo exploratório pré-registrado; TRL não se aplica a hipótese científica | Avaliação científica com replicação independente |
 | H3 — controle de qualidade de detecções PAMGuard | Aplicação de engenharia em investigação | Benchmark com rótulos independentes |
@@ -136,7 +136,7 @@ semantic_vector = ontology_bridge.map_vocalization_to_ontology(mapped_channel)
 
 | Limitação | Impacto | Mitigação |
 |-----------|---------|-----------|
-| Desk-study (sem validação em campo) | Resultados preliminares | Parceria com laboratórios oceanográficos para TRL 4–6 |
+| Desk-study (sem validação em campo) | Resultados preliminares | Parceria com laboratórios oceanográficos para os TRL 5 e 6 (validação em ambiente relevante) |
 | Classificação biológica heurística | Precisão limitada | Treinar ML com dados rotulados por especialistas |
 | H_N limitado a N=32 | Trade-off resolução vs. computação | Otimizar para ARM Cortex-M4 em dispositivos embarcados |
 | Propagação em águas rasas não modelada | Perda de precisão em estuários | Implementar modelo Bellhop-lite em fase futura |
